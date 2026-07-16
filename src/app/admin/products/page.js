@@ -9,6 +9,7 @@ const initialProducts = [
     description: "Our signature flaky pastry filled with sweet cream cheese.",
     price: 24.99,
     category: "Pastries",
+    sizes: [{ name: "Regular", price: 0.00 }],
     addons: [{ name: "Gift Wrap", price: 2.00 }],
     isSoldOut: false,
     isBestSelling: true,
@@ -21,6 +22,7 @@ const initialProducts = [
     description: "A sweet kiss of caramel in a butter cookie.",
     price: 15.50,
     category: "Cookies",
+    sizes: [],
     addons: [],
     isSoldOut: true,
     isBestSelling: false,
@@ -35,7 +37,7 @@ export default function AdminProducts() {
   const [currentProduct, setCurrentProduct] = useState(null);
 
   const [formData, setFormData] = useState({
-    name: "", description: "", price: "", category: "Cakes", addons: [],
+    name: "", description: "", price: "", category: "Cakes", sizes: [], addons: [],
     isSoldOut: false, isBestSelling: false, isFeatured: false, image: "https://placehold.co/400x300/FDF3D5/4A2C1D?text=New+Item"
   });
 
@@ -45,6 +47,25 @@ export default function AdminProducts() {
       ...formData,
       [name]: type === 'checkbox' ? checked : value
     });
+  };
+
+  const handleAddSize = () => {
+    setFormData({
+      ...formData,
+      sizes: [...formData.sizes, { name: "", price: 0 }]
+    });
+  };
+
+  const handleSizeChange = (index, field, value) => {
+    const newSizes = [...formData.sizes];
+    newSizes[index][field] = value;
+    setFormData({ ...formData, sizes: newSizes });
+  };
+  
+  const handleRemoveSize = (index) => {
+    const newSizes = [...formData.sizes];
+    newSizes.splice(index, 1);
+    setFormData({ ...formData, sizes: newSizes });
   };
 
   const handleAddOption = () => {
@@ -69,7 +90,7 @@ export default function AdminProducts() {
   const openAddForm = () => {
     setIsEditing(false);
     setFormData({
-      name: "", description: "", price: "", category: "Cakes", addons: [],
+      name: "", description: "", price: "", category: "Cakes", sizes: [], addons: [],
       isSoldOut: false, isBestSelling: false, isFeatured: false, image: "https://placehold.co/400x300/FDF3D5/4A2C1D?text=New+Item"
     });
     setCurrentProduct({ isNew: true });
@@ -143,6 +164,22 @@ export default function AdminProducts() {
                   <option value="Breads">Breads</option>
                 </select>
               </div>
+            </div>
+
+            <div className="input-group">
+              <label>Sizes</label>
+              {formData.sizes.map((size, index) => (
+                <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                  <input type="text" className="input" placeholder="Size Name (e.g. Large)" value={size.name} onChange={(e) => handleSizeChange(index, 'name', e.target.value)} style={{ flex: 2 }} />
+                  <input type="number" step="0.01" className="input" placeholder="Price Offset" value={size.price} onChange={(e) => handleSizeChange(index, 'price', e.target.value)} style={{ flex: 1 }} />
+                  <button type="button" className="btn-icon danger" onClick={() => handleRemoveSize(index)}>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                  </button>
+                </div>
+              ))}
+              <button type="button" className="btn btn-secondary" onClick={handleAddSize} style={{ alignSelf: 'flex-start', marginTop: '8px' }}>
+                + Add Size
+              </button>
             </div>
 
             <div className="input-group">
