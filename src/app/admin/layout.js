@@ -1,0 +1,52 @@
+"use client";
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import './admin.css';
+
+export default function AdminLayout({ children }) {
+  const pathname = usePathname();
+  
+  // Don't show sidebar/topbar on login page
+  if (pathname === '/admin/login') {
+    return children;
+  }
+
+  return (
+    <div className="admin-layout-wrapper">
+      {/* Sidebar */}
+      <aside className="admin-sidebar">
+        <div className="admin-sidebar-header">
+          <h2>Aetee CMS</h2>
+        </div>
+        <nav className="admin-nav">
+          <Link href="/admin/dashboard" className={`admin-nav-item ${pathname === '/admin/dashboard' ? 'active' : ''}`}>
+            Dashboard
+          </Link>
+          <Link href="/admin/categories" className={`admin-nav-item ${pathname === '/admin/categories' ? 'active' : ''}`}>
+            Categories
+          </Link>
+          <Link href="/admin/products" className={`admin-nav-item ${pathname === '/admin/products' ? 'active' : ''}`}>
+            Products
+          </Link>
+        </nav>
+      </aside>
+
+      {/* Main Area */}
+      <div className="admin-content-area">
+        {/* Top Navbar */}
+        <header className="admin-topbar">
+          <div className="admin-topbar-title">Admin Panel</div>
+          <Link href="/admin/login" className="btn btn-secondary" style={{ padding: '6px 16px', fontSize: '0.8rem' }}>
+            Logout
+          </Link>
+        </header>
+
+        {/* Content */}
+        <main className="admin-main">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
