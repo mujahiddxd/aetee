@@ -271,3 +271,20 @@ input[type="checkbox"].sr-only {
 .gap-md { gap: var(--space-md); }
 .mb-md { margin-bottom: var(--space-md); }
 .mb-lg { margin-bottom: var(--space-lg); }
+
+/* Responsive Navbar */
+.desktop-nav {
+  display: block;
+}
+.mobile-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  .mobile-nav {
+    display: block !important;
+  }
+}

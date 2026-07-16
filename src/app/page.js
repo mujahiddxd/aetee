@@ -1,42 +1,31 @@
 "use client";
 
+import { useState } from 'react';
 import Link from 'next/link';
-import './globals.css';
 
 export default function Home() {
-  return (
-    <div style={{ backgroundColor: 'var(--color-bg-white)', minHeight: '100vh', position: 'relative' }}>
-      
-      {/* Navbar */}
-      <header style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: '#FFFFFF' }}>
-        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ width: '48px', height: '48px', backgroundColor: 'var(--color-primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFF', fontWeight: 'bold', fontSize: '10px', textAlign: 'center', lineHeight: '1.2' }}>
-              PORTO'S
-            </div>
-            <h1 style={{ fontSize: '1.25rem', margin: 0, letterSpacing: '0.05em' }}>PORTO'S BAKE AT HOME</h1>
-          </div>
-          <nav style={{ display: 'flex', alignItems: 'center', gap: '24px', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
-            <Link href="/menu" style={{ color: 'inherit' }}>Menu</Link>
-            <Link href="/shop" style={{ color: 'inherit', display: 'flex', alignItems: 'center', gap: '4px' }}>Shop <span style={{ fontSize: '0.7em' }}>▼</span></Link>
-            <Link href="/rewards" style={{ color: 'inherit' }}>Rewards</Link>
-            <Link href="/help" style={{ color: 'inherit', display: 'flex', alignItems: 'center', gap: '4px' }}>Help <span style={{ fontSize: '0.7em' }}>▼</span></Link>
-            <Link href="/corporate" style={{ color: 'inherit' }}>Corporate Gifts</Link>
-            <button style={{ background: 'none', border: 'none', color: 'var(--color-text-main)', cursor: 'pointer' }}>
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5h.008v.008H8.625v-.008zm5.625 0h.008v.008h-.008v-.008z"></path>
-              </svg>
-            </button>
-          </nav>
-        </div>
-      </header>
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const slides = [
+    "https://placehold.co/1200x500/F0E6D2/5a3424?text=Slide+1",
+    "https://placehold.co/1200x500/E7F4FF/5a3424?text=Slide+2"
+  ];
 
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  };
+
+  return (
+    <>
       {/* Hero Section */}
       <section style={{ display: 'flex', minHeight: '550px' }}>
         {/* Left Side (Yellow) */}
         <div style={{ flex: 1, backgroundColor: 'var(--color-highlight)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px' }}>
           <div style={{ maxWidth: '480px', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '3.5rem', lineHeight: '1.1', marginBottom: '24px' }}>WELCOME TO PORTO'S NATIONWIDE SHIPPING</h2>
+            <h2 style={{ fontSize: '3.5rem', lineHeight: '1.1', marginBottom: '24px' }}>WELCOME TO AETEES BAKEHOUSE NATIONWIDE SHIPPING</h2>
             <p style={{ color: 'var(--color-text-main)', fontSize: '1rem', lineHeight: '1.6', marginBottom: '32px' }}>
               Turn any occasion into a celebration with our easy-to-bake pastries or award-winning cakes - LA's best bakery delivered to you, perfect for gifting near or far!
             </p>
@@ -56,29 +45,46 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Filter / Search Bar area (Light grey background) */}
-      <div style={{ backgroundColor: 'var(--color-bg-grey)', padding: '24px 0', borderTop: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)' }}>
-        <div className="container" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontFamily: 'Oswald, sans-serif', fontWeight: 'bold', fontSize: '1rem', color: 'var(--color-primary)' }}>FILTER BY:</span>
-            <select style={{ padding: '10px 16px', borderRadius: '4px', border: '1px solid var(--color-primary)', backgroundColor: 'transparent', color: 'var(--color-primary)', fontWeight: 'bold', outline: 'none', width: '150px' }}>
-              <option>ALL</option>
-            </select>
-          </div>
-          <div style={{ position: 'relative' }}>
-            <svg style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-            <input type="text" placeholder="Search" style={{ padding: '10px 16px 10px 36px', borderRadius: '4px', border: '1px solid var(--color-primary)', backgroundColor: 'transparent', color: 'var(--color-text-main)', outline: 'none', width: '250px' }} />
+      {/* Slider Section */}
+      <section style={{ position: 'relative', width: '100%', maxWidth: '1200px', margin: '48px auto', overflow: 'hidden', borderRadius: '12px', boxShadow: 'var(--shadow-card)' }}>
+        <div style={{ display: 'flex', transition: 'transform 0.5s ease-in-out', transform: `translateX(-${currentSlide * 100}%)` }}>
+          {slides.map((slide, index) => (
+            <img key={index} src={slide} alt={`Slide ${index + 1}`} style={{ width: '100%', flexShrink: 0, objectFit: 'cover' }} />
+          ))}
+        </div>
+        
+        {/* Left Arrow */}
+        <button onClick={prevSlide} style={{ position: 'absolute', top: '50%', left: '16px', transform: 'translateY(-50%)', backgroundColor: 'rgba(255, 255, 255, 0.8)', border: 'none', borderRadius: '50%', width: '48px', height: '48px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-card)', zIndex: 10 }}>
+          <svg width="24" height="24" fill="none" stroke="var(--color-primary)" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        {/* Right Arrow */}
+        <button onClick={nextSlide} style={{ position: 'absolute', top: '50%', right: '16px', transform: 'translateY(-50%)', backgroundColor: 'rgba(255, 255, 255, 0.8)', border: 'none', borderRadius: '50%', width: '48px', height: '48px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-card)', zIndex: 10 }}>
+          <svg width="24" height="24" fill="none" stroke="var(--color-primary)" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </section>
+
+      {/* Info Section (Image Left, Text Right) */}
+      <section style={{ display: 'flex', minHeight: '450px' }}>
+        {/* Left Side (Image) */}
+        <div style={{ flex: 1, backgroundImage: 'url("https://placehold.co/800x600/e6d5b8/5a3424?text=Pastries")', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        </div>
+
+        {/* Right Side (Text) */}
+        <div style={{ flex: 1, backgroundColor: '#FFF7E6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '64px' }}>
+          <div style={{ maxWidth: '480px', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '3.5rem', color: '#5A3424', textTransform: 'uppercase', marginBottom: '24px', lineHeight: '1' }}>WE MAKE IT, YOU BAKE IT!</h2>
+            <p style={{ color: '#5A3424', fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '40px' }}>
+              Our pastry chefs work hard to ensure your baking process is smooth and fun. Get baking in as little as 3 steps.
+            </p>
+            <button className="btn btn-primary" style={{ backgroundColor: '#5A3424', color: '#FFFFFF', padding: '16px 32px', border: 'none', borderRadius: '24px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', letterSpacing: '0.05em' }}>SEE THE MENU</button>
           </div>
         </div>
-      </div>
-
-      {/* Floating $10 Off Button */}
-      <button className="btn btn-primary" style={{ position: 'fixed', bottom: '32px', left: '32px', zIndex: 1000, boxShadow: 'var(--shadow-hover)', padding: '14px 24px' }}>
-        <span style={{ marginRight: '8px' }}>×</span> CLAIM $10 OFF
-      </button>
-
-    </div>
+      </section>
+    </>
   );
 }
