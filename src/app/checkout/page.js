@@ -2,8 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Script from 'next/script';
+import { useCart } from '../context/CartContext';
 
 export default function Checkout() {
+  const { cartItems, isLoaded } = useCart();
   const [paymentMethod, setPaymentMethod] = useState('');
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -34,7 +37,7 @@ export default function Checkout() {
     }
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     const newErrors = {};
 
     if (!formData.date) newErrors.date = "Delivery date is required.";
@@ -60,25 +63,84 @@ export default function Checkout() {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      setShowModal({ isOpen: true, type: 'success', message: 'Order placed successfully! Validation passed.' });
-      // Logic to actually place the order goes here
+      try {
+        // 1. Create order on backend
+        const response = await fetch('/api/payment/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: 'dummy-user-id', // Replace with real logged-in user ID
+            totalAmount: grandTotal,
+            items: cartItems.map(item => ({
+              productId: item.productId || 'dummy-product-id', // Ensure productId is passed
+              quantity: item.quantity,
+              price: item.price
+            }))
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // 2. Initialize Razorpay popup
+          const options = {
+            key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Ensure you add NEXT_PUBLIC_RAZORPAY_KEY_ID to .env
+            amount: data.amount,
+            currency: data.currency,
+            name: "Porto's Bake at Home",
+            description: "Order Payment",
+            order_id: data.orderId,
+            handler: async function (response) {
+              // 3. Verify Payment
+              const verifyRes = await fetch('/api/payment/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature
+                })
+              });
+              
+              const verifyData = await verifyRes.json();
+              if (verifyData.success) {
+                setShowModal({ isOpen: true, type: 'success', message: 'Payment successful and order placed!' });
+              } else {
+                setShowModal({ isOpen: true, type: 'error', message: 'Payment verification failed!' });
+              }
+            },
+            prefill: {
+              name: `${formData.firstName} ${formData.lastName}`,
+              email: formData.email,
+              contact: formData.phone
+            },
+            theme: {
+              color: "#5A3424"
+            }
+          };
+
+          const paymentObject = new window.Razorpay(options);
+          paymentObject.open();
+        } else {
+          setShowModal({ isOpen: true, type: 'error', message: 'Failed to initiate payment.' });
+        }
+      } catch (error) {
+        console.error("Payment error:", error);
+        setShowModal({ isOpen: true, type: 'error', message: 'An error occurred while processing payment.' });
+      }
     } else {
       setShowModal({ isOpen: true, type: 'error', message: 'Invalid input! Please check all highlighted fields.' });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
-  // Dummy values for visual matching (Total ₹1260)
-  const dummyItems = [
-    { id: 1, name: "Classic Chocolate Truffle", price: 850, quantity: 1, image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=100&h=100&fit=crop" },
-    { id: 2, name: "Red Velvet Cupcake", price: 150, quantity: 2, image: "https://images.unsplash.com/photo-1614707267537-b85aaf00c4b7?w=100&h=100&fit=crop" }
-  ];
-  const itemTotal = dummyItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const itemTotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const deliveryCharges = 60;
   const grandTotal = itemTotal + deliveryCharges;
 
   return (
     <div className="checkout-container">
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" />
       <style>{`
         .checkout-container {
           display: flex;
@@ -403,10 +465,10 @@ export default function Checkout() {
       <div className="checkout-right">
         {/* Order Items */}
         <div style={{ marginBottom: '32px' }}>
-          {dummyItems.map(item => (
-            <div key={item.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', gap: '16px' }}>
+          {cartItems.map(item => (
+            <div key={item.cartItemId} style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', gap: '16px' }}>
               <div style={{ position: 'relative' }}>
-                <img src={item.image} alt={item.name} style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #E5E5E5' }} />
+                <img src={item.product.image} alt={item.product.name} style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #E5E5E5' }} />
                 <div style={{
                   position: 'absolute',
                   top: '-8px',
@@ -426,7 +488,9 @@ export default function Checkout() {
                 </div>
               </div>
               <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#333', margin: '0 0 4px 0' }}>{item.name}</h3>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#333', margin: '0 0 4px 0' }}>{item.product.name}</h3>
+                {item.selectedSize && <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>Size: {item.selectedSize}</p>}
+                {item.selectedAddons && item.selectedAddons.length > 0 && <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>Addons: {item.selectedAddons.join(', ')}</p>}
               </div>
               <div style={{ fontWeight: '600', color: '#333' }}>
                 ₹{item.price * item.quantity}

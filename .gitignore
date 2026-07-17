@@ -50,3 +50,5 @@ next-env.d.ts
 *.sw?
 .env*.local
 
+
+/src/generated/prisma
