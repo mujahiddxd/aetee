@@ -1,24 +1,61 @@
 "use client";
 
 import '../globals.css';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { ChevronDown, ChevronUp } from '../components/Icons';
 import { ProductModal } from '../components/ProductModal';
 import { ProductCard } from '../components/ProductCard';
-import { categories, mockProducts } from '../data/mockData';
-
 export default function Storefront() {
   const { cartItems, updateQuantity } = useCart();
-  const [activeCategory, setActiveCategory] = useState("Best Sellers");
+  const [activeCategory, setActiveCategory] = useState("All");
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [expandedCategories, setExpandedCategories] = useState(
-    categories.reduce((acc, cat) => ({ ...acc, [cat.name]: true }), {})
-  );
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [expandedCategories, setExpandedCategories] = useState({});
   const [dietaryFilter, setDietaryFilter] = useState("all");
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [catsRes, prodsRes] = await Promise.all([
+          fetch('/api/categories'),
+          fetch('/api/products')
+        ]);
+        
+        if (catsRes.ok && prodsRes.ok) {
+          const catsData = await catsRes.json();
+          const prodsData = await prodsRes.json();
+          
+          const formattedCats = catsData.map(c => ({
+            ...c,
+            icon: "https://placehold.co/100x100/FDF8F5/F5B041?text=" + c.name.substring(0, 2).toUpperCase()
+          }));
+          
+          formattedCats.unshift({ name: "All", icon: "https://placehold.co/100x100/FDF8F5/F5B041?text=ALL" });
+          
+          const formattedProds = prodsData.map(p => ({
+            ...p,
+            isVeg: true,
+            customisable: p.addons && p.addons.length > 0
+          }));
+
+          setCategories(formattedCats);
+          setProducts(formattedProds);
+          setExpandedCategories(formattedCats.reduce((acc, cat) => ({ ...acc, [cat.name]: true }), {}));
+        }
+      } catch (error) {
+        console.error("Failed to fetch menu data", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   const toggleCategory = (categoryName) => {
     setExpandedCategories(prev => ({
@@ -27,12 +64,12 @@ export default function Storefront() {
     }));
   };
 
-  const filteredProducts = useMemo(() => mockProducts.filter(p => {
+  const filteredProducts = useMemo(() => products.filter(p => {
     const matchesCategory = activeCategory === "All" || p.category === activeCategory;
     const matchesDietary = dietaryFilter === "all" || (dietaryFilter === "veg" ? p.isVeg : !p.isVeg);
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesDietary && matchesSearch;
-  }), [activeCategory, dietaryFilter, searchQuery]);
+  }), [activeCategory, dietaryFilter, searchQuery, products]);
 
   return (
     <div style={{ backgroundColor: 'var(--color-bg-grey)', minHeight: '100vh', paddingBottom: '60px' }}>
@@ -219,7 +256,7 @@ export default function Storefront() {
 
               {expandedCategories[cat.name] && (
                 <div className="product-grid mobile-product-grid">
-                  {mockProducts
+                  {products
                     .filter(p => p.category === cat.name && (dietaryFilter === 'all' || (dietaryFilter === 'veg' ? p.isVeg : !p.isVeg)) && p.name.toLowerCase().includes(searchQuery.toLowerCase()))
                     .map((product) => (
                       <ProductCard
