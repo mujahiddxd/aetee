@@ -326,6 +326,7 @@ export default function Checkout() {
                 value={formData.date}
                 onChange={handleInputChange}
                 className={`form-input ${errors.date ? 'error' : ''}`}
+                required
               />
               {errors.date && <div className="error-message">{errors.date}</div>}
             </div>
@@ -336,6 +337,7 @@ export default function Checkout() {
                 value={formData.time}
                 onChange={handleInputChange}
                 className={`form-input ${errors.time ? 'error' : ''}`}
+                required
               >
                 <option value="" disabled>Select Time </option>
                 <option value="9-11">9:00 AM – 11:00 AM</option>
@@ -362,6 +364,8 @@ export default function Checkout() {
                 onChange={handleInputChange}
                 className={`form-input ${errors.firstName ? 'error' : ''}`} 
                 placeholder="First Name" 
+                required
+                minLength={2}
               />
               {errors.firstName && <div className="error-message">{errors.firstName}</div>}
             </div>
@@ -373,6 +377,8 @@ export default function Checkout() {
                 onChange={handleInputChange}
                 className={`form-input ${errors.lastName ? 'error' : ''}`} 
                 placeholder="Last Name" 
+                required
+                minLength={2}
               />
               {errors.lastName && <div className="error-message">{errors.lastName}</div>}
             </div>
@@ -386,6 +392,7 @@ export default function Checkout() {
               onChange={handleInputChange}
               className={`form-input ${errors.email ? 'error' : ''}`} 
               placeholder="Email Address" 
+              required
             />
             {errors.email && <div className="error-message">{errors.email}</div>}
           </div>
@@ -416,6 +423,10 @@ export default function Checkout() {
                 className={`form-input ${errors.phone ? 'error' : ''}`}
                 placeholder="Phone Number"
                 style={{ borderRadius: '0 12px 12px 0' }}
+                required
+                pattern="[0-9]{10}"
+                maxLength={10}
+                minLength={10}
               />
             </div>
             {errors.phone && <div className="error-message">{errors.phone}</div>}
@@ -435,6 +446,7 @@ export default function Checkout() {
               placeholder="Delivery Address"
               rows="3"
               style={{ resize: 'vertical' }}
+              required
             ></textarea>
             {errors.address && <div className="error-message">{errors.address}</div>}
           </div>
@@ -447,6 +459,7 @@ export default function Checkout() {
               onChange={handleInputChange}
               className={`form-input ${errors.houseNo ? 'error' : ''}`} 
               placeholder="House No / Apartment" 
+              required
             />
             {errors.houseNo && <div className="error-message">{errors.houseNo}</div>}
           </div>
@@ -471,6 +484,8 @@ export default function Checkout() {
                 className={`form-input ${errors.pincode ? 'error' : ''}`} 
                 placeholder="Pincode (Mumbai Only)" 
                 maxLength="6"
+                required
+                pattern="^400[0-9]{3}$"
               />
               {errors.pincode && <div className="error-message">{errors.pincode}</div>}
             </div>

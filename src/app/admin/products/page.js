@@ -191,7 +191,7 @@ export default function AdminProducts() {
               <div style={{ flex: 1 }}>
                 <div className="input-group">
                   <label>Product Name</label>
-                  <input type="text" className="input" name="name" value={formData.name} onChange={handleInputChange} required disabled={submitting} />
+                  <input type="text" className="input" name="name" value={formData.name} onChange={handleInputChange} required minLength={2} disabled={submitting} />
                 </div>
                 <div className="input-group">
                   <label>Description</label>
@@ -203,7 +203,7 @@ export default function AdminProducts() {
             <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
               <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
                 <label>Price ($)</label>
-                <input type="number" step="0.01" className="input" name="price" value={formData.price} onChange={handleInputChange} required disabled={submitting} />
+                <input type="number" step="0.01" className="input" name="price" value={formData.price} onChange={handleInputChange} required min="0" disabled={submitting} />
               </div>
               <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
                 <label>Category</label>
@@ -223,8 +223,8 @@ export default function AdminProducts() {
               <label>Sizes</label>
               {formData.sizes.map((size, index) => (
                 <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                  <input type="text" className="input" placeholder="Size Name (e.g. Large)" value={size.name} onChange={(e) => handleSizeChange(index, 'name', e.target.value)} style={{ flex: 2 }} disabled={submitting} />
-                  <input type="number" step="0.01" className="input" placeholder="Price Offset" value={size.price} onChange={(e) => handleSizeChange(index, 'price', e.target.value)} style={{ flex: 1 }} disabled={submitting} />
+                  <input type="text" className="input" placeholder="Size Name (e.g. Large)" value={size.name} onChange={(e) => handleSizeChange(index, 'name', e.target.value)} style={{ flex: 2 }} required minLength={1} disabled={submitting} />
+                  <input type="number" step="0.01" className="input" placeholder="Price Offset" value={size.price} onChange={(e) => handleSizeChange(index, 'price', e.target.value)} style={{ flex: 1 }} required min="0" disabled={submitting} />
                   <button type="button" className="btn-icon danger" onClick={() => handleRemoveSize(index)} disabled={submitting}>
                     <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                   </button>
@@ -239,8 +239,8 @@ export default function AdminProducts() {
               <label>Add-ons</label>
               {formData.addons.map((addon, index) => (
                 <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                  <input type="text" className="input" placeholder="Option Name" value={addon.name} onChange={(e) => handleAddonChange(index, 'name', e.target.value)} style={{ flex: 2 }} disabled={submitting} />
-                  <input type="number" step="0.01" className="input" placeholder="Extra Price" value={addon.price} onChange={(e) => handleAddonChange(index, 'price', e.target.value)} style={{ flex: 1 }} disabled={submitting} />
+                  <input type="text" className="input" placeholder="Option Name" value={addon.name} onChange={(e) => handleAddonChange(index, 'name', e.target.value)} style={{ flex: 2 }} required minLength={1} disabled={submitting} />
+                  <input type="number" step="0.01" className="input" placeholder="Extra Price" value={addon.price} onChange={(e) => handleAddonChange(index, 'price', e.target.value)} style={{ flex: 1 }} required min="0" disabled={submitting} />
                   <button type="button" className="btn-icon danger" onClick={() => handleRemoveOption(index)} disabled={submitting}>
                     <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                   </button>

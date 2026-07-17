@@ -101,6 +101,8 @@ export default function AdminCategories() {
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
             disabled={submitting}
+            required
+            minLength={2}
           />
           <button type="submit" className="btn btn-primary" disabled={submitting}>
             {submitting ? "Adding..." : "+ Add Category"}
