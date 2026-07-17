@@ -10,16 +10,28 @@ export default function AdminLogin() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Hardcoded logic for now as per spec
-    if (username === "admin" && password === "aetee@2026") {
-      // Typically we'd set an HTTP only cookie here, 
-      // but for client-side quick start we just redirect to dashboard
-      // Note: A real app will use a secure API route.
-      router.push("/admin/dashboard");
-    } else {
-      setError("Invalid username or password");
+    setError("");
+    
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        router.push("/admin/dashboard");
+      } else {
+        setError(data.error || "Invalid username or password");
+      }
+    } catch (err) {
+      setError("An error occurred during login. Please try again.");
     }
   };
 
