@@ -17,7 +17,8 @@ export default function Checkout() {
     phone: '',
     address: '',
     houseNo: '',
-    landmark: ''
+    landmark: '',
+    additionalInfo: ''
   });
   const [errors, setErrors] = useState({});
   const [showModal, setShowModal] = useState({ isOpen: false, type: '', message: '' });
@@ -450,6 +451,22 @@ export default function Checkout() {
               className="form-input" 
               placeholder="Nearest Landmark (Optional)" 
             />
+          </div>
+        </div>
+
+        {/* 5. Additional Information */}
+        <div className="section-card">
+          <h2 className="section-title">Additional Information</h2>
+          <div className="input-group" style={{ marginBottom: 0 }}>
+            <textarea 
+              name="additionalInfo"
+              value={formData.additionalInfo}
+              onChange={handleInputChange}
+              className="form-input" 
+              placeholder="Any special instructions for your order? (Optional)" 
+              rows="3" 
+              style={{ resize: 'vertical' }}
+            ></textarea>
           </div>
         </div>
         

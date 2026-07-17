@@ -2,11 +2,16 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
 
 export default function Cart() {
+  const router = useRouter();
   const { cartItems, updateQuantity, removeFromCart, isLoaded } = useCart();
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [pincode, setPincode] = useState('');
+  const [pincodeStatus, setPincodeStatus] = useState(''); // '', 'format_error', 'not_deliverable', 'deliverable'
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   const confirmRemove = () => {
     if (itemToDelete) {
@@ -23,6 +28,20 @@ export default function Cart() {
   const delivery = subtotal > 0 ? 50 : 0;
   const taxes = subtotal * 0.05;
   const total = subtotal + delivery + taxes;
+
+  const validPincodes = ['110001', '110002', '110011', '110012', '110013', '110020'];
+
+  const checkPincode = () => {
+    if (!/^\d{6}$/.test(pincode)) {
+      setPincodeStatus('format_error');
+      return;
+    }
+    if (validPincodes.includes(pincode)) {
+      setPincodeStatus('deliverable');
+    } else {
+      setPincodeStatus('not_deliverable');
+    }
+  };
 
   if (cartItems.length === 0) {
     return (
@@ -146,17 +165,41 @@ export default function Cart() {
         <div style={{ display: 'flex', gap: '12px' }}>
           <input
             type="text"
-            placeholder="Enter Delivery Pincode"
+            placeholder="Enter Delivery Pincode (e.g. 110001)"
+            value={pincode}
+            onChange={(e) => {
+              // Allow only numbers
+              const val = e.target.value.replace(/\D/g, '');
+              setPincode(val);
+              setPincodeStatus('');
+            }}
+            maxLength="6"
             style={{
-              flex: 1, padding: '14px 16px', borderRadius: '8px', border: '1px solid #DDD',
+              flex: 1, padding: '14px 16px', borderRadius: '8px', 
+              border: `1px solid ${pincodeStatus === 'format_error' || pincodeStatus === 'not_deliverable' ? '#D32F2F' : (pincodeStatus === 'deliverable' ? '#4CAF50' : '#DDD')}`,
+              backgroundColor: pincodeStatus === 'format_error' || pincodeStatus === 'not_deliverable' ? '#FEF6F6' : '#FFF',
               fontSize: '1rem', outline: 'none'
             }}
           />
-          <button style={{
-            backgroundColor: '#000', color: '#FFF', padding: '0 24px', borderRadius: '8px',
-            fontWeight: 'bold', border: 'none', cursor: 'pointer'
-          }}>Check</button>
+          <button 
+            onClick={checkPincode}
+            style={{
+              backgroundColor: '#000', color: '#FFF', padding: '0 24px', borderRadius: '8px',
+              fontWeight: 'bold', border: 'none', cursor: 'pointer'
+            }}
+          >
+            Check
+          </button>
         </div>
+        {pincodeStatus === 'format_error' && (
+          <p style={{ color: '#D32F2F', fontSize: '0.85rem', marginTop: '8px', marginBottom: 0 }}>Please enter a valid 6-digit pincode.</p>
+        )}
+        {pincodeStatus === 'not_deliverable' && (
+          <p style={{ color: '#D32F2F', fontSize: '0.85rem', marginTop: '8px', marginBottom: 0 }}>Sorry, we do not deliver to this pincode yet.</p>
+        )}
+        {pincodeStatus === 'deliverable' && (
+          <p style={{ color: '#4CAF50', fontSize: '0.85rem', marginTop: '8px', marginBottom: 0 }}>Great news! We deliver to your area.</p>
+        )}
       </div>
 
       {/* 4. Payment Summary */}
@@ -185,7 +228,21 @@ export default function Cart() {
 
       {/* 5. Proceed to Checkout Button */}
       <div style={{ padding: '0 24px' }}>
-        <button className="checkout-btn">
+        <button 
+          className="checkout-btn"
+          onClick={() => {
+            if (pincodeStatus === 'deliverable') {
+              router.push('/checkout');
+            } else {
+              setShowErrorModal(true);
+              if (!/^\d{6}$/.test(pincode)) {
+                setPincodeStatus('format_error');
+              } else if (!validPincodes.includes(pincode)) {
+                setPincodeStatus('not_deliverable');
+              }
+            }
+          }}
+        >
           Proceed to Checkout
         </button>
       </div>
@@ -230,6 +287,41 @@ export default function Cart() {
                 }}
               >Yes, Remove</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pincode Error Modal */}
+      {showErrorModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '24px'
+        }}>
+          <div style={{
+            backgroundColor: '#FFF',
+            padding: '32px 24px',
+            borderRadius: '16px',
+            width: '100%',
+            maxWidth: '360px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+            textAlign: 'center'
+          }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#D32F2F', marginBottom: '12px' }}>Action Required</h3>
+            <p style={{ color: '#666', marginBottom: '24px', fontSize: '0.95rem' }}>Please enter a valid and deliverable pincode before proceeding to checkout.</p>
+            <button
+              onClick={() => setShowErrorModal(false)}
+              style={{
+                width: '100%', padding: '12px', borderRadius: '12px', border: 'none',
+                backgroundColor: '#5A3424', color: '#FFF', fontWeight: 'bold', cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(90, 52, 36, 0.2)'
+              }}
+            >OK, Got it</button>
           </div>
         </div>
       )}

@@ -17,6 +17,8 @@ export default function Storefront() {
   );
   const [dietaryFilter, setDietaryFilter] = useState("all");
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const toggleCategory = (categoryName) => {
     setExpandedCategories(prev => ({
@@ -28,8 +30,9 @@ export default function Storefront() {
   const filteredProducts = useMemo(() => mockProducts.filter(p => {
     const matchesCategory = activeCategory === "All" || p.category === activeCategory;
     const matchesDietary = dietaryFilter === "all" || (dietaryFilter === "veg" ? p.isVeg : !p.isVeg);
-    return matchesCategory && matchesDietary;
-  }), [activeCategory, dietaryFilter]);
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesDietary && matchesSearch;
+  }), [activeCategory, dietaryFilter, searchQuery]);
 
   return (
     <div style={{ backgroundColor: 'var(--color-bg-grey)', minHeight: '100vh', paddingBottom: '60px' }}>
@@ -47,6 +50,8 @@ export default function Storefront() {
               <input
                 type="text"
                 placeholder="Search here"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ width: '100%', padding: '12px 16px', paddingRight: '40px', borderRadius: '8px', border: '1px solid var(--color-border)', background: '#FFF', fontSize: '0.95rem', outline: 'none' }}
               />
               <svg width="18" height="18" fill="none" stroke="var(--color-gold)" strokeWidth="2" viewBox="0 0 24 24" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
@@ -165,7 +170,7 @@ export default function Storefront() {
               Menu
             </button>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid var(--color-border)', background: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-main)', cursor: 'pointer' }}>
+              <button onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-main)', cursor: 'pointer', background: isMobileSearchOpen ? 'var(--color-highlight)' : '#FFF' }}>
                 <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                 </svg>
@@ -177,6 +182,19 @@ export default function Storefront() {
               </button>
             </div>
           </div>
+
+          {/* Mobile Search Field */}
+          {isMobileSearchOpen && (
+            <div style={{ marginBottom: '16px' }}>
+              <input
+                type="text"
+                placeholder="Search menu..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--color-border)', background: '#FFF', fontSize: '1rem', outline: 'none' }}
+              />
+            </div>
+          )}
 
           {/* Mobile Filter Options */}
           {isMobileFiltersOpen && (
@@ -202,7 +220,7 @@ export default function Storefront() {
               {expandedCategories[cat.name] && (
                 <div className="product-grid mobile-product-grid">
                   {mockProducts
-                    .filter(p => p.category === cat.name && (dietaryFilter === 'all' || (dietaryFilter === 'veg' ? p.isVeg : !p.isVeg)))
+                    .filter(p => p.category === cat.name && (dietaryFilter === 'all' || (dietaryFilter === 'veg' ? p.isVeg : !p.isVeg)) && p.name.toLowerCase().includes(searchQuery.toLowerCase()))
                     .map((product) => (
                       <ProductCard
                         key={product.id}
