@@ -1,6 +1,8 @@
 import React from 'react';
+import { useCart } from '../context/CartContext';
 
 export function ProductCard({ product, onSelect }) {
+  const { addToCart } = useCart();
   // Add some mock tags based on product name to match the screenshot
   const tag = product.name.includes("Choco") ? "MUST TRY" : product.name.includes("Mango") ? "NEW!" : null;
 
@@ -34,10 +36,22 @@ export function ProductCard({ product, onSelect }) {
           </div>
 
           <button
-            onClick={() => onSelect(product)}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (product.customisable || (product.sizes && product.sizes.length > 0)) {
+                onSelect(product);
+              } else {
+                addToCart({
+                  product,
+                  selectedSize: null,
+                  selectedAddons: [],
+                  totalPrice: product.price
+                });
+              }
+            }}
             style={{ padding: '0', background: 'transparent', border: 'none', color: 'var(--color-primary)', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
-            ADD+
+            {product.customisable || (product.sizes && product.sizes.length > 0) ? 'ADD+' : 'ADD'}
           </button>
         </div>
       </div>

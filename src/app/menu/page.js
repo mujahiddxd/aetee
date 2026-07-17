@@ -66,7 +66,7 @@ export default function Storefront() {
 
   const filteredProducts = useMemo(() => products.filter(p => {
     const matchesCategory = activeCategory === "All" || p.category === activeCategory;
-    const matchesDietary = dietaryFilter === "all" || (dietaryFilter === "veg" ? p.isVeg : !p.isVeg);
+    const matchesDietary = dietaryFilter === "all" || (dietaryFilter === "eggless" ? p.isVeg : !p.isVeg);
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesDietary && matchesSearch;
   }), [activeCategory, dietaryFilter, searchQuery, products]);
@@ -131,11 +131,11 @@ export default function Storefront() {
               </h2>
 
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setDietaryFilter(dietaryFilter === 'veg' ? 'all' : 'veg')} style={{ padding: '6px 16px', borderRadius: '24px', background: dietaryFilter === 'veg' ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.85rem', fontWeight: 600, color: dietaryFilter === 'veg' ? '#FFF' : 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                  Veg
+                <button onClick={() => setDietaryFilter(dietaryFilter === 'eggless' ? 'all' : 'eggless')} style={{ padding: '6px 16px', borderRadius: '24px', background: dietaryFilter === 'eggless' ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.85rem', fontWeight: 600, color: dietaryFilter === 'eggless' ? '#FFF' : 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  Eggless
                 </button>
-                <button onClick={() => setDietaryFilter(dietaryFilter === 'non-veg' ? 'all' : 'non-veg')} style={{ padding: '6px 16px', borderRadius: '24px', background: dietaryFilter === 'non-veg' ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.85rem', fontWeight: 600, color: dietaryFilter === 'non-veg' ? '#FFF' : 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                  Non-Veg
+                <button onClick={() => setDietaryFilter(dietaryFilter === 'egg' ? 'all' : 'egg')} style={{ padding: '6px 16px', borderRadius: '24px', background: dietaryFilter === 'egg' ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.85rem', fontWeight: 600, color: dietaryFilter === 'egg' ? '#FFF' : 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  Egg
                 </button>
               </div>
             </div>
@@ -237,8 +237,8 @@ export default function Storefront() {
           {isMobileFiltersOpen && (
             <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', padding: '12px', background: '#FFF', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
               <button onClick={() => setDietaryFilter('all')} style={{ flex: 1, padding: '8px', borderRadius: '24px', background: dietaryFilter === 'all' ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.85rem', fontWeight: 600, color: dietaryFilter === 'all' ? '#FFF' : 'var(--color-primary)', cursor: 'pointer' }}>All</button>
-              <button onClick={() => setDietaryFilter('veg')} style={{ flex: 1, padding: '8px', borderRadius: '24px', background: dietaryFilter === 'veg' ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.85rem', fontWeight: 600, color: dietaryFilter === 'veg' ? '#FFF' : 'var(--color-primary)', cursor: 'pointer' }}>Veg</button>
-              <button onClick={() => setDietaryFilter('non-veg')} style={{ flex: 1, padding: '8px', borderRadius: '24px', background: dietaryFilter === 'non-veg' ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.85rem', fontWeight: 600, color: dietaryFilter === 'non-veg' ? '#FFF' : 'var(--color-primary)', cursor: 'pointer' }}>Non-Veg</button>
+              <button onClick={() => setDietaryFilter('eggless')} style={{ flex: 1, padding: '8px', borderRadius: '24px', background: dietaryFilter === 'eggless' ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.85rem', fontWeight: 600, color: dietaryFilter === 'eggless' ? '#FFF' : 'var(--color-primary)', cursor: 'pointer' }}>Eggless</button>
+              <button onClick={() => setDietaryFilter('egg')} style={{ flex: 1, padding: '8px', borderRadius: '24px', background: dietaryFilter === 'egg' ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.85rem', fontWeight: 600, color: dietaryFilter === 'egg' ? '#FFF' : 'var(--color-primary)', cursor: 'pointer' }}>Egg</button>
             </div>
           )}
 
@@ -257,7 +257,7 @@ export default function Storefront() {
               {expandedCategories[cat.name] && (
                 <div className="product-grid mobile-product-grid">
                   {products
-                    .filter(p => p.category === cat.name && (dietaryFilter === 'all' || (dietaryFilter === 'veg' ? p.isVeg : !p.isVeg)) && p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                    .filter(p => p.category === cat.name && (dietaryFilter === 'all' || (dietaryFilter === 'eggless' ? p.isVeg : !p.isVeg)) && p.name.toLowerCase().includes(searchQuery.toLowerCase()))
                     .map((product) => (
                       <ProductCard
                         key={product.id}
