@@ -354,27 +354,6 @@ export default function Checkout() {
         <div className="section-card">
           <h2 className="section-title">Delivering To</h2>
 
-          <button 
-            type="button"
-            onClick={(e) => { e.preventDefault(); alert("Location access requested! (Implementation placeholder)"); }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              backgroundColor: '#F5F8FF',
-              border: '1px solid #4285F4',
-              color: '#4285F4',
-              padding: '10px 16px',
-              borderRadius: '8px',
-              fontWeight: '600',
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              marginBottom: '20px',
-              width: 'fit-content'
-            }}>
-            📍 Use Current Location
-          </button>
-
           <div className="input-group">
             <textarea
               name="address"

@@ -207,11 +207,9 @@ export default function Cart() {
 
       {/* 5. Proceed to Checkout Button */}
       <div style={{ padding: '0 24px' }}>
-        <Link href="/checkout" style={{ textDecoration: 'none' }}>
-          <button className="checkout-btn">
-            Proceed to Checkout
-          </button>
-        </Link>
+        <button className="checkout-btn">
+          Proceed to Checkout
+        </button>
       </div>
 
       {/* Custom Delete Confirmation Modal */}
