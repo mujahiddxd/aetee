@@ -128,8 +128,8 @@ export function ProductModal({ product, onClose }) {
             onClick={() => {
               addToCart({
                 product,
-                selectedSize: product.sizes && product.sizes.length > 0 ? product.sizes[selectedSize].name : null,
-                selectedAddons: product.addons && product.addons.length > 0 ? Array.from(selectedAddons).map(idx => product.addons[idx].name) : [],
+                selectedSize: product.sizes && product.sizes.length > 0 ? product.sizes[selectedSize]?.name : null,
+                selectedAddons: product.addons && product.addons.length > 0 ? Array.from(selectedAddons).map(idx => product.addons[idx]?.name).filter(Boolean) : [],
                 totalPrice
               });
               onClose();
