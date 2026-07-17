@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Nunito } from "next/font/google";
 import "./globals.css";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -14,14 +14,44 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const nunito = Nunito({
+  variable: "--font-nunito",
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "600", "700", "800", "900"],
+});
+
 export const metadata = {
-  title: "Aetees Bake House",
-  description: "Aetees Bake House",
+  title: "Aetees Bakehouse",
+  description: "#OrderDirect from Aetees Bakehouse. Beautiful mobile menu for dine-in, take-away and online ordering.",
+  themeColor: "#000000",
+  openGraph: {
+    title: "Aetees Bakehouse",
+    type: "website",
+    url: "https://orders.aeteesbakehouse.com/",
+    images: [
+      {
+        url: "https://airmenusimages.blr1.cdn.digitaloceanspaces.com/brands/brands_1636_1752772565667_Nanz_bakehouse_BROWN_LOGO.png",
+        width: 800,
+        height: 600,
+        alt: "Aetees Bakehouse",
+      },
+    ],
+    description: "#OrderDirect from Aetees Bakehouse",
+    siteName: "Aetees Bakehouse",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "https://orders.aeteesbakehouse.com/",
+    title: "Aetees Bakehouse",
+    description: "#OrderDirect from Aetees Bakehouse",
+    images: ["https://airmenusimages.blr1.cdn.digitaloceanspaces.com/brands/brands_1636_1752772565667_Nanz_bakehouse_BROWN_LOGO.png"],
+  },
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${nunito.variable}`}>
       <body>
         <CartProvider>
           <div style={{ backgroundColor: 'var(--color-bg-white)', minHeight: '100vh', position: 'relative', display: 'flex', flexDirection: 'column' }}>

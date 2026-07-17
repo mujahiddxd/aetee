@@ -1,8 +1,11 @@
 "use client";
 
 import Link from 'next/link';
+import { useState } from 'react';
 
 export default function Navbar() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
     <>
       {/* --- TOP HEADER --- */}
@@ -30,12 +33,18 @@ export default function Navbar() {
 
       {/* Mobile Top Header */}
       <header className="mobile-nav">
-        <div style={{ backgroundColor: 'var(--color-primary)', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ backgroundColor: 'var(--color-primary)', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1100 }}>
           {/* Hamburger Menu Icon */}
-          <button style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', padding: 0 }}>
-            <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
-            </svg>
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{ background: 'none', border: 'none', color: '#FFF', cursor: 'pointer', padding: 0 }}>
+            {isMenuOpen ? (
+              <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            ) : (
+              <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+            )}
           </button>
           
           {/* Cart Icon */}
@@ -47,6 +56,20 @@ export default function Navbar() {
         </div>
       </header>
 
+      {/* Mobile Side Drawer */}
+      {isMenuOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 1050, display: 'flex' }}>
+          {/* Backdrop */}
+          <div onClick={() => setIsMenuOpen(false)} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)' }}></div>
+          
+          {/* Drawer Content */}
+          <div style={{ position: 'relative', width: '250px', height: '100%', backgroundColor: 'var(--color-bg-white)', padding: '80px 24px 24px', display: 'flex', flexDirection: 'column', gap: '24px', boxShadow: '2px 0 10px rgba(0,0,0,0.1)' }}>
+            <Link href="/" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none', color: 'var(--color-text-main)', fontSize: '1.25rem', fontWeight: 600, fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>Home</Link>
+            <Link href="/menu" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none', color: 'var(--color-text-main)', fontSize: '1.25rem', fontWeight: 600, fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>Menu</Link>
+            <Link href="/cart" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none', color: 'var(--color-text-main)', fontSize: '1.25rem', fontWeight: 600, fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>Cart</Link>
+          </div>
+        </div>
+      )}
     </>
   );
 }
