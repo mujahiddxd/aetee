@@ -1,40 +1,16 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useCart } from '../context/CartContext';
 
 export default function Cart() {
+  const { cartItems, updateQuantity, removeFromCart, isLoaded } = useCart();
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "Classic Chocolate Truffle",
-      price: 850,
-      quantity: 1,
-      image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=200&h=200&fit=crop"
-    },
-    {
-      id: 2,
-      name: "Red Velvet Cupcake",
-      price: 150,
-      quantity: 2,
-      image: "https://images.unsplash.com/photo-1614707267537-b85aaf00c4b7?w=200&h=200&fit=crop"
-    }
-  ]);
-
-  const updateQuantity = (id, delta) => {
-    setCartItems(items => items.map(item => {
-      if (item.id === id) {
-        const newQuantity = Math.max(0, item.quantity + delta);
-        return { ...item, quantity: newQuantity };
-      }
-      return item;
-    }).filter(item => item.quantity > 0));
-  };
 
   const confirmRemove = () => {
     if (itemToDelete) {
-      setCartItems(items => items.filter(item => item.id !== itemToDelete));
+      removeFromCart(itemToDelete);
       setItemToDelete(null);
     }
   };
@@ -125,7 +101,7 @@ export default function Cart() {
       {/* 2. Cart Items */}
       <div style={{ padding: '24px' }}>
         {cartItems.map(item => (
-          <div key={item.id} style={{
+          <div key={item.cartItemId} style={{
             display: 'flex',
             alignItems: 'center',
             marginBottom: '16px',
@@ -135,14 +111,16 @@ export default function Cart() {
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
             gap: '16px'
           }}>
-            <img src={item.image} alt={item.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} />
+            <img src={item.product.image} alt={item.product.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} />
             <div style={{ flex: 1 }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: 0, color: '#333' }}>{item.name}</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: 0, color: '#333' }}>{item.product.name}</h3>
+              {item.selectedSize && <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#666' }}>Size: {item.selectedSize}</p>}
+              {item.selectedAddons && item.selectedAddons.length > 0 && <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#666' }}>Addons: {item.selectedAddons.join(', ')}</p>}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <button
                 className="delete-btn"
-                onClick={() => setItemToDelete(item.id)}
+                onClick={() => setItemToDelete(item.cartItemId)}
                 title="Remove item"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -152,9 +130,9 @@ export default function Cart() {
                 </svg>
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <button onClick={() => updateQuantity(item.id, -1)} className="qty-btn">-</button>
+                <button onClick={() => updateQuantity(item.cartItemId, -1)} className="qty-btn">-</button>
                 <span style={{ fontWeight: '600', width: '20px', textAlign: 'center' }}>{item.quantity}</span>
-                <button onClick={() => updateQuantity(item.id, 1)} className="qty-btn">+</button>
+                <button onClick={() => updateQuantity(item.cartItemId, 1)} className="qty-btn">+</button>
               </div>
               <p style={{ color: '#000', fontWeight: '600', fontSize: '1.1rem', margin: 0, minWidth: '50px', textAlign: 'right' }}>₹{item.price}</p>
             </div>

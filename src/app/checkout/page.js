@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useCart } from '../context/CartContext';
 
 export default function Checkout() {
+  const { cartItems, isLoaded } = useCart();
   const [paymentMethod, setPaymentMethod] = useState('');
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -68,12 +70,7 @@ export default function Checkout() {
     }
   };
 
-  // Dummy values for visual matching (Total ₹1260)
-  const dummyItems = [
-    { id: 1, name: "Classic Chocolate Truffle", price: 850, quantity: 1, image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=100&h=100&fit=crop" },
-    { id: 2, name: "Red Velvet Cupcake", price: 150, quantity: 2, image: "https://images.unsplash.com/photo-1614707267537-b85aaf00c4b7?w=100&h=100&fit=crop" }
-  ];
-  const itemTotal = dummyItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const itemTotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const deliveryCharges = 60;
   const grandTotal = itemTotal + deliveryCharges;
 
@@ -424,10 +421,10 @@ export default function Checkout() {
       <div className="checkout-right">
         {/* Order Items */}
         <div style={{ marginBottom: '32px' }}>
-          {dummyItems.map(item => (
-            <div key={item.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', gap: '16px' }}>
+          {cartItems.map(item => (
+            <div key={item.cartItemId} style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', gap: '16px' }}>
               <div style={{ position: 'relative' }}>
-                <img src={item.image} alt={item.name} style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #E5E5E5' }} />
+                <img src={item.product.image} alt={item.product.name} style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #E5E5E5' }} />
                 <div style={{
                   position: 'absolute',
                   top: '-8px',
@@ -447,7 +444,9 @@ export default function Checkout() {
                 </div>
               </div>
               <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#333', margin: '0 0 4px 0' }}>{item.name}</h3>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#333', margin: '0 0 4px 0' }}>{item.product.name}</h3>
+                {item.selectedSize && <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>Size: {item.selectedSize}</p>}
+                {item.selectedAddons && item.selectedAddons.length > 0 && <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>Addons: {item.selectedAddons.join(', ')}</p>}
               </div>
               <div style={{ fontWeight: '600', color: '#333' }}>
                 ₹{item.price * item.quantity}
