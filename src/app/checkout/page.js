@@ -17,7 +17,8 @@ export default function Checkout() {
     phone: '',
     address: '',
     houseNo: '',
-    landmark: ''
+    landmark: '',
+    pincode: ''
   });
   const [errors, setErrors] = useState({});
   const [showModal, setShowModal] = useState({ isOpen: false, type: '', message: '' });
@@ -59,6 +60,12 @@ export default function Checkout() {
 
     if (!formData.address.trim()) newErrors.address = "Delivery address is required.";
     if (!formData.houseNo.trim()) newErrors.houseNo = "House number or apartment is required.";
+    
+    if (!formData.pincode.trim()) {
+      newErrors.pincode = "Pincode is required.";
+    } else if (!/^400\d{3}$/.test(formData.pincode)) {
+      newErrors.pincode = "Sorry, we currently only deliver to Mumbai (400xxx) pincodes.";
+    }
 
     setErrors(newErrors);
 
@@ -144,7 +151,7 @@ export default function Checkout() {
       <style>{`
         .checkout-container {
           display: flex;
-          flex-direction: column;
+          flex-direction: column-reverse;
           max-width: 1200px;
           margin: 0 auto;
           min-height: 100vh;
@@ -156,20 +163,22 @@ export default function Checkout() {
         }
         .checkout-left {
           flex: 1.2;
-          padding: 48px 24px;
+          padding: 24px 16px;
         }
         .checkout-right {
           flex: 0.8;
-          padding: 48px 24px;
+          padding: 24px 16px;
           background-color: #FAFAFA;
         }
         @media (min-width: 900px) {
           .checkout-right {
             border-left: 1px solid #E5E5E5;
-            padding-left: 48px;
+            padding: 48px;
+            padding-left: 32px;
           }
           .checkout-left {
-            padding-right: 48px;
+            padding: 48px;
+            padding-right: 32px;
           }
         }
         .section-card {
@@ -462,15 +471,29 @@ export default function Checkout() {
             {errors.houseNo && <div className="error-message">{errors.houseNo}</div>}
           </div>
 
-          <div className="input-group" style={{ marginBottom: 0 }}>
-            <input 
-              type="text" 
-              name="landmark"
-              value={formData.landmark}
-              onChange={handleInputChange}
-              className="form-input" 
-              placeholder="Nearest Landmark (Optional)" 
-            />
+          <div className="row-flex" style={{ marginBottom: 0 }}>
+            <div style={{ flex: 1 }} className="input-group">
+              <input 
+                type="text" 
+                name="landmark"
+                value={formData.landmark}
+                onChange={handleInputChange}
+                className="form-input" 
+                placeholder="Nearest Landmark (Optional)" 
+              />
+            </div>
+            <div style={{ flex: 1 }} className="input-group">
+              <input 
+                type="text" 
+                name="pincode"
+                value={formData.pincode}
+                onChange={handleInputChange}
+                className={`form-input ${errors.pincode ? 'error' : ''}`} 
+                placeholder="Pincode (Mumbai Only)" 
+                maxLength="6"
+              />
+              {errors.pincode && <div className="error-message">{errors.pincode}</div>}
+            </div>
           </div>
         </div>
         

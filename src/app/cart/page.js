@@ -7,6 +7,18 @@ import { useCart } from '../context/CartContext';
 export default function Cart() {
   const { cartItems, updateQuantity, removeFromCart, isLoaded } = useCart();
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [pincode, setPincode] = useState('');
+  const [pincodeStatus, setPincodeStatus] = useState(null);
+
+  const handleCheckPincode = () => {
+    if (!pincode.trim()) {
+      setPincodeStatus({ type: 'error', message: 'Please enter a pincode.' });
+    } else if (/^400\d{3}$/.test(pincode)) {
+      setPincodeStatus({ type: 'success', message: 'Awesome! Delivery is available in your area.' });
+    } else {
+      setPincodeStatus({ type: 'error', message: 'Sorry, we currently only deliver to Mumbai (400xxx) pincodes.' });
+    }
+  };
 
   const confirmRemove = () => {
     if (itemToDelete) {
@@ -146,17 +158,27 @@ export default function Cart() {
         <div style={{ display: 'flex', gap: '12px' }}>
           <input
             type="text"
+            value={pincode}
+            onChange={(e) => { setPincode(e.target.value); setPincodeStatus(null); }}
             placeholder="Enter Delivery Pincode"
+            maxLength="6"
             style={{
               flex: 1, padding: '14px 16px', borderRadius: '8px', border: '1px solid #DDD',
               fontSize: '1rem', outline: 'none'
             }}
           />
-          <button style={{
-            backgroundColor: '#000', color: '#FFF', padding: '0 24px', borderRadius: '8px',
-            fontWeight: 'bold', border: 'none', cursor: 'pointer'
-          }}>Check</button>
+          <button 
+            onClick={handleCheckPincode}
+            style={{
+              backgroundColor: '#000', color: '#FFF', padding: '0 24px', borderRadius: '8px',
+              fontWeight: 'bold', border: 'none', cursor: 'pointer'
+            }}>Check</button>
         </div>
+        {pincodeStatus && (
+          <p style={{ marginTop: '12px', fontSize: '0.95rem', fontWeight: '500', color: pincodeStatus.type === 'success' ? '#2e7d32' : '#d32f2f' }}>
+            {pincodeStatus.type === 'success' ? '✅ ' : '❌ '}{pincodeStatus.message}
+          </p>
+        )}
       </div>
 
       {/* 4. Payment Summary */}
