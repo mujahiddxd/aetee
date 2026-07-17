@@ -1,3 +1,4 @@
+"use client";
 import React from 'react';
 import { useCart } from '../context/CartContext';
 
@@ -47,6 +48,7 @@ export function ProductCard({ product, onSelect }) {
                   selectedAddons: [],
                   totalPrice: product.price
                 });
+                alert(`${product.name} added to cart!`);
               }
             }}
             style={{ padding: '0', background: 'transparent', border: 'none', color: 'var(--color-primary)', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center' }}

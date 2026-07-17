@@ -132,6 +132,7 @@ export function ProductModal({ product, onClose }) {
                 selectedAddons: product.addons && product.addons.length > 0 ? Array.from(selectedAddons).map(idx => product.addons[idx]?.name).filter(Boolean) : [],
                 totalPrice
               });
+              alert(`${product.name} added to cart!`);
               onClose();
             }}>
             ADD TO CART
