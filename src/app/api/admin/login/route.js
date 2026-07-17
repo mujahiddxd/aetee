@@ -4,8 +4,10 @@ export async function POST(request) {
   try {
     const { username, password } = await request.json();
 
-    const validUsername = process.env.ADMIN_USERNAME;
-    const validPassword = process.env.ADMIN_PASSWORD;
+    const validUsername = process.env.ADMIN_USERNAME || 'admin';
+    const validPassword = process.env.ADMIN_PASSWORD || 'aetee@2026'; // fallback to old default just in case
+
+    console.log('Login attempt:', { providedUsername: username, validUsername, validPasswordProvided: process.env.ADMIN_PASSWORD ? true : false });
 
     if (username === validUsername && password === validPassword) {
       // Create a response
