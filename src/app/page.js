@@ -25,22 +25,22 @@ export default function Home() {
         {/* Left Side (Yellow) */}
         <div className="home-split-left" style={{ backgroundColor: 'var(--color-highlight)' }}>
           <div style={{ maxWidth: '480px', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '3.5rem', lineHeight: '1.1', marginBottom: '24px' }}>WELCOME TO AETEES BAKEHOUSE NATIONWIDE SHIPPING</h2>
+            <h2 style={{ fontSize: '3.5rem', lineHeight: '1.1', marginBottom: '24px' }}>WELCOME TO AETEES BAKEHOUSE MUMBAI</h2>
             <p style={{ color: 'var(--color-text-main)', fontSize: '1rem', lineHeight: '1.6', marginBottom: '32px' }}>
-              Turn any occasion into a celebration with our easy-to-bake pastries or award-winning cakes - LA's best bakery delivered to you, perfect for gifting near or far!
+              Turn any occasion into a celebration with our easy-to-bake pastries or award-winning cakes - Mumbai's finest bakery delivered to you, perfect for gifting near or far!
             </p>
-            <button className="btn btn-primary" style={{ padding: '16px 32px' }}>SEE THE MENU ↓</button>
+            <Link href="/menu"><button className="btn btn-primary" style={{ padding: '16px 32px' }}>SEE THE MENU ↓</button></Link>
           </div>
         </div>
 
         {/* Right Side (Image + Box) */}
         <div className="home-split-right" style={{ position: 'relative', backgroundImage: 'url("https://placehold.co/800x600/87CEEB/5a3424?text=Ice+Cream+Cake+Image")', backgroundSize: 'cover', backgroundPosition: 'center' }}>
           <div style={{ backgroundColor: '#FFFFFF', padding: '40px', width: '90%', maxWidth: '400px', textAlign: 'center', boxShadow: 'var(--shadow-card)' }}>
-            <h2 style={{ fontSize: '2.5rem', lineHeight: '1.1', marginBottom: '16px' }}>DULCE DE LECHE BESITO® ICE CREAM CAKE</h2>
+            <h2 style={{ fontSize: '2.5rem', lineHeight: '1.1', marginBottom: '16px' }}>ALPHONSO MANGO FRESH CREAM CAKE</h2>
             <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', lineHeight: '1.6', marginBottom: '24px' }}>
-              Layers of Cuban cake, premium dulce de leche ice cream, Besito® cookie crumbs, and rich dulce de leche in every bite. Available for a limited time.
+              Layers of classic Bombay mawa cake, premium Alphonso mango cream, and rich mango glaze in every bite. Available for a limited time.
             </p>
-            <button className="btn btn-primary" style={{ padding: '14px 28px' }}>ORDER NOW</button>
+            <Link href="/menu"><button className="btn btn-primary" style={{ padding: '14px 28px' }}>ORDER NOW</button></Link>
           </div>
         </div>
       </section>
@@ -77,11 +77,11 @@ export default function Home() {
         {/* Right Side (Text) */}
         <div className="home-split-right" style={{ backgroundColor: '#FFF7E6' }}>
           <div style={{ maxWidth: '480px', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '3.5rem', color: '#5A3424', textTransform: 'uppercase', marginBottom: '24px', lineHeight: '1' }}>WE MAKE IT, YOU BAKE IT!</h2>
+            <h2 style={{ fontSize: '3.5rem', color: '#5A3424', textTransform: 'uppercase', marginBottom: '24px', lineHeight: '1' }}>FRESH FROM THE OVEN TO YOUR DOOR</h2>
             <p style={{ color: '#5A3424', fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '40px' }}>
-              Our pastry chefs work hard to ensure your baking process is smooth and fun. Get baking in as little as 3 steps.
+              Experience the magic of Aetees Bakehouse. Award-winning cakes and signature pastries, delivered fresh.
             </p>
-            <button className="btn btn-primary" style={{ backgroundColor: '#5A3424', color: '#FFFFFF', padding: '16px 32px', border: 'none', borderRadius: '24px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', letterSpacing: '0.05em' }}>SEE THE MENU</button>
+            <Link href="/menu"><button className="btn btn-primary" style={{ backgroundColor: '#5A3424', color: '#FFFFFF', padding: '16px 32px', border: 'none', borderRadius: '24px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', letterSpacing: '0.05em' }}>SEE THE MENU</button></Link>
           </div>
         </div>
       </section>
