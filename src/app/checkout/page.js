@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Script from 'next/script';
 import { useCart } from '../context/CartContext';
 
 export default function Checkout() {
@@ -36,7 +37,7 @@ export default function Checkout() {
     }
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     const newErrors = {};
 
     if (!formData.date) newErrors.date = "Delivery date is required.";
@@ -62,8 +63,71 @@ export default function Checkout() {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      setShowModal({ isOpen: true, type: 'success', message: 'Order placed successfully! Validation passed.' });
-      // Logic to actually place the order goes here
+      try {
+        // 1. Create order on backend
+        const response = await fetch('/api/payment/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: 'dummy-user-id', // Replace with real logged-in user ID
+            totalAmount: grandTotal,
+            items: cartItems.map(item => ({
+              productId: item.productId || 'dummy-product-id', // Ensure productId is passed
+              quantity: item.quantity,
+              price: item.price
+            }))
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // 2. Initialize Razorpay popup
+          const options = {
+            key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Ensure you add NEXT_PUBLIC_RAZORPAY_KEY_ID to .env
+            amount: data.amount,
+            currency: data.currency,
+            name: "Porto's Bake at Home",
+            description: "Order Payment",
+            order_id: data.orderId,
+            handler: async function (response) {
+              // 3. Verify Payment
+              const verifyRes = await fetch('/api/payment/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature
+                })
+              });
+              
+              const verifyData = await verifyRes.json();
+              if (verifyData.success) {
+                setShowModal({ isOpen: true, type: 'success', message: 'Payment successful and order placed!' });
+              } else {
+                setShowModal({ isOpen: true, type: 'error', message: 'Payment verification failed!' });
+              }
+            },
+            prefill: {
+              name: `${formData.firstName} ${formData.lastName}`,
+              email: formData.email,
+              contact: formData.phone
+            },
+            theme: {
+              color: "#5A3424"
+            }
+          };
+
+          const paymentObject = new window.Razorpay(options);
+          paymentObject.open();
+        } else {
+          setShowModal({ isOpen: true, type: 'error', message: 'Failed to initiate payment.' });
+        }
+      } catch (error) {
+        console.error("Payment error:", error);
+        setShowModal({ isOpen: true, type: 'error', message: 'An error occurred while processing payment.' });
+      }
     } else {
       setShowModal({ isOpen: true, type: 'error', message: 'Invalid input! Please check all highlighted fields.' });
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -76,6 +140,7 @@ export default function Checkout() {
 
   return (
     <div className="checkout-container">
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" />
       <style>{`
         .checkout-container {
           display: flex;

@@ -20,6 +20,7 @@ model User {
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
 
   addresses Address[]
+  orders    Order[]
 
   @@map("users")
 }
@@ -80,4 +81,37 @@ model ProductOption {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_options")
+}
+
+model Order {
+  id                 String   @id @default(uuid())
+  userId             String   @map("user_id")
+  totalAmount        Decimal  @map("total_amount") @db.Decimal(10, 2)
+  status             String   @default("PENDING") @db.VarChar(50) // PENDING, PAID, FAILED
+  
+  // Razorpay Specifics
+  razorpayOrderId    String?  @unique @map("razorpay_order_id") @db.VarChar(255)
+  razorpayPaymentId  String?  @unique @map("razorpay_payment_id") @db.VarChar(255)
+  razorpaySignature  String?  @map("razorpay_signature") @db.VarChar(255)
+  
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items              OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String   @id @default(uuid())
+  orderId    String   @map("order_id")
+  productId  String   @map("product_id")
+  quantity   Int      @default(1)
+  price      Decimal  @db.Decimal(10, 2) // Price at the time of purchase
+
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
 }
