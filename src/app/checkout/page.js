@@ -420,51 +420,68 @@ export default function Checkout() {
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
+          backgroundColor: 'rgba(0,0,0,0.6)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 1000,
+          backdropFilter: 'blur(4px)',
           animation: 'fadeIn 0.2s ease'
         }}>
           <div style={{
             backgroundColor: '#FFF',
-            padding: '32px',
-            borderRadius: '16px',
-            maxWidth: '400px',
+            padding: '40px 32px',
+            borderRadius: '24px',
+            maxWidth: '420px',
             width: '90%',
             textAlign: 'center',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
             transform: 'translateY(-20px)',
-            animation: 'slideDown 0.3s ease forwards'
+            animation: 'slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards'
           }}>
-            <h3 style={{ margin: '0 0 16px 0', color: showModal.type === 'error' ? '#D32F2F' : '#5A3424', fontSize: '1.3rem' }}>
-              {showModal.type === 'error' ? 'Validation Error' : 'Success!'}
+            <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+              {showModal.type === 'error' ? (
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#FFF0F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D32F2F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                </div>
+              ) : (
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#F0F8F1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                </div>
+              )}
+            </div>
+
+            <h3 style={{ margin: '0 0 12px 0', color: '#333', fontSize: '1.5rem', fontWeight: '800' }}>
+              {showModal.type === 'error' ? 'Notice' : 'Success!'}
             </h3>
-            <p style={{ color: '#555', marginBottom: '24px', fontSize: '1rem', lineHeight: '1.5' }}>
+            <p style={{ color: '#666', marginBottom: '32px', fontSize: '1.05rem', lineHeight: '1.6' }}>
               {showModal.message}
             </p>
             <button
               onClick={() => setShowModal({ isOpen: false, type: '', message: '' })}
               style={{
-                backgroundColor: showModal.type === 'error' ? '#D32F2F' : '#5A3424',
+                backgroundColor: 'var(--color-primary, #5A3424)',
                 color: '#FFF',
                 border: 'none',
-                padding: '14px 24px',
+                padding: '16px 32px',
                 borderRadius: '12px',
-                fontWeight: 'bold',
+                fontWeight: '700',
                 cursor: 'pointer',
                 width: '100%',
-                fontSize: '1rem',
-                transition: 'background-color 0.2s ease'
+                fontSize: '1.1rem',
+                letterSpacing: '0.5px',
+                boxShadow: '0 4px 12px rgba(90, 52, 36, 0.2)',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease'
               }}
+              onMouseOver={(e) => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 6px 16px rgba(90, 52, 36, 0.3)'; }}
+              onMouseOut={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 4px 12px rgba(90, 52, 36, 0.2)'; }}
             >
-              OK
+              {showModal.type === 'error' ? 'Got it' : 'Continue'}
             </button>
           </div>
           <style>{`
             @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-            @keyframes slideDown { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            @keyframes slideDown { from { transform: translateY(-40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
           `}</style>
         </div>
       )}
