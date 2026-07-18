@@ -11,6 +11,7 @@ export async function POST(req) {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
+      delivery_date
     } = body;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
@@ -99,6 +100,69 @@ export async function POST(req) {
         razorpaySignature: razorpay_signature,
       },
     });
+
+    // 5. Send Telegram Message Instantly
+    try {
+      const fullOrder = await prisma.order.findUnique({
+        where: { id: updatedOrder.id },
+        include: {
+          user: { include: { addresses: { orderBy: { createdAt: 'desc' }, take: 1 } } },
+          items: { include: { product: true } }
+        }
+      });
+
+      if (fullOrder && process.env.TELEGRAM_BOT_TOKEN) {
+        let itemsText = '';
+        fullOrder.items.forEach((item, index) => {
+          const pName = item.product?.name || `Product #${item.productId}`;
+          let extras = [];
+          if (item.size) extras.push(`Size: ${item.size}`);
+          if (item.addons) extras.push(`Addons: ${item.addons}`);
+          const extrasStr = extras.length > 0 ? ` [${extras.join(', ')}]` : '';
+          itemsText += `${index + 1}. ${pName}${extrasStr} - Qty: ${item.quantity} (₹${Number(item.price).toFixed(2)})\n`;
+        });
+
+        const address = fullOrder.user.addresses && fullOrder.user.addresses.length > 0 ? fullOrder.user.addresses[0] : null;
+        const addressText = address ? `${address.addressLine1}${address.addressLine2 ? ', ' + address.addressLine2 : ''}, ${address.city} - ${address.postalCode}` : 'N/A';
+
+        const hourFormatter = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', hour12: false });
+        const orderHourIST = parseInt(hourFormatter.format(fullOrder.createdAt), 10);
+        const dateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
+        const todayStr = dateFormatter.format(fullOrder.createdAt);
+        const tomorrowStr = dateFormatter.format(new Date(fullOrder.createdAt.getTime() + 24 * 60 * 60 * 1000));
+        const deliveryNote = orderHourIST < 12 ? `🚚 *Delivery:* SAME DAY (${todayStr})` : `📅 *Delivery:* NEXT DAY (${tomorrowStr})`;
+
+        const startOfDay = new Date(`${todayStr}T00:00:00+05:30`);
+        const serialNumber = await prisma.order.count({
+          where: { createdAt: { gte: startOfDay, lte: fullOrder.createdAt } }
+        });
+
+        const message = `
+🎉 *NEW ORDER RECEIVED! (Daily #${serialNumber})* 🎉
+
+*Daily Order No:* #${serialNumber}
+*System ID:* ${fullOrder.id}
+*Razorpay ID:* ${fullOrder.razorpayOrderId}
+*Customer:* ${fullOrder.user.firstName} ${fullOrder.user.lastName}
+*Phone:* ${fullOrder.user.phone || 'N/A'}
+*Address:* ${addressText}
+*Amount Paid:* ₹${fullOrder.totalAmount}
+${delivery_date ? `*Requested Date:* ${delivery_date}` : ''}
+${deliveryNote}
+
+*Items Ordered:*
+${itemsText}
+        `.trim();
+
+        fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: message, parse_mode: 'Markdown' }),
+        }).catch(e => console.error('Telegram error:', e));
+      }
+    } catch (err) {
+      console.error('Error sending fallback telegram message:', err);
+    }
 
     return NextResponse.json({
       success: true,
