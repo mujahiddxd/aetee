@@ -67,13 +67,7 @@ export async function POST(req) {
       let itemsText = '';
       order.items.forEach((item, index) => {
         const pName = item.product?.name || `Product #${item.productId}`;
-        
-        let extras = [];
-        if (item.size) extras.push(`Size: ${item.size}`);
-        if (item.addons) extras.push(`Addons: ${item.addons}`);
-        const extrasStr = extras.length > 0 ? ` [${extras.join(', ')}]` : '';
-
-        itemsText += `${index + 1}. ${pName}${extrasStr} - Qty: ${item.quantity} (₹${Number(item.price).toFixed(2)})\n`;
+        itemsText += `${index + 1}. ${pName} - Qty: ${item.quantity} (₹${Number(item.price).toFixed(2)})\n`;
       });
 
       // Extract address

@@ -103,8 +103,6 @@ export async function POST(req) {
               productId: item.productId,
               quantity: item.quantity,
               price: item.price,
-              size: item.size || null,
-              addons: item.addons || null,
             })),
           },
         },

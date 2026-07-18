@@ -89,9 +89,7 @@ export default function Checkout() {
             items: cartItems.map(item => ({
               productId: item.product.id,
               quantity: item.quantity,
-              price: item.price,
-              size: item.selectedSize || null,
-              addons: item.selectedAddons && item.selectedAddons.length > 0 ? item.selectedAddons.join(', ') : null
+              price: item.price
             }))
           })
         });
@@ -99,21 +97,13 @@ export default function Checkout() {
         const data = await response.json();
 
         if (data.success) {
-          // Create a specific description of the items being purchased
-          const orderDescription = cartItems.map(item => {
-            let desc = `${item.quantity}x ${item.product.name}`;
-            if (item.selectedSize) desc += ` [${item.selectedSize}]`;
-            if (item.selectedAddons && item.selectedAddons.length > 0) desc += ` + ${item.selectedAddons.join(', ')}`;
-            return desc;
-          }).join(' | ');
-
           // 2. Initialize Razorpay popup
           const options = {
             key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Ensure you add NEXT_PUBLIC_RAZORPAY_KEY_ID to .env
             amount: data.amount,
             currency: data.currency,
             name: "Aetee's Bakehouse",
-            description: orderDescription.length > 255 ? orderDescription.substring(0, 252) + '...' : orderDescription,
+            description: "Order Payment",
             order_id: data.orderId,
             handler: async function (response) {
               // 3. Verify Payment
