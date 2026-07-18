@@ -34,13 +34,21 @@ export async function POST(req) {
         where: {
           userId: existingUser.id,
           status: 'PAID',
-          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+          createdAt: { 
+            gte: (() => {
+              const now = new Date();
+              const year = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', year: 'numeric' }).format(now);
+              const month = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', month: '2-digit' }).format(now);
+              const day = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', day: '2-digit' }).format(now);
+              return new Date(`${year}-${month}-${day}T00:00:00+05:30`);
+            })() 
+          },
         },
       });
 
       if (recentPaidOrders >= 0) {
         return NextResponse.json(
-          { success: false, error: 'You have reached the maximum limit of 25 orders in 24 hours. Please try again later.' },
+          { success: false, error: 'Sorry for the inconvenience, but you have reached the maximum limit of 25 orders in 24 hours. Please try ordering again sometime later.' },
           { status: 429 }
         );
       }
