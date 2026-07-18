@@ -28,14 +28,12 @@ export default function Cart() {
   const delivery = subtotal > 0 ? 50 : 0;
   const total = parseFloat((subtotal + delivery).toFixed(2));
 
-  const validPincodes = ['110001', '110002', '110011', '110012', '110013', '110020'];
-
   const checkPincode = () => {
     if (!/^\d{6}$/.test(pincode)) {
       setPincodeStatus('format_error');
       return;
     }
-    if (validPincodes.includes(pincode)) {
+    if (/^400\d{3}$/.test(pincode)) {
       setPincodeStatus('deliverable');
     } else {
       setPincodeStatus('not_deliverable');

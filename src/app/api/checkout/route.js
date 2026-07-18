@@ -92,7 +92,7 @@ export async function POST(req) {
   } catch (error) {
     console.error('Error in checkout:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to process checkout' },
+      { success: false, error: error.message || 'Failed to process checkout' },
       { status: 500 }
     );
   }

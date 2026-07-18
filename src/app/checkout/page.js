@@ -19,7 +19,7 @@ export default function Checkout() {
     houseNo: '',
     landmark: '',
     additionalInfo: '',
-    pincode: ''
+    pincode: '400001'
   });
   const [errors, setErrors] = useState({});
   const [showModal, setShowModal] = useState({ isOpen: false, type: '', message: '' });
@@ -137,7 +137,7 @@ export default function Checkout() {
           const paymentObject = new window.Razorpay(options);
           paymentObject.open();
         } else {
-          setShowModal({ isOpen: true, type: 'error', message: 'Failed to initiate payment.' });
+          setShowModal({ isOpen: true, type: 'error', message: data.error || 'Failed to initiate payment.' });
         }
       } catch (error) {
         console.error("Payment error:", error);
