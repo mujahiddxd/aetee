@@ -20,68 +20,67 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    // 1. Find or create User
-    let user = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          firstName,
-          lastName,
-          email,
-          phone,
-        },
-      });
-    } else {
-      // Optionally update user details if they changed
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: { firstName, lastName, phone }
-      });
-    }
-
-    // 2. Create Address
-    await prisma.address.create({
-      data: {
-        userId: user.id,
-        addressLine1,
-        addressLine2: addressLine2 || null,
-        city,
-        postalCode,
-      }
-    });
-
-    // 3. Create Razorpay Order
+    // 1. Validate amount before any DB or API calls
     const amountInPaise = Math.round(totalAmount * 100);
     if (amountInPaise < 100) {
       return NextResponse.json({ success: false, error: 'Minimum amount must be at least 100 paise' }, { status: 400 });
     }
 
-    const options = {
+    // 2. Create Razorpay Order (external API — cannot be rolled back)
+    const razorpayOrder = await razorpay.orders.create({
       amount: amountInPaise,
       currency: 'INR',
       receipt: `receipt_${Date.now()}`,
-    };
+    });
 
-    const razorpayOrder = await razorpay.orders.create(options);
+    // 3. Wrap all DB writes in a transaction for atomicity
+    const { user, dbOrder } = await prisma.$transaction(async (tx) => {
+      // Find or create User
+      let txUser = await tx.user.findUnique({
+        where: { email },
+      });
 
-    // 4. Create Order in Database
-    const dbOrder = await prisma.order.create({
-      data: {
-        userId: user.id,
-        totalAmount: totalAmount,
-        status: 'PENDING',
-        razorpayOrderId: razorpayOrder.id,
-        items: {
-          create: items.map(item => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-          }))
-        }
+      if (!txUser) {
+        txUser = await tx.user.create({
+          data: { firstName, lastName, email, phone },
+        });
+      } else {
+        // Update user details if they changed
+        txUser = await tx.user.update({
+          where: { id: txUser.id },
+          data: { firstName, lastName, phone },
+        });
       }
+
+      // Create Address
+      await tx.address.create({
+        data: {
+          userId: txUser.id,
+          addressLine1,
+          addressLine2: addressLine2 || null,
+          city,
+          postalCode,
+        },
+      });
+
+      // Create Order with items
+      const txOrder = await tx.order.create({
+        data: {
+          userId: txUser.id,
+          totalAmount: totalAmount,
+          status: 'PENDING',
+          razorpayOrderId: razorpayOrder.id,
+          items: {
+            create: items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              price: item.price,
+            })),
+          },
+        },
+      });
+
+      return { user: txUser, dbOrder: txOrder };
     });
 
     return NextResponse.json({
