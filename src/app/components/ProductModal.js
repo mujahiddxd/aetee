@@ -55,7 +55,7 @@ export function ProductModal({ product, onClose }) {
 
         <div className="product-modal-body">
           {/* Image */}
-          <div style={{ width: '100%' }}>
+          <div style={{ width: '100%', marginTop: '-48px' }}>
             <img src={product.image} alt={product.name} style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '400px', objectFit: 'cover' }} />
           </div>
 
