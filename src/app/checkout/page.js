@@ -46,7 +46,7 @@ export default function Checkout() {
     if (!formData.time) newErrors.time = "Delivery time slot is required.";
     if (!formData.firstName.trim()) newErrors.firstName = "First name is required.";
     if (!formData.lastName.trim()) newErrors.lastName = "Last name is required.";
-    
+
     if (!formData.email.trim()) {
       newErrors.email = "Email address is required.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -61,7 +61,7 @@ export default function Checkout() {
 
     if (!formData.address.trim()) newErrors.address = "Delivery address is required.";
     if (!formData.houseNo.trim()) newErrors.houseNo = "House number or apartment is required.";
-    
+
     if (!formData.pincode.trim()) {
       newErrors.pincode = "Pincode is required.";
     } else if (!/^400\d{3}$/.test(formData.pincode)) {
@@ -116,7 +116,7 @@ export default function Checkout() {
                   razorpay_signature: response.razorpay_signature
                 })
               });
-              
+
               const verifyData = await verifyRes.json();
               if (verifyData.success) {
                 setShowModal({ isOpen: true, type: 'success', message: 'Payment successful and order placed!' });
@@ -133,14 +133,14 @@ export default function Checkout() {
               color: "#5A3424"
             },
             modal: {
-              ondismiss: function() {
+              ondismiss: function () {
                 setShowModal({ isOpen: true, type: 'error', message: 'Payment was cancelled by the user.' });
               }
             }
           };
 
           const paymentObject = new window.Razorpay(options);
-          paymentObject.on('payment.failed', function (response){
+          paymentObject.on('payment.failed', function (response) {
             setShowModal({ isOpen: true, type: 'error', message: 'Payment failed: ' + response.error.description });
           });
           paymentObject.open();
@@ -347,7 +347,7 @@ export default function Checkout() {
             </div>
             <div style={{ flex: 1 }} className="input-group">
               <label className="input-label">Delivery Time</label>
-              <select 
+              <select
                 name="time"
                 value={formData.time}
                 onChange={handleInputChange}
@@ -372,26 +372,26 @@ export default function Checkout() {
 
           <div className="row-flex">
             <div style={{ flex: 1 }} className="input-group">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleInputChange}
-                className={`form-input ${errors.firstName ? 'error' : ''}`} 
-                placeholder="First Name" 
+                className={`form-input ${errors.firstName ? 'error' : ''}`}
+                placeholder="First Name"
                 required
                 minLength={2}
               />
               {errors.firstName && <div className="error-message">{errors.firstName}</div>}
             </div>
             <div style={{ flex: 1 }} className="input-group">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleInputChange}
-                className={`form-input ${errors.lastName ? 'error' : ''}`} 
-                placeholder="Last Name" 
+                className={`form-input ${errors.lastName ? 'error' : ''}`}
+                placeholder="Last Name"
                 required
                 minLength={2}
               />
@@ -400,13 +400,13 @@ export default function Checkout() {
           </div>
 
           <div className="input-group">
-            <input 
-              type="email" 
+            <input
+              type="email"
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className={`form-input ${errors.email ? 'error' : ''}`} 
-              placeholder="Email Address" 
+              className={`form-input ${errors.email ? 'error' : ''}`}
+              placeholder="Email Address"
               required
             />
             {errors.email && <div className="error-message">{errors.email}</div>}
@@ -467,13 +467,13 @@ export default function Checkout() {
           </div>
 
           <div className="input-group">
-            <input 
-              type="text" 
+            <input
+              type="text"
               name="houseNo"
               value={formData.houseNo}
               onChange={handleInputChange}
-              className={`form-input ${errors.houseNo ? 'error' : ''}`} 
-              placeholder="House No / Apartment" 
+              className={`form-input ${errors.houseNo ? 'error' : ''}`}
+              placeholder="House No / Apartment"
               required
             />
             {errors.houseNo && <div className="error-message">{errors.houseNo}</div>}
@@ -481,23 +481,23 @@ export default function Checkout() {
 
           <div className="row-flex" style={{ marginBottom: 0 }}>
             <div style={{ flex: 1 }} className="input-group">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 name="landmark"
                 value={formData.landmark}
                 onChange={handleInputChange}
-                className="form-input" 
-                placeholder="Nearest Landmark (Optional)" 
+                className="form-input"
+                placeholder="Nearest Landmark (Optional)"
               />
             </div>
             <div style={{ flex: 1 }} className="input-group">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 name="pincode"
                 value={formData.pincode}
                 onChange={handleInputChange}
-                className={`form-input ${errors.pincode ? 'error' : ''}`} 
-                placeholder="Pincode (Mumbai Only)" 
+                className={`form-input ${errors.pincode ? 'error' : ''}`}
+                placeholder="Pincode (Mumbai Only)"
                 maxLength="6"
                 required
                 pattern="^400[0-9]{3}$"
@@ -511,18 +511,18 @@ export default function Checkout() {
         <div className="section-card">
           <h2 className="section-title">Additional Information</h2>
           <div className="input-group" style={{ marginBottom: 0 }}>
-            <textarea 
+            <textarea
               name="additionalInfo"
               value={formData.additionalInfo}
               onChange={handleInputChange}
-              className="form-input" 
-              placeholder="Any special instructions for your order? (Optional)" 
-              rows="3" 
+              className="form-input"
+              placeholder="Any special instructions for your order? (Optional)"
+              rows="3"
               style={{ resize: 'vertical' }}
             ></textarea>
           </div>
         </div>
-        
+
         {/* Place Order Button - Desktop/Mobile */}
         <div className="mobile-sticky-bottom">
           <button className="place-order-btn" onClick={handlePlaceOrder}>
@@ -619,7 +619,7 @@ export default function Checkout() {
             <p style={{ color: '#555', marginBottom: '24px', fontSize: '1rem', lineHeight: '1.5' }}>
               {showModal.message}
             </p>
-            <button 
+            <button
               onClick={() => setShowModal({ isOpen: false, type: '', message: '' })}
               style={{
                 backgroundColor: showModal.type === 'error' ? '#D32F2F' : '#5A3424',

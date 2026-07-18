@@ -17,11 +17,8 @@ export default function Navbar() {
       {/* Desktop Top Header */}
       <header className="desktop-nav" style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: '#FFFFFF' }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 32px', width: '100%' }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '24px', textDecoration: 'none', color: 'inherit' }}>
-            <div style={{ width: '64px', height: '64px', backgroundColor: 'var(--color-primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFF', fontWeight: 'bold', fontSize: '12px', textAlign: 'center', lineHeight: '1.2' }}>
-              AETEES
-            </div>
-            <h1 style={{ fontSize: '1.75rem', margin: 0, letterSpacing: '0.05em', textTransform: 'uppercase' }}>AETEES BAKEHOUSE</h1>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
+            <img src="/logo.png" alt="Aetee's Bakehouse" style={{ height: '70px', width: 'auto', objectFit: 'contain', mixBlendMode: 'multiply' }} />
           </Link>
           <nav style={{ display: 'flex', alignItems: 'center', gap: '32px', fontSize: '1.25rem', color: 'var(--color-text-muted)', fontWeight: '500' }}>
             <Link href="/menu" style={{ color: 'inherit', textDecoration: 'none' }}>Menu</Link>

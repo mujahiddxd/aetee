@@ -10,10 +10,8 @@ export default function Footer() {
         {/* Left Side (Logo + Links) */}
         <div style={{ display: 'flex', gap: '64px', flexWrap: 'wrap' }}>
           {/* Logo Column */}
-          <div style={{ width: '120px' }}>
-            <div style={{ width: '100px', height: '60px', backgroundColor: '#FAD889', borderRadius: '50px', border: '4px solid #8D6E63', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', position: 'relative' }}>
-               <div style={{ backgroundColor: '#5A3424', color: '#FFF', fontSize: '14px', padding: '4px 8px', position: 'absolute', bottom: '-20px', whiteSpace: 'nowrap' }}>Bake at Home</div>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <img src="/logo.png" alt="Aetee's Bakehouse" style={{ width: '180px', height: 'auto', objectFit: 'contain', mixBlendMode: 'multiply' }} />
           </div>
 
           {/* Links Columns */}
