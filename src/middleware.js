@@ -30,7 +30,7 @@ async function verifyAdminToken(tokenValue) {
   return tokenValue === expectedToken;
 }
 
-export async function proxy(request) {
+export async function middleware(request) {
   const { pathname } = request.nextUrl;
 
   // Protect specific API routes

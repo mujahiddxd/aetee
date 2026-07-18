@@ -27,7 +27,7 @@ export default function Home() {
           <div style={{ maxWidth: '480px', textAlign: 'center' }}>
             <h2 style={{ fontSize: '3.5rem', lineHeight: '1.1', marginBottom: '24px' }}>WELCOME TO AETEES BAKEHOUSE MUMBAI</h2>
             <p style={{ color: 'var(--color-text-main)', fontSize: '1rem', lineHeight: '1.6', marginBottom: '32px' }}>
-              Turn any occasion into a celebration with our easy-to-bake pastries or award-winning cakes - Mumbai's finest bakery delivered to you, perfect for gifting near or far!
+              Turn any occasion into a celebration with our easy-to-bake pastries or award-winning cakes - Mumbai&apos;s finest bakery delivered to you, perfect for gifting near or far!
             </p>
             <Link href="/menu"><button className="btn btn-primary" style={{ padding: '16px 32px' }}>SEE THE MENU ↓</button></Link>
           </div>

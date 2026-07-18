@@ -3,7 +3,7 @@ export default function ContactPage() {
     <div className="container" style={{ padding: '64px 0', minHeight: '60vh' }}>
       <h1 style={{ fontSize: '2.5rem', marginBottom: '24px' }}>Contact Us</h1>
       <p style={{ fontSize: '1.1rem', color: '#666', marginBottom: '32px' }}>
-        We'd love to hear from you. Please reach out to us with any questions or feedback.
+        We&apos;d love to hear from you. Please reach out to us with any questions or feedback.
       </p>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '400px' }}>
