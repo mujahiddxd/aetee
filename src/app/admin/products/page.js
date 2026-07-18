@@ -238,8 +238,10 @@ export default function AdminProducts() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: Array.from(selectedProductIds) })
       });
-      
-      if (!res.ok) throw new Error("Failed to delete products");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to delete products");
+      }
       
       setProducts(products.filter(p => !selectedProductIds.has(p.id)));
       setSelectedProductIds(new Set());
