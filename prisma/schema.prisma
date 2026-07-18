@@ -134,6 +134,7 @@ model Order {
   // userId index is auto-created by MySQL for the foreign key
   @@index([status])
   @@index([createdAt])
+  @@index([userId, status, createdAt])
   @@map("orders")
 }
 

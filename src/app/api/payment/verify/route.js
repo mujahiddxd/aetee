@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 
+import Razorpay from 'razorpay';
+
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -30,7 +32,55 @@ export async function POST(req) {
       );
     }
 
-    // 3. Signature is valid, update the order in the database to PAID
+    // 3. Defense-in-depth: re-check limit before marking PAID
+    const order = await prisma.order.findUnique({
+      where: { razorpayOrderId: razorpay_order_id },
+      select: { userId: true },
+    });
+
+    if (order) {
+      const recentPaidOrders = await prisma.order.count({
+        where: {
+          userId: order.userId,
+          status: 'PAID',
+          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
+      });
+
+      if (recentPaidOrders >= 25) {
+        // Auto-refund — customer never loses money
+        const razorpay = new Razorpay({
+          key_id: process.env.RAZORPAY_KEY_ID,
+          key_secret: process.env.RAZORPAY_KEY_SECRET,
+        });
+
+        try {
+          await razorpay.payments.refund(razorpay_payment_id, {
+            speed: 'normal',
+          });
+        } catch (refundError) {
+          console.error('Auto-refund failed:', refundError);
+          // still mark as FAILED so it's visible for manual refund
+        }
+
+        // Mark order as FAILED so admin dashboard reflects reality
+        await prisma.order.update({
+          where: { razorpayOrderId: razorpay_order_id },
+          data: {
+            status: 'FAILED',
+            razorpayPaymentId: razorpay_payment_id,
+            razorpaySignature: razorpay_signature,
+          },
+        });
+
+        return NextResponse.json(
+          { success: false, error: 'Order limit reached. Your payment has been automatically refunded.' },
+          { status: 429 }
+        );
+      }
+    }
+
+    // 4. Signature is valid, update the order in the database to PAID
     const updatedOrder = await prisma.order.update({
       where: {
         razorpayOrderId: razorpay_order_id,
