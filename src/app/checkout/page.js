@@ -409,7 +409,7 @@ export default function Checkout() {
                 {item.selectedAddons && item.selectedAddons.length > 0 && <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>Addons: {item.selectedAddons.join(', ')}</p>}
               </div>
               <div style={{ fontWeight: '600', color: '#333' }}>
-                ₹{item.price * item.quantity}
+                ₹{(item.price * item.quantity).toFixed(2)}
               </div>
             </div>
           ))}

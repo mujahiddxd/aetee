@@ -111,8 +111,12 @@ export function RepeatComboModal({ product, onClose, onSelectNew }) {
           <button onClick={onClose} style={{ flex: 1, padding: '14px', backgroundColor: '#FFF', border: '1px solid #CCC', borderRadius: '6px', fontSize: '0.95rem', fontWeight: 700, color: '#444', cursor: 'pointer' }}>
             CANCEL
           </button>
-          <button onClick={handleRepeat} style={{ flex: 1, padding: '14px', backgroundColor: 'var(--color-primary)', border: 'none', borderRadius: '6px', fontSize: '0.95rem', fontWeight: 700, color: '#FFF', cursor: 'pointer' }}>
-            REPEAT COMBINATION
+          <button 
+            disabled={product.isSoldOut}
+            onClick={handleRepeat} 
+            style={{ flex: 1, padding: '14px', backgroundColor: product.isSoldOut ? '#ccc' : 'var(--color-primary)', border: 'none', borderRadius: '6px', fontSize: '0.95rem', fontWeight: 700, color: product.isSoldOut ? '#888' : '#FFF', cursor: product.isSoldOut ? 'not-allowed' : 'pointer' }}
+          >
+            {product.isSoldOut ? 'SOLD OUT' : 'REPEAT COMBINATION'}
           </button>
         </div>
 

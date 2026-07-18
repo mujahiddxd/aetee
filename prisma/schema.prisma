@@ -105,11 +105,20 @@ model ProductOption {
   @@map("product_options")
 }
 
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  FAILED
+}
+
 model Order {
-  id                 String   @id @default(uuid())
-  userId             String   @map("user_id")
-  totalAmount        Decimal  @map("total_amount") @db.Decimal(10, 2)
-  status             String   @default("PENDING") @db.VarChar(50) // PENDING, PAID, FAILED
+  id                 String      @id @default(uuid())
+  userId             String      @map("user_id")
+  totalAmount        Decimal     @map("total_amount") @db.Decimal(10, 2)
+  status             OrderStatus @default(PENDING)
   
   // Razorpay Specifics
   razorpayOrderId    String?  @unique @map("razorpay_order_id") @db.VarChar(255)

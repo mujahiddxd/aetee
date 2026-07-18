@@ -25,9 +25,9 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
     setSelectedAddons(newAddons);
   };
 
-  const totalPrice = product.price +
+  const totalPrice = Number((product.price +
     (product.sizes?.[selectedSize]?.price || 0) +
-    Array.from(selectedAddons).reduce((sum, idx) => sum + (product.addons?.[idx]?.price || 0), 0);
+    Array.from(selectedAddons).reduce((sum, idx) => sum + (product.addons?.[idx]?.price || 0), 0)).toFixed(2));
 
   return (
     <div className="product-modal-overlay" onClick={onClose}>
@@ -166,14 +166,16 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
                       {currentQuantity}
                     </span>
                     <button
+                      disabled={product.isSoldOut}
                       onClick={() => {
+                        if (product.isSoldOut) return;
                         if (product.customisable || (product.sizes && product.sizes.length > 0)) {
                           if (onRepeatSelect) onRepeatSelect(product);
                         } else {
                           updateQuantity(currentCartItemId, 1);
                         }
                       }}
-                      style={{ padding: '8px', background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      style={{ padding: '8px', background: 'transparent', border: 'none', color: product.isSoldOut ? '#ccc' : 'var(--color-primary)', cursor: product.isSoldOut ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                     </button>
@@ -188,6 +190,17 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
                     GO TO CART
                   </Link>
                 </div>
+              );
+            }
+
+            if (product.isSoldOut) {
+              return (
+                <button
+                  disabled
+                  style={{ width: '100%', backgroundColor: '#ccc', color: '#888', border: 'none', borderRadius: '4px', padding: '14px', fontSize: '1rem', fontWeight: 700, cursor: 'not-allowed', letterSpacing: '0.5px' }}
+                >
+                  SOLD OUT
+                </button>
               );
             }
 

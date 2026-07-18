@@ -133,7 +133,7 @@ export default function Cart() {
                 <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: 0, color: '#333' }}>{item.product.name}</h3>
                 {item.selectedSize && <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#666' }}>Size: {item.selectedSize}</p>}
                 {item.selectedAddons && item.selectedAddons.length > 0 && <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#666' }}>Addons: {item.selectedAddons.join(', ')}</p>}
-                <p style={{ color: '#000', fontWeight: '700', fontSize: '1.1rem', margin: '8px 0 0 0' }}>₹{item.price * item.quantity}</p>
+                <p style={{ color: '#000', fontWeight: '700', fontSize: '1.1rem', margin: '8px 0 0 0' }}>₹{(item.price * item.quantity).toFixed(2)}</p>
               </div>
             </div>
             
@@ -155,7 +155,12 @@ export default function Cart() {
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                 </button>
                 <span style={{ fontWeight: '600', width: '20px', textAlign: 'center' }}>{item.quantity}</span>
-                <button onClick={() => updateQuantity(item.cartItemId, 1)} className="qty-btn">
+                <button 
+                  disabled={item.product.isSoldOut}
+                  onClick={() => { if (!item.product.isSoldOut) updateQuantity(item.cartItemId, 1) }} 
+                  className="qty-btn"
+                  style={{ cursor: item.product.isSoldOut ? 'not-allowed' : 'pointer', opacity: item.product.isSoldOut ? 0.5 : 1 }}
+                >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                 </button>
               </div>
