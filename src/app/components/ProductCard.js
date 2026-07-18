@@ -3,7 +3,7 @@ import React from 'react';
 import { useCart } from '../context/CartContext';
 
 export function ProductCard({ product, onSelect }) {
-  const { addToCart } = useCart();
+  const { cartItems, addToCart, updateQuantity } = useCart();
 
   // Data-driven tag based on actual product flags from the admin panel
   const tag = product.isSoldOut ? "SOLD OUT" : product.isBestSelling ? "BEST SELLER" : product.isFeatured ? "FEATURED" : null;
@@ -38,27 +38,74 @@ export function ProductCard({ product, onSelect }) {
             {product.price.toLocaleString('en-IN')}
           </div>
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (product.isSoldOut) return;
-              if (product.customisable || (product.sizes && product.sizes.length > 0)) {
-                onSelect(product);
-              } else {
-                addToCart({
-                  product,
-                  selectedSize: null,
-                  selectedAddons: [],
-                  totalPrice: product.price
-                });
-                alert(`${product.name} added to cart!`);
-              }
-            }}
-            disabled={product.isSoldOut}
-            style={{ padding: '0', background: 'transparent', border: 'none', color: product.isSoldOut ? '#ccc' : 'var(--color-primary)', fontSize: '0.9rem', fontWeight: 600, cursor: product.isSoldOut ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center' }}
-          >
-            {product.isSoldOut ? 'SOLD OUT' : (product.customisable || (product.sizes && product.sizes.length > 0) ? 'ADD+' : 'ADD')}
-          </button>
+          {product.isSoldOut ? (
+            <button
+              disabled
+              style={{ padding: '0', background: 'transparent', border: 'none', color: '#ccc', fontSize: '0.9rem', fontWeight: 600, cursor: 'not-allowed', display: 'flex', alignItems: 'center' }}
+            >
+              SOLD OUT
+            </button>
+          ) : (() => {
+            // Find how many of this product are in the cart
+            const matchingItems = cartItems.filter(item => item.product.id === product.id);
+            const cartQuantity = matchingItems.reduce((sum, item) => sum + item.quantity, 0);
+
+            if (cartQuantity > 0) {
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid var(--color-primary)', borderRadius: '6px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(74,44,29,0.1)' }}>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // If multiple variations exist, remove from the last one
+                      const lastItem = matchingItems[matchingItems.length - 1];
+                      updateQuantity(lastItem.cartItemId, -1);
+                    }} 
+                    style={{ padding: '4px 12px', background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold' }}
+                  >
+                    -
+                  </button>
+                  <span style={{ padding: '0 4px', fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-primary)', minWidth: '16px', textAlign: 'center' }}>
+                    {cartQuantity}
+                  </span>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (product.customisable || (product.sizes && product.sizes.length > 0)) {
+                        onSelect(product); // Open modal for customisation
+                      } else {
+                        // Simply increment
+                        updateQuantity(matchingItems[0].cartItemId, 1);
+                      }
+                    }} 
+                    style={{ padding: '4px 12px', background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold' }}
+                  >
+                    +
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (product.customisable || (product.sizes && product.sizes.length > 0)) {
+                    onSelect(product);
+                  } else {
+                    addToCart({
+                      product,
+                      selectedSize: null,
+                      selectedAddons: [],
+                      totalPrice: product.price
+                    });
+                  }
+                }}
+                style={{ padding: '0', background: 'transparent', border: 'none', color: 'var(--color-primary)', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                {product.customisable || (product.sizes && product.sizes.length > 0) ? 'ADD+' : 'ADD'}
+              </button>
+            );
+          })()}
         </div>
       </div>
     </div>

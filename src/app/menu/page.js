@@ -129,18 +129,27 @@ export default function Storefront() {
                   </div>
                   {/* Nested Subcategories */}
                   {cat.children && cat.children.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', marginLeft: '40px', borderLeft: '2px solid var(--color-highlight)', paddingLeft: '8px', gap: '4px', marginBottom: '12px' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      marginLeft: '28px', /* Center of the parent icon */
+                      borderLeft: '1px solid var(--color-border)', 
+                      paddingLeft: '16px', /* Align text nicely */
+                      gap: '2px', 
+                      marginTop: '4px',
+                      marginBottom: '16px' 
+                    }}>
                       {cat.children.map(sub => (
                         <div
                           key={sub.name}
                           style={{
-                            padding: '6px 12px',
+                            padding: '8px 12px',
                             cursor: 'pointer',
                             fontSize: '0.85rem',
                             color: (activeCategory === cat.name && activeSubCategory === sub.name) ? 'var(--color-primary)' : 'var(--color-text-muted)',
                             fontWeight: (activeCategory === cat.name && activeSubCategory === sub.name) ? 700 : 500,
                             borderRadius: '6px',
-                            background: (activeCategory === cat.name && activeSubCategory === sub.name) ? 'var(--color-highlight)' : 'transparent',
+                            background: (activeCategory === cat.name && activeSubCategory === sub.name) ? 'rgba(90, 52, 36, 0.05)' : 'transparent',
                             transition: 'all 0.2s ease'
                           }}
                           onClick={() => {

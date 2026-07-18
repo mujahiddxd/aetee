@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 
 export function ProductModal({ product, onClose }) {
-  const { addToCart } = useCart();
+  const { cartItems, addToCart, updateQuantity } = useCart();
   const [selectedSize, setSelectedSize] = useState(0);
   const [selectedAddons, setSelectedAddons] = useState(new Set());
 
@@ -126,20 +126,52 @@ export function ProductModal({ product, onClose }) {
 
         {/* Footer Fixed Bar */}
         <div className="product-modal-footer">
-          <button 
-            style={{ width: '100%', backgroundColor: 'var(--color-primary)', color: '#FFF', border: 'none', borderRadius: '4px', padding: '14px', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.5px' }}
-            onClick={() => {
-              addToCart({
-                product,
-                selectedSize: product.sizes && product.sizes.length > 0 ? product.sizes[selectedSize]?.name : null,
-                selectedAddons: product.addons && product.addons.length > 0 ? Array.from(selectedAddons).map(idx => product.addons[idx]?.name).filter(Boolean) : [],
-                totalPrice
-              });
-              alert(`${product.name} added to cart!`);
-              onClose();
-            }}>
-            ADD TO CART
-          </button>
+          {(() => {
+            const currentSelectedSizeName = product.sizes && product.sizes.length > 0 ? product.sizes[selectedSize]?.name : null;
+            const currentSelectedAddonNames = product.addons && product.addons.length > 0 ? Array.from(selectedAddons).map(idx => product.addons[idx]?.name).filter(Boolean) : [];
+            const addonsStr = currentSelectedAddonNames.length > 0 ? currentSelectedAddonNames.sort().join('_') : '';
+            const currentCartItemId = `${product.id}-${currentSelectedSizeName || 'default'}-${addonsStr}`;
+            
+            const cartItem = cartItems.find(item => item.cartItemId === currentCartItemId);
+            const currentQuantity = cartItem ? cartItem.quantity : 0;
+
+            if (currentQuantity > 0) {
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid var(--color-primary)', borderRadius: '4px', overflow: 'hidden', width: '100%', boxShadow: '0 2px 4px rgba(74,44,29,0.1)' }}>
+                  <button 
+                    onClick={() => updateQuantity(currentCartItemId, -1)} 
+                    style={{ padding: '14px', background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', fontSize: '1.4rem', fontWeight: 'bold', flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                  >
+                    -
+                  </button>
+                  <span style={{ padding: '0 8px', fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-primary)' }}>
+                    {currentQuantity}
+                  </span>
+                  <button 
+                    onClick={() => updateQuantity(currentCartItemId, 1)} 
+                    style={{ padding: '14px', background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', fontSize: '1.4rem', fontWeight: 'bold', flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                  >
+                    +
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <button 
+                style={{ width: '100%', backgroundColor: 'var(--color-primary)', color: '#FFF', border: 'none', borderRadius: '4px', padding: '14px', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.5px' }}
+                onClick={() => {
+                  addToCart({
+                    product,
+                    selectedSize: currentSelectedSizeName,
+                    selectedAddons: currentSelectedAddonNames,
+                    totalPrice
+                  });
+                }}>
+                ADD TO CART
+              </button>
+            );
+          })()}
         </div>
 
       </div>
