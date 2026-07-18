@@ -26,10 +26,10 @@ export const metadata = {
   openGraph: {
     title: "Aetees Bakehouse",
     type: "website",
-    url: "https://orders.aeteesbakehouse.com/",
+    url: "https://skyblue-rhinoceros-487469.hostingersite.com/",
     images: [
       {
-        url: "https://airmenusimages.blr1.cdn.digitaloceanspaces.com/brands/brands_1636_1752772565667_Nanz_bakehouse_BROWN_LOGO.png",
+        url: "https://skyblue-rhinoceros-487469.hostingersite.com/aeteesbakehouse.png",
         width: 800,
         height: 600,
         alt: "Aetees Bakehouse",
@@ -41,10 +41,10 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    site: "https://orders.aeteesbakehouse.com/",
+    site: "https://skyblue-rhinoceros-487469.hostingersite.com/",
     title: "Aetees Bakehouse",
     description: "#OrderDirect from Aetees Bakehouse",
-    images: ["https://airmenusimages.blr1.cdn.digitaloceanspaces.com/brands/brands_1636_1752772565667_Nanz_bakehouse_BROWN_LOGO.png"],
+    images: ["https://skyblue-rhinoceros-487469.hostingersite.com/aeteesbakehouse.png"],
   },
 };
 

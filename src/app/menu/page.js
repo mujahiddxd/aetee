@@ -31,7 +31,6 @@ export default function Storefront() {
           fetch('/api/products', { cache: 'no-store' }),
           fetch('/api/filters', { cache: 'no-store' })
         ]);
-        
         if (catsRes.ok && prodsRes.ok && filtersRes.ok) {
           const catsData = await catsRes.json();
           const prodsData = await prodsRes.json();

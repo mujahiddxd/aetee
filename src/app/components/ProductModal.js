@@ -32,7 +32,7 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
   return (
     <div className="product-modal-overlay" onClick={onClose}>
       <div className="product-modal-container" onClick={e => e.stopPropagation()}>
-        
+
         {/* Header */}
         <div className="product-modal-header" style={{ justifyContent: 'space-between' }}>
           <button onClick={onClose} className="product-modal-close-btn">
@@ -40,7 +40,7 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
             </svg>
           </button>
-          
+
           <Link href="/cart" style={{ color: 'var(--color-primary)', textDecoration: 'none', position: 'relative', display: 'flex', alignItems: 'center' }}>
             <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5h.008v.008H8.625v-.008zm5.625 0h.008v.008h-.008v-.008z"></path>
@@ -61,7 +61,7 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
 
           {/* Content */}
           <div style={{ padding: '20px' }}>
-            
+
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px' }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flex: 1 }}>
                 <div className="product-card-veg-icon" style={{ marginTop: '4px' }}>
@@ -79,7 +79,7 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
             </div>
 
             <p style={{ color: '#666', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '20px' }}>{product.description}</p>
-            
+
             <div style={{ height: '1px', backgroundColor: 'var(--color-border)', margin: '20px 0' }}></div>
 
             {product.sizes && product.sizes.length > 0 && (
@@ -108,6 +108,10 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
                   ))}
                 </div>
               </div>
+            )}
+
+            {product.sizes && product.sizes.length > 0 && product.addons && product.addons.length > 0 && (
+              <div style={{ height: '8px', backgroundColor: '#F1F1F6', margin: '0 -20px 24px -20px' }}></div>
             )}
 
             {product.addons && product.addons.length > 0 && (
@@ -144,7 +148,7 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
             const currentSelectedAddonNames = product.addons && product.addons.length > 0 ? Array.from(selectedAddons).map(idx => product.addons[idx]?.name).filter(Boolean) : [];
             const addonsStr = currentSelectedAddonNames.length > 0 ? currentSelectedAddonNames.sort().join('_') : '';
             const currentCartItemId = `${product.id}-${currentSelectedSizeName || 'default'}-${addonsStr}`;
-            
+
             const cartItem = cartItems.find(item => item.cartItemId === currentCartItemId);
             const currentQuantity = cartItem ? cartItem.quantity : 0;
 
@@ -152,8 +156,8 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
               return (
                 <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
                   <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid var(--color-primary)', borderRadius: '4px', padding: '4px 8px', background: '#fff' }}>
-                    <button 
-                      onClick={() => updateQuantity(currentCartItemId, -1)} 
+                    <button
+                      onClick={() => updateQuantity(currentCartItemId, -1)}
                       style={{ padding: '8px', background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
@@ -161,20 +165,20 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
                     <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-primary)' }}>
                       {currentQuantity}
                     </span>
-                    <button 
+                    <button
                       onClick={() => {
                         if (product.customisable || (product.sizes && product.sizes.length > 0)) {
                           if (onRepeatSelect) onRepeatSelect(product);
                         } else {
                           updateQuantity(currentCartItemId, 1);
                         }
-                      }} 
+                      }}
                       style={{ padding: '8px', background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                     </button>
                   </div>
-                  <Link 
+                  <Link
                     href="/cart"
                     style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', backgroundColor: 'var(--color-primary)', color: '#FFF', border: 'none', borderRadius: '4px', padding: '14px', textDecoration: 'none', fontWeight: 700, letterSpacing: '0.5px' }}
                   >
@@ -188,7 +192,7 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
             }
 
             return (
-              <button 
+              <button
                 style={{ width: '100%', backgroundColor: 'var(--color-primary)', color: '#FFF', border: 'none', borderRadius: '4px', padding: '14px', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.5px' }}
                 onClick={() => {
                   addToCart({
