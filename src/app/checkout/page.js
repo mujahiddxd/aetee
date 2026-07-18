@@ -115,6 +115,9 @@ export default function Checkout() {
             name: "Aetee's Bakehouse",
             description: orderDescription.length > 255 ? orderDescription.substring(0, 252) + '...' : orderDescription,
             order_id: data.orderId,
+            notes: {
+              delivery_date: formData.date
+            },
             handler: async function (response) {
               // 3. Verify Payment
               const verifyRes = await fetch('/api/payment/verify', {
@@ -168,7 +171,7 @@ export default function Checkout() {
   };
 
   const itemTotal = parseFloat(cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2));
-  const deliveryCharges = 1;
+  const deliveryCharges = 0.1;
   const grandTotal = parseFloat((itemTotal + deliveryCharges).toFixed(2));
 
   return (
