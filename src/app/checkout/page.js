@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
-import Image from 'next/image';
+
 import { useCart } from '../context/CartContext';
 import './checkout.css';
 
@@ -365,7 +365,7 @@ export default function Checkout() {
             <div key={item.cartItemId} style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', gap: '16px' }}>
               <div style={{ position: 'relative' }}>
                 <div style={{ width: 64, height: 64, position: 'relative' }}>
-                  <Image src={item.product.image} alt={item.product.name} fill sizes="64px" style={{ objectFit: 'cover', borderRadius: '8px', border: '1px solid #E5E5E5' }} />
+                  <img src={item.product.image} alt={item.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', border: '1px solid #E5E5E5' }} />
                 </div>
                 <div style={{
                   position: 'absolute',

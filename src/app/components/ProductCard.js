@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import Image from 'next/image';
+
 import { useCart } from '../context/CartContext';
 
 export function ProductCard({ product, onSelect, onRepeatSelect }) {
@@ -13,7 +13,7 @@ export function ProductCard({ product, onSelect, onRepeatSelect }) {
   return (
     <div className="product-card" style={{ opacity: product.isSoldOut ? 0.6 : 1 }}>
       <div className="product-image-container" onClick={() => onSelect(product)} style={{ cursor: 'pointer', position: 'relative' }}>
-        <Image src={product.image} alt={product.name} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" className="product-image" />
+        <img src={product.image} alt={product.name} className="product-image" />
       </div>
 
       <div className="product-content">
