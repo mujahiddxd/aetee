@@ -32,32 +32,6 @@ export default function Storefront() {
           fetch('/api/filters', { cache: 'no-store' })
         ]);
         
-        // Local sample product for testing
-        const localSampleProduct = {
-          id: 'local-test-product-123',
-          name: 'Choco Chip Butter Cake',
-          description: 'Our OG chocochip butter cake — soft, rich, and loaded with gooey chocolate chips. Best enjoyed warm for that melt-in-your-mouth goodness.',
-          price: 900.00,
-          categoryId: 'local',
-          category: 'Cakes',
-          image: 'https://airmenusimages.blr1.cdn.digitaloceanspaces.com/item/item_1178520_1777963258755_butter_cake___airmenus.jpg',
-          isFeatured: true,
-          isVeg: true,
-          customisable: true,
-          sizes: [
-            { name: 'Make it 1/2 kg', price: 0.00, image: 'https://airmenusimages.blr1.cdn.digitaloceanspaces.com/variation/variation_923264_1777963502286_butter_cake__top_airmenus__1_.jpg' },
-            { name: 'Make it 1kg', price: 700.00, image: 'https://airmenusimages.blr1.cdn.digitaloceanspaces.com/variation/variation_923265_1777963524706_butter_cake__1kg_top_airmenus.jpg' }
-          ],
-          addons: [
-            { name: "Happy Father's Day topper", price: 100.00 },
-            { name: 'Happy anniversary topper', price: 100.00 },
-            { name: 'Congratulations topper', price: 100.00 },
-            { name: 'Happy birthday topper', price: 100.00 },
-            { name: 'Make it a gift', price: 300.00 }
-          ],
-          filters: []
-        };
-
         if (catsRes.ok && prodsRes.ok && filtersRes.ok) {
           const catsData = await catsRes.json();
           const prodsData = await prodsRes.json();
@@ -76,7 +50,6 @@ export default function Storefront() {
             customisable: p.addons && p.addons.length > 0
           }));
           
-          formattedProds.unshift(localSampleProduct);
 
           setCategories(formattedCats);
           setProducts(formattedProds);
@@ -84,37 +57,14 @@ export default function Storefront() {
           setExpandedCategories(formattedCats.reduce((acc, cat) => ({ ...acc, [cat.name]: true }), {}));
         } else {
           // Fallback if API fails (e.g. Next.js Prisma cache issue)
-          setCategories([{ name: "All", icon: "https://placehold.co/100x100/FDF8F5/F5B041?text=ALL" }, { id: 'local', name: 'Cakes' }]);
-          setProducts([localSampleProduct]);
+          setCategories([]);
+          setProducts([]);
         }
       } catch (error) {
         console.error("Failed to fetch menu data", error);
         // Fallback on error
-        setCategories([{ name: "All", icon: "https://placehold.co/100x100/FDF8F5/F5B041?text=ALL" }, { id: 'local', name: 'Cakes' }]);
-        setProducts([{
-          id: 'local-test-product-123',
-          name: 'Choco Chip Butter Cake',
-          description: 'Our OG chocochip butter cake — soft, rich, and loaded with gooey chocolate chips. Best enjoyed warm for that melt-in-your-mouth goodness.',
-          price: 900.00,
-          categoryId: 'local',
-          category: 'Cakes',
-          image: 'https://airmenusimages.blr1.cdn.digitaloceanspaces.com/item/item_1178520_1777963258755_butter_cake___airmenus.jpg',
-          isFeatured: true,
-          isVeg: true,
-          customisable: true,
-          sizes: [
-            { name: 'Make it 1/2 kg', price: 0.00, image: 'https://airmenusimages.blr1.cdn.digitaloceanspaces.com/variation/variation_923264_1777963502286_butter_cake__top_airmenus__1_.jpg' },
-            { name: 'Make it 1kg', price: 700.00, image: 'https://airmenusimages.blr1.cdn.digitaloceanspaces.com/variation/variation_923265_1777963524706_butter_cake__1kg_top_airmenus.jpg' }
-          ],
-          addons: [
-            { name: "Happy Father's Day topper", price: 100.00 },
-            { name: 'Happy anniversary topper', price: 100.00 },
-            { name: 'Congratulations topper', price: 100.00 },
-            { name: 'Happy birthday topper', price: 100.00 },
-            { name: 'Make it a gift', price: 300.00 }
-          ],
-          filters: []
-        }]);
+        setCategories([]);
+        setProducts([]);
       } finally {
         setIsLoading(false);
       }
