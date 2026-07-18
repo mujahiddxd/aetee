@@ -150,7 +150,7 @@ export default function Checkout() {
   };
 
   const itemTotal = parseFloat(cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2));
-  const deliveryCharges = 60;
+  const deliveryCharges = 1;
   const grandTotal = parseFloat((itemTotal + deliveryCharges).toFixed(2));
 
   return (
