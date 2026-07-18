@@ -29,11 +29,14 @@ export async function POST(req) {
     // We can listen for 'order.paid' or 'payment.captured'
     if (body.event === 'order.paid' || body.event === 'payment.captured') {
       let razorpayOrderId = null;
+      let requestedDate = null;
 
       if (body.event === 'order.paid') {
         razorpayOrderId = body.payload.order?.entity?.id;
+        requestedDate = body.payload.order?.entity?.notes?.delivery_date;
       } else if (body.event === 'payment.captured') {
         razorpayOrderId = body.payload.payment?.entity?.order_id;
+        requestedDate = body.payload.payment?.entity?.notes?.delivery_date;
       }
 
       if (!razorpayOrderId) {
@@ -83,22 +86,37 @@ export async function POST(req) {
         : 'N/A';
 
       // Calculate Delivery Time (Before 12 PM IST = Same Day)
-      const formatter = new Intl.DateTimeFormat('en-IN', {
-        timeZone: 'Asia/Kolkata',
-        hour: 'numeric',
-        hour12: false
+      const hourFormatter = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', hour12: false });
+      const orderHourIST = parseInt(hourFormatter.format(order.createdAt), 10);
+      
+      const dateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
+      const todayStr = dateFormatter.format(order.createdAt);
+      const tomorrowStr = dateFormatter.format(new Date(order.createdAt.getTime() + 24 * 60 * 60 * 1000));
+      
+      const deliveryNote = orderHourIST < 12 ? `🚚 *Delivery:* SAME DAY (${todayStr})` : `📅 *Delivery:* NEXT DAY (${tomorrowStr})`;
+
+      // Calculate Daily Serial Number
+      const startOfDay = new Date(`${todayStr}T00:00:00+05:30`);
+      const serialNumber = await prisma.order.count({
+        where: {
+          createdAt: {
+            gte: startOfDay,
+            lte: order.createdAt
+          }
+        }
       });
-      const orderHourIST = parseInt(formatter.format(order.createdAt), 10);
-      const deliveryNote = orderHourIST < 12 ? "🚚 *Delivery:* SAME DAY (Today)" : "📅 *Delivery:* NEXT DAY (Tomorrow)";
 
       const message = `
-🎉 *NEW ORDER RECEIVED!* 🎉
+🎉 *NEW ORDER RECEIVED! (Daily #${serialNumber})* 🎉
 
-*Order ID:* ${order.id}
+*Daily Order No:* #${serialNumber}
+*System ID:* ${order.id}
+*Razorpay ID:* ${order.razorpayOrderId}
 *Customer:* ${order.user.firstName} ${order.user.lastName}
 *Phone:* ${order.user.phone || 'N/A'}
 *Address:* ${addressText}
 *Amount Paid:* ₹${order.totalAmount}
+${requestedDate ? `*Requested Date:* ${requestedDate}` : ''}
 ${deliveryNote}
 
 *Items Ordered:*
