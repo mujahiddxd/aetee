@@ -26,7 +26,35 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: 'Minimum amount must be at least 100 paise' }, { status: 400 });
     }
 
-    // 2. Create Razorpay Order (external API — cannot be rolled back)
+    // 2. Rate limit: max 25 paid orders per 24 hours
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+
+    if (existingUser) {
+      const recentPaidOrders = await prisma.order.count({
+        where: {
+          userId: existingUser.id,
+          status: 'PAID',
+          createdAt: { 
+            gte: (() => {
+              const now = new Date();
+              const year = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', year: 'numeric' }).format(now);
+              const month = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', month: '2-digit' }).format(now);
+              const day = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', day: '2-digit' }).format(now);
+              return new Date(`${year}-${month}-${day}T00:00:00+05:30`);
+            })() 
+          },
+        },
+      });
+
+      if (recentPaidOrders >= 2) {
+        return NextResponse.json(
+          { success: false, error: 'Sorry for the inconvenience, but you have reached the maximum limit of 2 orders in a day. Please try ordering again tomorrow.' },
+          { status: 429 }
+        );
+      }
+    }
+
+    // 3. Create Razorpay Order (external API — cannot be rolled back)
     const razorpayOrder = await razorpay.orders.create({
       amount: amountInPaise,
       currency: 'INR',
