@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -49,7 +50,9 @@ export default function Home() {
       <section style={{ position: 'relative', width: '100%', maxWidth: '1200px', margin: '48px auto', overflow: 'hidden', borderRadius: '12px', boxShadow: 'var(--shadow-card)' }}>
         <div style={{ display: 'flex', transition: 'transform 0.5s ease-in-out', transform: `translateX(-${currentSlide * 100}%)` }}>
           {slides.map((slide, index) => (
-            <img key={index} src={slide} alt={`Slide ${index + 1}`} style={{ width: '100%', flexShrink: 0, objectFit: 'cover' }} />
+            <div key={index} style={{ width: '100%', position: 'relative', aspectRatio: '1200/500', flexShrink: 0 }}>
+              <Image src={slide} alt={`Slide ${index + 1}`} fill sizes="100vw" style={{ objectFit: 'cover' }} priority={index === 0} />
+            </div>
           ))}
         </div>
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export function ProductModal({ product, onClose, onRepeatSelect }) {
   const { cartItems, addToCart, updateQuantity, isLoaded } = useCart();
@@ -55,8 +56,8 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
 
         <div className="product-modal-body">
           {/* Image */}
-          <div style={{ width: '100%' }}>
-            <img src={product.image} alt={product.name} style={{ width: '100%', aspectRatio: '16/9', display: 'block', objectFit: 'cover', backgroundColor: '#FAFAF8' }} />
+          <div style={{ width: '100%', position: 'relative', aspectRatio: '16/9' }}>
+            <Image src={product.image} alt={product.name} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" style={{ display: 'block', objectFit: 'cover', backgroundColor: '#FAFAF8' }} />
           </div>
 
           {/* Content */}
@@ -99,7 +100,7 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
                           style={{ width: '20px', height: '20px', accentColor: 'var(--color-primary)' }}
                         />
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          {size.image && <img src={size.image} alt={size.name} style={{ width: 48, height: 48, borderRadius: 4, objectFit: 'cover', border: '1px solid var(--color-border)' }} />}
+                          {size.image && <div style={{ width: 48, height: 48, position: 'relative', flexShrink: 0 }}><Image src={size.image} alt={size.name} fill sizes="48px" style={{ borderRadius: 4, objectFit: 'cover', border: '1px solid var(--color-border)' }} /></div>}
                           <span style={{ fontSize: '1rem', color: 'var(--color-primary)' }}>{size.name}</span>
                         </div>
                       </div>
@@ -128,7 +129,7 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
                           style={{ width: '20px', height: '20px', accentColor: 'var(--color-primary)' }}
                         />
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          {addon.image && <img src={addon.image} alt={addon.name} style={{ width: 48, height: 48, borderRadius: 4, objectFit: 'cover', border: '1px solid #EBEBEB' }} />}
+                          {addon.image && <div style={{ width: 48, height: 48, position: 'relative', flexShrink: 0 }}><Image src={addon.image} alt={addon.name} fill sizes="48px" style={{ borderRadius: 4, objectFit: 'cover', border: '1px solid #EBEBEB' }} /></div>}
                           <span style={{ fontSize: '1rem', color: 'var(--color-primary)' }}>{addon.name}</span>
                         </div>
                       </div>

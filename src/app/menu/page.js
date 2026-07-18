@@ -7,6 +7,7 @@ import { ChevronDown, ChevronUp } from '../components/Icons';
 import { ProductModal } from '../components/ProductModal';
 import { ProductCard } from '../components/ProductCard';
 import { RepeatComboModal } from '../components/RepeatComboModal';
+import Image from 'next/image';
 export default function Storefront() {
   const { cartItems, updateQuantity } = useCart();
   const [activeCategory, setActiveCategory] = useState("All");
@@ -236,7 +237,9 @@ export default function Storefront() {
                     onClick={() => handleCategoryClick(cat.name)}
                     style={{ marginBottom: '4px' }}
                   >
-                    <img src={cat.icon} alt={cat.name} className="category-icon" />
+                    <div style={{ width: 32, height: 32, position: 'relative', flexShrink: 0 }}>
+                      <Image src={cat.icon} alt={cat.name} fill sizes="32px" className="category-icon" style={{ borderRadius: '50%' }} />
+                    </div>
                     <span>{cat.name}</span>
                   </div>
                 </div>
@@ -284,7 +287,9 @@ export default function Storefront() {
                   <div style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '8px' }}>
                     {cartItems.map(item => (
                       <div key={item.cartItemId} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                        <img src={item.product.image} alt={item.product.name} style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px' }} />
+                        <div style={{ width: 48, height: 48, position: 'relative', flexShrink: 0 }}>
+                          <Image src={item.product.image} alt={item.product.name} fill sizes="48px" style={{ objectFit: 'cover', borderRadius: '8px' }} />
+                        </div>
                         <div style={{ flex: 1 }}>
                           <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }}>{item.product.name}</p>
                           <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>₹{Number(item.price).toFixed(2)}</p>

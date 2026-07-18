@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
 
@@ -128,7 +129,9 @@ export default function Cart() {
             gap: '16px'
           }}>
             <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-              <img src={item.product.image} alt={item.product.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 }} />
+              <div style={{ width: 80, height: 80, position: 'relative', flexShrink: 0 }}>
+                <Image src={item.product.image} alt={item.product.name} fill sizes="80px" style={{ objectFit: 'cover', borderRadius: '8px' }} />
+              </div>
               <div style={{ flex: 1 }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: 0, color: '#333' }}>{item.product.name}</h3>
                 {item.selectedSize && <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#666' }}>Size: {item.selectedSize}</p>}
