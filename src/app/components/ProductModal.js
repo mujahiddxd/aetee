@@ -55,8 +55,8 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
 
         <div className="product-modal-body">
           {/* Image */}
-          <div style={{ width: '100%', marginTop: '-48px' }}>
-            <img src={product.image} alt={product.name} style={{ width: '100%', height: 'auto', display: 'block', maxHeight: '400px', objectFit: 'cover' }} />
+          <div style={{ width: '100%' }}>
+            <img src={product.image} alt={product.name} style={{ width: '100%', aspectRatio: '16/9', display: 'block', objectFit: 'cover', backgroundColor: '#FAFAF8' }} />
           </div>
 
           {/* Content */}
