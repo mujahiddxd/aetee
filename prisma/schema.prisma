@@ -43,9 +43,12 @@ model Address {
 model Category {
   id        String    @id @default(uuid())
   name      String    @db.VarChar(255)
+  parentId  String?   @map("parent_id")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
 
+  parent    Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
   products  Product[]
 
   @@map("categories")
@@ -67,8 +70,8 @@ model Product {
 
   category Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   options  ProductOption[]
-  orderItems OrderItem[]
-  filters    FilterTag[]
+  orderItems     OrderItem[]
+  productFilters ProductFilter[]
 
   @@map("products")
 }
@@ -79,9 +82,21 @@ model FilterTag {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
 
-  products  Product[]
+  productFilters ProductFilter[]
 
   @@map("filter_tags")
+}
+
+model ProductFilter {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  filterId  String   @map("filter_id")
+  
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  filter    FilterTag @relation(fields: [filterId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, filterId])
+  @@map("product_filters")
 }
 
 model ProductOption {
@@ -90,6 +105,7 @@ model ProductOption {
   name       String   @db.VarChar(255)
   extraPrice Decimal  @default(0.00) @map("extra_price") @db.Decimal(10, 2)
   imageUrl   String?  @map("image_url") @db.VarChar(1024)
+  type       String   @default("ADDON") @db.VarChar(20) // "SIZE" or "ADDON"
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
 
