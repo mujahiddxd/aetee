@@ -38,7 +38,7 @@ export async function POST(req) {
         },
       });
 
-      if (recentPaidOrders >= 25) {
+      if (recentPaidOrders >= 0) {
         return NextResponse.json(
           { success: false, error: 'You have reached the maximum limit of 25 orders in 24 hours. Please try again later.' },
           { status: 429 }

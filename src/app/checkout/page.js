@@ -11,7 +11,6 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState('');
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
-    time: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -44,7 +43,6 @@ export default function Checkout() {
     const newErrors = {};
 
     if (!formData.date) newErrors.date = "Delivery date is required.";
-    if (!formData.time) newErrors.time = "Delivery time slot is required.";
     if (!formData.firstName.trim()) newErrors.firstName = "First name is required.";
     if (!formData.lastName.trim()) newErrors.lastName = "Last name is required.";
 
@@ -175,12 +173,11 @@ export default function Checkout() {
           <p style={{ color: '#888', fontSize: '1rem' }}>Complete your order details</p>
         </div>
 
-        {/* 2. Delivery Slot Section */}
+        {/* 2. Delivery Date Section */}
         <div className="section-card">
-          <h2 className="section-title">Delivery Slot</h2>
+          <h2 className="section-title">Delivery Date</h2>
           <div className="row-flex">
             <div style={{ flex: 1 }} className="input-group">
-              <label className="input-label">Delivery Date</label>
               <input
                 type="date"
                 name="date"
@@ -190,24 +187,6 @@ export default function Checkout() {
                 required
               />
               {errors.date && <div className="error-message">{errors.date}</div>}
-            </div>
-            <div style={{ flex: 1 }} className="input-group">
-              <label className="input-label">Delivery Time</label>
-              <select
-                name="time"
-                value={formData.time}
-                onChange={handleInputChange}
-                className={`form-input ${errors.time ? 'error' : ''}`}
-                required
-              >
-                <option value="" disabled>Select Time </option>
-                <option value="9-11">9:00 AM – 11:00 AM</option>
-                <option value="11-1">11:00 AM – 1:00 PM</option>
-                <option value="1-3">1:00 PM – 3:00 PM</option>
-                <option value="3-5">3:00 PM – 5:00 PM</option>
-                <option value="5-7">5:00 PM – 7:00 PM</option>
-              </select>
-              {errors.time && <div className="error-message">{errors.time}</div>}
             </div>
           </div>
         </div>
