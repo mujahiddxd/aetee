@@ -148,9 +148,13 @@ export default function Cart() {
                 </svg>
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <button onClick={() => updateQuantity(item.cartItemId, -1)} className="qty-btn">-</button>
+                <button onClick={() => updateQuantity(item.cartItemId, -1)} className="qty-btn">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                </button>
                 <span style={{ fontWeight: '600', width: '20px', textAlign: 'center' }}>{item.quantity}</span>
-                <button onClick={() => updateQuantity(item.cartItemId, 1)} className="qty-btn">+</button>
+                <button onClick={() => updateQuantity(item.cartItemId, 1)} className="qty-btn">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                </button>
               </div>
               <p style={{ color: '#000', fontWeight: '600', fontSize: '1.1rem', margin: 0, minWidth: '50px', textAlign: 'right' }}>₹{item.price}</p>
             </div>

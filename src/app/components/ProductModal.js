@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import Link from 'next/link';
 
-export function ProductModal({ product, onClose }) {
+export function ProductModal({ product, onClose, onRepeatSelect }) {
   const { cartItems, addToCart, updateQuantity, isLoaded } = useCart();
   const cartItemCount = cartItems?.reduce((total, item) => total + item.quantity, 0) || 0;
   const [selectedSize, setSelectedSize] = useState(0);
@@ -150,22 +150,39 @@ export function ProductModal({ product, onClose }) {
 
             if (currentQuantity > 0) {
               return (
-                <div style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid var(--color-primary)', borderRadius: '4px', overflow: 'hidden', width: '100%', boxShadow: '0 2px 4px rgba(74,44,29,0.1)' }}>
-                  <button 
-                    onClick={() => updateQuantity(currentCartItemId, -1)} 
-                    style={{ padding: '14px', background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', fontSize: '1.4rem', fontWeight: 'bold', flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid var(--color-primary)', borderRadius: '4px', padding: '4px 8px', background: '#fff' }}>
+                    <button 
+                      onClick={() => updateQuantity(currentCartItemId, -1)} 
+                      style={{ padding: '8px', background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                    </button>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-primary)' }}>
+                      {currentQuantity}
+                    </span>
+                    <button 
+                      onClick={() => {
+                        if (product.customisable || (product.sizes && product.sizes.length > 0)) {
+                          if (onRepeatSelect) onRepeatSelect(product);
+                        } else {
+                          updateQuantity(currentCartItemId, 1);
+                        }
+                      }} 
+                      style={{ padding: '8px', background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                    </button>
+                  </div>
+                  <Link 
+                    href="/cart"
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', backgroundColor: 'var(--color-primary)', color: '#FFF', border: 'none', borderRadius: '4px', padding: '14px', textDecoration: 'none', fontWeight: 700, letterSpacing: '0.5px' }}
                   >
-                    -
-                  </button>
-                  <span style={{ padding: '0 8px', fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-primary)' }}>
-                    {currentQuantity}
-                  </span>
-                  <button 
-                    onClick={() => updateQuantity(currentCartItemId, 1)} 
-                    style={{ padding: '14px', background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', fontSize: '1.4rem', fontWeight: 'bold', flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-                  >
-                    +
-                  </button>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63-.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    GO TO CART
+                  </Link>
                 </div>
               );
             }

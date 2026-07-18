@@ -2,7 +2,7 @@
 import React from 'react';
 import { useCart } from '../context/CartContext';
 
-export function ProductCard({ product, onSelect }) {
+export function ProductCard({ product, onSelect, onRepeatSelect }) {
   const { cartItems, addToCart, updateQuantity } = useCart();
 
   // Data-driven tag based on actual product flags from the admin panel
@@ -56,30 +56,33 @@ export function ProductCard({ product, onSelect }) {
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      // If multiple variations exist, remove from the last one
                       const lastItem = matchingItems[matchingItems.length - 1];
                       updateQuantity(lastItem.cartItemId, -1);
                     }} 
-                    style={{ padding: '4px 12px', background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold' }}
+                    style={{ padding: '6px 8px', background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                   >
-                    -
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                   </button>
-                  <span style={{ padding: '0 4px', fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-primary)', minWidth: '16px', textAlign: 'center' }}>
+                  <span style={{ padding: '0 4px', fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-primary)', minWidth: '20px', textAlign: 'center' }}>
                     {cartQuantity}
                   </span>
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
                       if (product.customisable || (product.sizes && product.sizes.length > 0)) {
-                        onSelect(product); // Open modal for customisation
+                        if (onRepeatSelect) {
+                          onSelect(product);
+                          onRepeatSelect(product);
+                        } else {
+                          onSelect(product);
+                        }
                       } else {
-                        // Simply increment
                         updateQuantity(matchingItems[0].cartItemId, 1);
                       }
                     }} 
-                    style={{ padding: '4px 12px', background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold' }}
+                    style={{ padding: '6px 8px', background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                   >
-                    +
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                   </button>
                 </div>
               );
