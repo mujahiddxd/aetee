@@ -11,6 +11,12 @@ export default function AdminProducts() {
   const [currentProduct, setCurrentProduct] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // New states for feature request
+  const [filterCategoryId, setFilterCategoryId] = useState("all");
+  const [selectedProductIds, setSelectedProductIds] = useState(new Set());
+  const [draggedItemId, setDraggedItemId] = useState(null);
+  const [isReordering, setIsReordering] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "", description: "", price: "", categoryId: "", sizes: [], addons: [],
     isSoldOut: false, isBestSelling: false, isFeatured: false, image: "https://placehold.co/400x300/FDF3D5/4A2C1D?text=New+Item"
@@ -148,7 +154,7 @@ export default function AdminProducts() {
       if (isEditing) {
         setProducts(products.map(p => p.id === currentProduct.id ? savedProduct : p));
       } else {
-        setProducts([savedProduct, ...products]);
+        setProducts([...products, savedProduct]);
       }
       setCurrentProduct(null);
     } catch (err) {
@@ -168,21 +174,165 @@ export default function AdminProducts() {
       if (!res.ok) throw new Error("Failed to delete product");
       
       setProducts(products.filter(p => p.id !== id));
+      
+      const newSelected = new Set(selectedProductIds);
+      newSelected.delete(id);
+      setSelectedProductIds(newSelected);
     } catch (err) {
       setError(err.message);
     }
   };
 
+  // --- Multi-Select & Bulk Actions Logic ---
+  const handleSelectProduct = (id) => {
+    const newSelected = new Set(selectedProductIds);
+    if (newSelected.has(id)) newSelected.delete(id);
+    else newSelected.add(id);
+    setSelectedProductIds(newSelected);
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const allIds = filteredProducts.map(p => p.id);
+      setSelectedProductIds(new Set(allIds));
+    } else {
+      setSelectedProductIds(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${selectedProductIds.size} products?`)) return;
+    
+    try {
+      setLoading(true);
+      const res = await fetch('/api/products/bulk', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedProductIds) })
+      });
+      
+      if (!res.ok) throw new Error("Failed to delete products");
+      
+      setProducts(products.filter(p => !selectedProductIds.has(p.id)));
+      setSelectedProductIds(new Set());
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Drag and Drop Logic ---
+  const filteredProducts = filterCategoryId === "all" 
+    ? products 
+    : products.filter(p => p.categoryId === filterCategoryId);
+
+  const handleDragStart = (e, id) => {
+    setDraggedItemId(id);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", id);
+    // Visual effect
+    setTimeout(() => {
+      if (e.target) e.target.style.opacity = '0.4';
+    }, 0);
+  };
+
+  const handleDragEnd = (e) => {
+    if (e.target) e.target.style.opacity = '1';
+    setDraggedItemId(null);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = async (e, targetId) => {
+    e.preventDefault();
+    if (!draggedItemId || draggedItemId === targetId) {
+      setDraggedItemId(null);
+      return;
+    }
+
+    const newProducts = [...products];
+    const draggedIndex = newProducts.findIndex(p => p.id === draggedItemId);
+    const targetIndex = newProducts.findIndex(p => p.id === targetId);
+    
+    const [draggedItem] = newProducts.splice(draggedIndex, 1);
+    newProducts.splice(targetIndex, 0, draggedItem);
+    
+    setProducts(newProducts);
+    setDraggedItemId(null);
+    setIsReordering(true);
+
+    const itemsInCategory = newProducts.filter(p => p.categoryId === filterCategoryId);
+    const payload = itemsInCategory.map((prod, index) => ({
+      id: prod.id,
+      sortOrder: index
+    }));
+
+    try {
+      const res = await fetch('/api/products/reorder', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: payload })
+      });
+      if (!res.ok) throw new Error("Failed to save new order");
+    } catch (err) {
+      setError("Failed to save order. Please refresh.");
+      console.error(err);
+    } finally {
+      setIsReordering(false);
+    }
+  };
+
+
   return (
     <div>
-      <div className="page-header">
-        <h1>Manage Products</h1>
+      <div className="page-header" style={{ flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <h1>Manage Products</h1>
+          {isReordering && <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Saving order...</span>}
+        </div>
+        
         {!currentProduct && (
-          <button className="btn btn-primary" onClick={openAddForm}>
-            + Add New Product
-          </button>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <select 
+              className="input" 
+              style={{ marginBottom: 0, minWidth: '200px' }}
+              value={filterCategoryId}
+              onChange={(e) => {
+                setFilterCategoryId(e.target.value);
+                setSelectedProductIds(new Set());
+              }}
+            >
+              <option value="all">All Categories</option>
+              {flatCats.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+            
+            <button className="btn btn-primary" onClick={openAddForm}>
+              + Add New Product
+            </button>
+          </div>
         )}
       </div>
+
+      {filterCategoryId === "all" && !currentProduct && (
+        <div style={{ padding: '12px', background: 'rgba(245,166,35,0.1)', color: '#b97700', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>
+          💡 <strong>Tip:</strong> Select a specific category from the dropdown above to enable drag-and-drop reordering.
+        </div>
+      )}
+
+      {selectedProductIds.size > 0 && !currentProduct && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--color-bg-grey)', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--color-border)' }}>
+          <span style={{ fontWeight: 600 }}>{selectedProductIds.size} product{selectedProductIds.size > 1 ? 's' : ''} selected</span>
+          <button className="btn btn-secondary" onClick={handleBulkDelete} style={{ color: '#ff3b30', borderColor: '#ff3b30', background: 'rgba(255,59,48,0.1)' }}>
+            Delete Selected
+          </button>
+        </div>
+      )}
 
       {error && (
         <div style={{ background: 'rgba(255,59,48,0.1)', color: '#ff3b30', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem' }}>
@@ -241,7 +391,6 @@ export default function AdminProducts() {
                       Image
                       <input type="file" accept="image/*" style={{ display: 'none' }} disabled={submitting} onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
-                          // Mocking upload for now with a placeholder until Hostinger is implemented
                           handleSizeChange(index, 'image', `https://placehold.co/100x100/FDF3D5/4A2C1D?text=${encodeURIComponent(size.name || 'Size')}`);
                         }
                       }} />
@@ -270,7 +419,6 @@ export default function AdminProducts() {
                       Image
                       <input type="file" accept="image/*" style={{ display: 'none' }} disabled={submitting} onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
-                          // Mocking upload for now with a placeholder until Hostinger is implemented
                           handleAddonChange(index, 'image', `https://placehold.co/100x100/FDF3D5/4A2C1D?text=${encodeURIComponent(addon.name || 'Addon')}`);
                         }
                       }} />
@@ -317,6 +465,13 @@ export default function AdminProducts() {
           <table className="data-table">
             <thead>
               <tr>
+                <th width="40">
+                  <input 
+                    type="checkbox" 
+                    onChange={handleSelectAll}
+                    checked={filteredProducts.length > 0 && selectedProductIds.size === filteredProducts.length}
+                  />
+                </th>
                 <th width="80">Image</th>
                 <th>Name</th>
                 <th>Price</th>
@@ -326,18 +481,47 @@ export default function AdminProducts() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="5" style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>Loading products...</td></tr>
-              ) : products.length === 0 ? (
-                <tr><td colSpan="5" style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>No products found.</td></tr>
+                <tr><td colSpan="6" style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>Loading products...</td></tr>
+              ) : filteredProducts.length === 0 ? (
+                <tr><td colSpan="6" style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>No products found in this category.</td></tr>
               ) : (
-                products.map(prod => (
-                  <tr key={prod.id}>
+                filteredProducts.map(prod => (
+                  <tr 
+                    key={prod.id}
+                    draggable={filterCategoryId !== "all"}
+                    onDragStart={(e) => handleDragStart(e, prod.id)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, prod.id)}
+                    style={{ 
+                      cursor: filterCategoryId !== "all" ? 'grab' : 'default',
+                      backgroundColor: draggedItemId === prod.id ? 'var(--color-bg-grey)' : 'inherit'
+                    }}
+                  >
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {filterCategoryId !== "all" && (
+                          <div style={{ color: 'var(--color-text-muted)', cursor: 'grab' }}>
+                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16"></path>
+                            </svg>
+                          </div>
+                        )}
+                        <input 
+                          type="checkbox" 
+                          checked={selectedProductIds.has(prod.id)}
+                          onChange={() => handleSelectProduct(prod.id)}
+                        />
+                      </div>
+                    </td>
                     <td>
                       <img src={prod.image} alt={prod.name} style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px' }} />
                     </td>
                     <td>
                       <strong>{prod.name}</strong>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{prod.category}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                        {categories.find(c => c.id === prod.categoryId)?.name || prod.categoryId}
+                      </div>
                     </td>
                     <td style={{ fontWeight: 600 }}>${Number(prod.price).toFixed(2)}</td>
                     <td>

@@ -64,6 +64,7 @@ model Product {
   isFeatured   Boolean  @default(false) @map("is_featured")
   isBestSeller Boolean  @default(false) @map("is_best_seller")
   isSoldOut    Boolean  @default(false) @map("is_sold_out")
+  sortOrder    Int      @default(0) @map("sort_order")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
 
