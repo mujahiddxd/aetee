@@ -26,8 +26,7 @@ export default function Cart() {
 
   const subtotal = parseFloat(cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2));
   const delivery = subtotal > 0 ? 50 : 0;
-  const taxes = parseFloat((subtotal * 0.05).toFixed(2));
-  const total = parseFloat((subtotal + delivery + taxes).toFixed(2));
+  const total = parseFloat((subtotal + delivery).toFixed(2));
 
   const validPincodes = ['110001', '110002', '110011', '110012', '110013', '110020'];
 
@@ -211,13 +210,9 @@ export default function Cart() {
           <span>Item Total</span>
           <span>₹{subtotal.toFixed(2)}</span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', color: '#555' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', color: '#555' }}>
           <span>Delivery</span>
           <span>₹{delivery.toFixed(2)}</span>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', color: '#555' }}>
-          <span>Taxes (5%)</span>
-          <span>₹{taxes.toFixed(2)}</span>
         </div>
         <div style={{ borderTop: '1px solid #E5E5E5', margin: '12px 0' }}></div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem', color: '#000', marginTop: '16px' }}>
