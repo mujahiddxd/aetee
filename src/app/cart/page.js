@@ -25,7 +25,7 @@ export default function Cart() {
   };
 
   const subtotal = parseFloat(cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2));
-  const delivery = subtotal > 0 ? 50 : 0;
+  const delivery = subtotal > 0 ? 1 : 0;
   const total = parseFloat((subtotal + delivery).toFixed(2));
 
   const checkPincode = () => {
@@ -119,7 +119,7 @@ export default function Cart() {
         {cartItems.map(item => (
           <div key={item.cartItemId} style={{
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: 'column',
             marginBottom: '16px',
             padding: '16px',
             backgroundColor: '#FFF',
@@ -127,13 +127,17 @@ export default function Cart() {
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
             gap: '16px'
           }}>
-            <img src={item.product.image} alt={item.product.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} />
-            <div style={{ flex: 1 }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: 0, color: '#333' }}>{item.product.name}</h3>
-              {item.selectedSize && <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#666' }}>Size: {item.selectedSize}</p>}
-              {item.selectedAddons && item.selectedAddons.length > 0 && <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#666' }}>Addons: {item.selectedAddons.join(', ')}</p>}
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+              <img src={item.product.image} alt={item.product.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: 0, color: '#333' }}>{item.product.name}</h3>
+                {item.selectedSize && <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#666' }}>Size: {item.selectedSize}</p>}
+                {item.selectedAddons && item.selectedAddons.length > 0 && <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#666' }}>Addons: {item.selectedAddons.join(', ')}</p>}
+                <p style={{ color: '#000', fontWeight: '700', fontSize: '1.1rem', margin: '8px 0 0 0' }}>₹{item.price * item.quantity}</p>
+              </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F0F0F0', paddingTop: '12px' }}>
               <button
                 className="delete-btn"
                 onClick={() => setItemToDelete(item.cartItemId)}
@@ -144,6 +148,7 @@ export default function Cart() {
                   <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
                   <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
                 </svg>
+                <span style={{ fontSize: '0.85rem', marginLeft: '6px', fontWeight: '600' }}>Remove</span>
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <button onClick={() => updateQuantity(item.cartItemId, -1)} className="qty-btn">
@@ -154,7 +159,6 @@ export default function Cart() {
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                 </button>
               </div>
-              <p style={{ color: '#000', fontWeight: '600', fontSize: '1.1rem', margin: 0, minWidth: '50px', textAlign: 'right' }}>₹{item.price}</p>
             </div>
           </div>
         ))}

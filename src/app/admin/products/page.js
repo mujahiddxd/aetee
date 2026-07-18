@@ -44,10 +44,6 @@ export default function AdminProducts() {
     isSoldOut: false, isBestSelling: false, isFeatured: false, image: ""
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -74,6 +70,12 @@ export default function AdminProducts() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;

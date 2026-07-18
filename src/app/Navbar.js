@@ -22,6 +22,7 @@ export default function Navbar() {
           </Link>
           <nav style={{ display: 'flex', alignItems: 'center', gap: '32px', fontSize: '1.25rem', color: 'var(--color-text-muted)', fontWeight: '500' }}>
             <Link href="/menu" style={{ color: 'inherit', textDecoration: 'none' }}>Menu</Link>
+            <Link href="/contact" style={{ color: 'inherit', textDecoration: 'none' }}>Contact</Link>
 
             <Link href="/cart" style={{ background: 'none', border: 'none', color: 'var(--color-text-main)', cursor: 'pointer', display: 'flex', alignItems: 'center', textDecoration: 'none', position: 'relative' }}>
               <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
@@ -77,6 +78,7 @@ export default function Navbar() {
           <div style={{ position: 'relative', width: '250px', height: '100%', backgroundColor: 'var(--color-bg-white)', padding: '80px 24px 24px', display: 'flex', flexDirection: 'column', gap: '24px', boxShadow: '2px 0 10px rgba(0,0,0,0.1)' }}>
             <Link href="/" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none', color: 'var(--color-text-main)', fontSize: '1.25rem', fontWeight: 600, fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>Home</Link>
             <Link href="/menu" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none', color: 'var(--color-text-main)', fontSize: '1.25rem', fontWeight: 600, fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>Menu</Link>
+            <Link href="/contact" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none', color: 'var(--color-text-main)', fontSize: '1.25rem', fontWeight: 600, fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>Contact</Link>
             <Link href="/cart" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none', color: 'var(--color-text-main)', fontSize: '1.25rem', fontWeight: 600, fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>Cart</Link>
           </div>
         </div>

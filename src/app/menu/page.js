@@ -24,6 +24,7 @@ export default function Storefront() {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     async function fetchData() {
       try {
         const [catsRes, prodsRes, filtersRes] = await Promise.all([
@@ -36,6 +37,8 @@ export default function Storefront() {
           const prodsData = await prodsRes.json();
           const filtersData = await filtersRes.json();
           
+          if (!isMounted) return;
+
           const formattedCats = catsData.map(c => ({
             ...c,
             icon: "https://placehold.co/100x100/FDF8F5/F5B041?text=" + c.name.substring(0, 2).toUpperCase()
@@ -48,27 +51,29 @@ export default function Storefront() {
             isVeg: true,
             customisable: p.addons && p.addons.length > 0
           }));
-          
 
           setCategories(formattedCats);
           setProducts(formattedProds);
           setFilters(filtersData);
-          setExpandedCategories(formattedCats.reduce((acc, cat) => ({ ...acc, [cat.name]: true }), {}));
-        } else {
-          // Fallback if API fails (e.g. Next.js Prisma cache issue)
-          setCategories([]);
-          setProducts([]);
+          
+          setExpandedCategories(prev => {
+            if (Object.keys(prev).length === 0) {
+              return formattedCats.reduce((acc, cat) => ({ ...acc, [cat.name]: true }), {});
+            }
+            return prev;
+          });
         }
       } catch (error) {
         console.error("Failed to fetch menu data", error);
-        // Fallback on error
-        setCategories([]);
-        setProducts([]);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     }
     fetchData();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const toggleCategory = (categoryName) => {
@@ -272,7 +277,7 @@ export default function Storefront() {
                     </svg>
                   </div>
                   <p style={{ fontWeight: 700, color: 'var(--color-text-main)', fontSize: '0.95rem', margin: '0 0 4px 0' }}>Oops! Your cart is empty.</p>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: 0 }}>You haven't placed any order yet.</p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: 0 }}>You haven&apos;t placed any order yet.</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -404,6 +409,29 @@ export default function Storefront() {
           ))}
         </div>
 
+        {cartItems.length > 0 && (
+          <div className="order-count-footer">
+            <div className="left">
+              <div className="item-count-price">
+                <div className="cart-count">
+                  <div>
+                    <span className="icon-cart"></span>
+                    <div className="order-item-count">{cartItems.reduce((sum, item) => sum + item.quantity, 0)}</div>
+                  </div>
+                  <p className="total">INR {cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString('en-IN')}</p>
+                </div>
+              </div>
+              <p className="info">Extra charges may apply</p>
+            </div>
+            <div className="right">
+              <a href="/cart" style={{ textDecoration: 'none' }}>
+                <button className="btn btn-sm my-order" tabIndex="0">
+                  <span className="mr-2">MY ORDER</span><span className="icon-caret-right"></span>
+                </button>
+              </a>
+            </div>
+          </div>
+        )}
 
       </main>
 
