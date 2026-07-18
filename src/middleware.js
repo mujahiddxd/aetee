@@ -34,7 +34,7 @@ export async function middleware(request) {
   const { pathname } = request.nextUrl;
 
   // Protect specific API routes
-  const protectedRoutes = ['/api/products', '/api/categories', '/api/orders'];
+  const protectedRoutes = ['/api/products', '/api/categories', '/api/orders', '/api/filters'];
 
   const isProtectedApi = protectedRoutes.some(route => pathname.startsWith(route));
 
@@ -43,7 +43,7 @@ export async function middleware(request) {
 
     let requiresAuth = false;
 
-    if (pathname.startsWith('/api/products') || pathname.startsWith('/api/categories')) {
+    if (pathname.startsWith('/api/products') || pathname.startsWith('/api/categories') || pathname.startsWith('/api/filters')) {
       if (isModifying) requiresAuth = true;
     } else if (pathname.startsWith('/api/orders')) {
       requiresAuth = true;

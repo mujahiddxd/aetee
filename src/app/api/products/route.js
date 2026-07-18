@@ -24,7 +24,6 @@ export async function GET() {
       price: Number(prod.price),
       categoryId: prod.categoryId,
       category: prod.category ? prod.category.name : 'Uncategorized',
-      parentCategory: prod.category?.parent ? prod.category.parent.name : null,
       image: prod.imageUrl || 'https://placehold.co/400x300/FDF3D5/4A2C1D?text=No+Image',
       isFeatured: prod.isFeatured,
       isBestSelling: prod.isBestSeller,
