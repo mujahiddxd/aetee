@@ -57,10 +57,14 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Name, price, and category are required' }, { status: 400 });
     }
 
+    if (Number(price) < 0) {
+      return NextResponse.json({ error: 'Price cannot be negative' }, { status: 400 });
+    }
+
     // Combine sizes and addons into ProductOptions
     const allOptions = [
-      ...(sizes || []).map(s => ({ name: s.name, extraPrice: Number(s.price), imageUrl: s.image || null })),
-      ...(addons || []).map(a => ({ name: a.name, extraPrice: Number(a.price), imageUrl: a.image || null }))
+      ...(sizes || []).map(s => ({ name: s.name, extraPrice: Math.max(0, Number(s.price)), imageUrl: s.image || null })),
+      ...(addons || []).map(a => ({ name: a.name, extraPrice: Math.max(0, Number(a.price)), imageUrl: a.image || null }))
     ].filter(opt => opt.name.trim() !== '');
 
     const product = await prisma.product.create({
