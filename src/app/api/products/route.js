@@ -13,9 +13,7 @@ export async function GET() {
       include: {
         category: true,
         options: true,
-        productFilters: {
-          include: { filter: true }
-        },
+        filters: true,
       },
     });
 
@@ -32,21 +30,15 @@ export async function GET() {
       isBestSelling: prod.isBestSeller,
       isSoldOut: prod.isSoldOut,
       // We map database options to the addons array for the frontend
-      // We map database options to the addons array for the frontend
-      addons: prod.options.filter(opt => opt.type === 'ADDON').map(opt => ({
+      addons: prod.options.map(opt => ({
         id: opt.id,
         name: opt.name,
         price: Number(opt.extraPrice),
         image: opt.imageUrl
       })),
-      sizes: prod.options.filter(opt => opt.type === 'SIZE').map(opt => ({
-        id: opt.id,
-        name: opt.name,
-        price: Number(opt.extraPrice),
-        image: opt.imageUrl
-      })),
-      filters: prod.productFilters.map(pf => pf.filter.id),
-      filterTags: prod.productFilters.map(pf => ({ id: pf.filter.id, name: pf.filter.name }))
+      sizes: [], // The schema doesn't differentiate sizes, so we leave it empty
+      filters: prod.filters.map(f => f.id),
+      filterTags: prod.filters.map(f => ({ id: f.id, name: f.name }))
     }));
 
     return NextResponse.json(formatted);
@@ -70,10 +62,9 @@ export async function POST(request) {
     }
 
     // Combine sizes and addons into ProductOptions
-    // Combine sizes and addons into ProductOptions
     const allOptions = [
-      ...(sizes || []).map(s => ({ name: s.name, extraPrice: Math.max(0, Number(s.price)), imageUrl: s.image || null, type: 'SIZE' })),
-      ...(addons || []).map(a => ({ name: a.name, extraPrice: Math.max(0, Number(a.price)), imageUrl: a.image || null, type: 'ADDON' }))
+      ...(sizes || []).map(s => ({ name: s.name, extraPrice: Math.max(0, Number(s.price)), imageUrl: s.image || null })),
+      ...(addons || []).map(a => ({ name: a.name, extraPrice: Math.max(0, Number(a.price)), imageUrl: a.image || null }))
     ].filter(opt => opt.name.trim() !== '');
 
     const product = await prisma.product.create({
@@ -89,14 +80,14 @@ export async function POST(request) {
         options: {
           create: allOptions,
         },
-        productFilters: {
-          create: (filterIds || []).map(id => ({ filterId: id }))
+        filters: {
+          connect: (filterIds || []).map(id => ({ id }))
         }
       },
       include: {
         category: true,
         options: true,
-        productFilters: { include: { filter: true } },
+        filters: true,
       }
     });
 
@@ -111,9 +102,9 @@ export async function POST(request) {
       isFeatured: product.isFeatured,
       isBestSelling: product.isBestSeller,
       isSoldOut: product.isSoldOut,
-      addons: product.options.filter(opt => opt.type === 'ADDON').map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
-      sizes: product.options.filter(opt => opt.type === 'SIZE').map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
-      filters: product.productFilters.map(pf => pf.filter.id)
+      addons: product.options.map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
+      sizes: [],
+      filters: product.filters.map(f => f.id)
     }, { status: 201 });
   } catch (error) {
     console.error('Failed to create product:', error);

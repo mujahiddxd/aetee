@@ -16,18 +16,13 @@ export async function PUT(request, { params }) {
     }
 
     // Combine sizes and addons into ProductOptions
-    // Combine sizes and addons into ProductOptions
     const allOptions = [
-      ...(sizes || []).map(s => ({ name: s.name, extraPrice: Math.max(0, Number(s.price)), imageUrl: s.image || null, type: 'SIZE' })),
-      ...(addons || []).map(a => ({ name: a.name, extraPrice: Math.max(0, Number(a.price)), imageUrl: a.image || null, type: 'ADDON' }))
+      ...(sizes || []).map(s => ({ name: s.name, extraPrice: Math.max(0, Number(s.price)), imageUrl: s.image || null })),
+      ...(addons || []).map(a => ({ name: a.name, extraPrice: Math.max(0, Number(a.price)), imageUrl: a.image || null }))
     ].filter(opt => opt.name.trim() !== '');
 
     // In a real app we'd intelligently update/delete options. Here we just delete all and recreate for simplicity.
     await prisma.productOption.deleteMany({
-      where: { productId: id }
-    });
-    
-    await prisma.productFilter.deleteMany({
       where: { productId: id }
     });
 
@@ -45,14 +40,14 @@ export async function PUT(request, { params }) {
         options: {
           create: allOptions,
         },
-        productFilters: {
-          create: (filterIds || []).map(id => ({ filterId: id }))
+        filters: {
+          set: (filterIds || []).map(id => ({ id }))
         }
       },
       include: {
         category: true,
         options: true,
-        productFilters: { include: { filter: true } },
+        filters: true,
       }
     });
 
@@ -67,9 +62,9 @@ export async function PUT(request, { params }) {
       isFeatured: product.isFeatured,
       isBestSelling: product.isBestSeller,
       isSoldOut: product.isSoldOut,
-      addons: product.options.filter(opt => opt.type === 'ADDON').map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
-      sizes: product.options.filter(opt => opt.type === 'SIZE').map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
-      filters: product.productFilters.map(pf => pf.filter.id)
+      addons: product.options.map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
+      sizes: [],
+      filters: product.filters.map(f => f.id)
     });
   } catch (error) {
     console.error('Failed to update product:', error);
