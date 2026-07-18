@@ -102,7 +102,7 @@ export default function Checkout() {
             key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Ensure you add NEXT_PUBLIC_RAZORPAY_KEY_ID to .env
             amount: data.amount,
             currency: data.currency,
-            name: "Porto's Bake at Home",
+            name: "Aetee's Bakehouse",
             description: "Order Payment",
             order_id: data.orderId,
             handler: async function (response) {

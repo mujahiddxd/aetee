@@ -26,10 +26,10 @@ export const metadata = {
   openGraph: {
     title: "Aetees Bakehouse",
     type: "website",
-    url: "https://skyblue-rhinoceros-487469.hostingersite.com/",
+    url: "https://aeteesbakehouse.com/",
     images: [
       {
-        url: "https://skyblue-rhinoceros-487469.hostingersite.com/aeteesbakehouse.png",
+        url: "https://aeteesbakehouse.com/aeteesbakehouse.png",
         width: 800,
         height: 600,
         alt: "Aetees Bakehouse",
@@ -41,10 +41,10 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    site: "https://skyblue-rhinoceros-487469.hostingersite.com/",
+    site: "https://aeteesbakehouse.com/",
     title: "Aetees Bakehouse",
     description: "#OrderDirect from Aetees Bakehouse",
-    images: ["https://skyblue-rhinoceros-487469.hostingersite.com/aeteesbakehouse.png"],
+    images: ["https://aeteesbakehouse.com/aeteesbakehouse.png"],
   },
 };
 
