@@ -1,14 +1,24 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/categories — Fetch all categories with product count
 export async function GET() {
   try {
     const categories = await prisma.category.findMany({
+      where: { parentId: null },
       orderBy: { createdAt: 'desc' },
       include: {
         _count: {
           select: { products: true },
+        },
+        children: {
+          include: {
+            _count: {
+              select: { products: true },
+            },
+          },
         },
       },
     });
@@ -16,8 +26,16 @@ export async function GET() {
     const formatted = categories.map((cat) => ({
       id: cat.id,
       name: cat.name,
+      parentId: cat.parentId,
       products: cat._count.products,
       createdAt: cat.createdAt,
+      children: cat.children ? cat.children.map(child => ({
+        id: child.id,
+        name: child.name,
+        parentId: child.parentId,
+        products: child._count.products,
+        createdAt: child.createdAt,
+      })) : [],
     }));
 
     return NextResponse.json(formatted);
@@ -34,7 +52,7 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name } = body;
+    const { name, parentId } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -44,11 +62,14 @@ export async function POST(request) {
     }
 
     const category = await prisma.category.create({
-      data: { name: name.trim() },
+      data: { 
+        name: name.trim(),
+        ...(parentId && { parentId })
+      },
     });
 
     return NextResponse.json(
-      { id: category.id, name: category.name, products: 0, createdAt: category.createdAt },
+      { id: category.id, name: category.name, parentId: category.parentId, products: 0, createdAt: category.createdAt, children: [] },
       { status: 201 }
     );
   } catch (error) {

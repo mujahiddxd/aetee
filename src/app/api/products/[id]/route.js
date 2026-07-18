@@ -13,8 +13,8 @@ export async function PUT(request, { params }) {
 
     // Combine sizes and addons into ProductOptions
     const allOptions = [
-      ...(sizes || []).map(s => ({ name: s.name, extraPrice: Number(s.price) })),
-      ...(addons || []).map(a => ({ name: a.name, extraPrice: Number(a.price) }))
+      ...(sizes || []).map(s => ({ name: s.name, extraPrice: Number(s.price), imageUrl: s.image || null })),
+      ...(addons || []).map(a => ({ name: a.name, extraPrice: Number(a.price), imageUrl: a.image || null }))
     ].filter(opt => opt.name.trim() !== '');
 
     // In a real app we'd intelligently update/delete options. Here we just delete all and recreate for simplicity.
@@ -54,7 +54,7 @@ export async function PUT(request, { params }) {
       isFeatured: product.isFeatured,
       isBestSelling: product.isBestSeller,
       isSoldOut: product.isSoldOut,
-      addons: product.options.map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice) })),
+      addons: product.options.map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
       sizes: [],
     });
   } catch (error) {

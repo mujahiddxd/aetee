@@ -24,8 +24,8 @@ export default function AdminProducts() {
     try {
       setLoading(true);
       const [prodRes, catRes] = await Promise.all([
-        fetch("/api/products"),
-        fetch("/api/categories")
+        fetch("/api/products", { cache: 'no-store' }),
+        fetch("/api/categories", { cache: 'no-store' })
       ]);
       
       if (!prodRes.ok || !catRes.ok) throw new Error("Failed to fetch data");
@@ -55,7 +55,7 @@ export default function AdminProducts() {
   const handleAddSize = () => {
     setFormData({
       ...formData,
-      sizes: [...formData.sizes, { name: "", price: 0 }]
+      sizes: [...formData.sizes, { name: "", price: 0, image: "" }]
     });
   };
 
@@ -74,7 +74,7 @@ export default function AdminProducts() {
   const handleAddOption = () => {
     setFormData({
       ...formData,
-      addons: [...formData.addons, { name: "", price: 0 }]
+      addons: [...formData.addons, { name: "", price: 0, image: "" }]
     });
   };
 
@@ -90,10 +90,20 @@ export default function AdminProducts() {
     setFormData({ ...formData, addons: newAddons });
   };
 
+  const flatCats = [];
+  categories.forEach(cat => {
+    flatCats.push(cat);
+    if (cat.children && cat.children.length > 0) {
+      cat.children.forEach(child => {
+        flatCats.push({ ...child, name: `${cat.name} > ${child.name}` });
+      });
+    }
+  });
+
   const openAddForm = () => {
     setIsEditing(false);
     setFormData({
-      name: "", description: "", price: "", categoryId: categories.length > 0 ? categories[0].id : "", sizes: [], addons: [],
+      name: "", description: "", price: "", categoryId: flatCats.length > 0 ? flatCats[0].id : "", sizes: [], addons: [],
       isSoldOut: false, isBestSelling: false, isFeatured: false, image: "https://placehold.co/400x300/FDF3D5/4A2C1D?text=New+Item"
     });
     setCurrentProduct({ isNew: true });
@@ -103,7 +113,7 @@ export default function AdminProducts() {
     setIsEditing(true);
     setFormData({ 
       ...prod,
-      categoryId: prod.categoryId || (categories.length > 0 ? categories[0].id : "")
+      categoryId: prod.categoryId || (flatCats.length > 0 ? flatCats[0].id : "")
     });
     setCurrentProduct(prod);
   };
@@ -208,10 +218,10 @@ export default function AdminProducts() {
               <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
                 <label>Category</label>
                 <select className="input" name="categoryId" value={formData.categoryId} onChange={handleInputChange} required disabled={submitting}>
-                  {categories.length === 0 ? (
+                  {flatCats.length === 0 ? (
                     <option value="">No categories available</option>
                   ) : (
-                    categories.map(cat => (
+                    flatCats.map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))
                   )}
@@ -225,6 +235,19 @@ export default function AdminProducts() {
                 <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
                   <input type="text" className="input" placeholder="Size Name (e.g. Large)" value={size.name} onChange={(e) => handleSizeChange(index, 'name', e.target.value)} style={{ flex: 2 }} required minLength={1} disabled={submitting} />
                   <input type="number" step="0.01" className="input" placeholder="Price Offset" value={size.price} onChange={(e) => handleSizeChange(index, 'price', e.target.value)} style={{ flex: 1 }} required min="0" disabled={submitting} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                    <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'var(--color-text-main)', border: '1px solid var(--color-border)', padding: '6px 12px', borderRadius: '6px', background: '#FFF' }}>
+                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                      Image
+                      <input type="file" accept="image/*" style={{ display: 'none' }} disabled={submitting} onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          // Mocking upload for now with a placeholder until Hostinger is implemented
+                          handleSizeChange(index, 'image', `https://placehold.co/100x100/FDF3D5/4A2C1D?text=${encodeURIComponent(size.name || 'Size')}`);
+                        }
+                      }} />
+                    </label>
+                    {size.image && <img src={size.image} alt="preview" style={{ width: '28px', height: '28px', borderRadius: '4px', objectFit: 'cover' }} />}
+                  </div>
                   <button type="button" className="btn-icon danger" onClick={() => handleRemoveSize(index)} disabled={submitting}>
                     <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                   </button>
@@ -241,6 +264,19 @@ export default function AdminProducts() {
                 <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
                   <input type="text" className="input" placeholder="Option Name" value={addon.name} onChange={(e) => handleAddonChange(index, 'name', e.target.value)} style={{ flex: 2 }} required minLength={1} disabled={submitting} />
                   <input type="number" step="0.01" className="input" placeholder="Extra Price" value={addon.price} onChange={(e) => handleAddonChange(index, 'price', e.target.value)} style={{ flex: 1 }} required min="0" disabled={submitting} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                    <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'var(--color-text-main)', border: '1px solid var(--color-border)', padding: '6px 12px', borderRadius: '6px', background: '#FFF' }}>
+                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                      Image
+                      <input type="file" accept="image/*" style={{ display: 'none' }} disabled={submitting} onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          // Mocking upload for now with a placeholder until Hostinger is implemented
+                          handleAddonChange(index, 'image', `https://placehold.co/100x100/FDF3D5/4A2C1D?text=${encodeURIComponent(addon.name || 'Addon')}`);
+                        }
+                      }} />
+                    </label>
+                    {addon.image && <img src={addon.image} alt="preview" style={{ width: '28px', height: '28px', borderRadius: '4px', objectFit: 'cover' }} />}
+                  </div>
                   <button type="button" className="btn-icon danger" onClick={() => handleRemoveOption(index)} disabled={submitting}>
                     <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                   </button>

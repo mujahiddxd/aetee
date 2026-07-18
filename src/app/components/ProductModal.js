@@ -110,7 +110,10 @@ export function ProductModal({ product, onClose }) {
                           onChange={() => handleAddonToggle(idx)}
                           style={{ width: '20px', height: '20px', accentColor: 'var(--color-primary)' }}
                         />
-                        <span style={{ fontSize: '1rem', color: 'var(--color-primary)' }}>{addon.name}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          {addon.image && <img src={addon.image} alt={addon.name} style={{ width: 48, height: 48, borderRadius: 4, objectFit: 'cover', border: '1px solid #EBEBEB' }} />}
+                          <span style={{ fontSize: '1rem', color: 'var(--color-primary)' }}>{addon.name}</span>
+                        </div>
                       </div>
                       <span style={{ fontSize: '0.95rem', color: '#666' }}>+ {addon.price.toFixed(2)}</span>
                     </label>

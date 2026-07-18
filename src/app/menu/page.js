@@ -9,12 +9,12 @@ import { ProductCard } from '../components/ProductCard';
 export default function Storefront() {
   const { cartItems, updateQuantity } = useCart();
   const [activeCategory, setActiveCategory] = useState("All");
+  const [activeSubCategory, setActiveSubCategory] = useState("All");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedCategories, setExpandedCategories] = useState({});
-  const [dietaryFilter, setDietaryFilter] = useState("all");
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
@@ -23,8 +23,8 @@ export default function Storefront() {
     async function fetchData() {
       try {
         const [catsRes, prodsRes] = await Promise.all([
-          fetch('/api/categories'),
-          fetch('/api/products')
+          fetch('/api/categories', { cache: 'no-store' }),
+          fetch('/api/products', { cache: 'no-store' })
         ]);
         
         if (catsRes.ok && prodsRes.ok) {
@@ -64,12 +64,20 @@ export default function Storefront() {
     }));
   };
 
+  const handleCategoryClick = (categoryName) => {
+    setActiveCategory(categoryName);
+    setActiveSubCategory("All");
+  };
+
   const filteredProducts = useMemo(() => products.filter(p => {
-    const matchesCategory = activeCategory === "All" || p.category === activeCategory;
-    const matchesDietary = dietaryFilter === "all" || (dietaryFilter === "eggless" ? p.isVeg : !p.isVeg);
+    const matchesCategory = activeCategory === "All" || p.category === activeCategory || p.parentCategory === activeCategory;
+    const matchesSubCategory = activeSubCategory === "All" || p.category === activeSubCategory;
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesDietary && matchesSearch;
-  }), [activeCategory, dietaryFilter, searchQuery, products]);
+    return matchesCategory && matchesSubCategory && matchesSearch;
+  }), [activeCategory, activeSubCategory, searchQuery, products]);
+
+  const currentCatData = categories.find(c => c.name === activeCategory);
+  const subCategories = currentCatData?.children || [];
 
   return (
     <div style={{ backgroundColor: 'var(--color-bg-grey)', minHeight: '100vh', paddingBottom: '60px' }}>
@@ -110,13 +118,41 @@ export default function Storefront() {
           <div className="menu-sidebar">
             <div className="category-list">
               {categories.map(cat => (
-                <div
-                  key={cat.name}
-                  className={`category-item ${activeCategory === cat.name ? "active" : ""}`}
-                  onClick={() => setActiveCategory(cat.name)}
-                >
-                  <img src={cat.icon} alt={cat.name} className="category-icon" />
-                  <span>{cat.name}</span>
+                <div key={cat.name}>
+                  <div
+                    className={`category-item ${activeCategory === cat.name && activeSubCategory === "All" ? "active" : ""}`}
+                    onClick={() => handleCategoryClick(cat.name)}
+                    style={{ marginBottom: cat.children && cat.children.length > 0 ? '4px' : '0' }}
+                  >
+                    <img src={cat.icon} alt={cat.name} className="category-icon" />
+                    <span>{cat.name}</span>
+                  </div>
+                  {/* Nested Subcategories */}
+                  {cat.children && cat.children.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', marginLeft: '40px', borderLeft: '2px solid var(--color-highlight)', paddingLeft: '8px', gap: '4px', marginBottom: '12px' }}>
+                      {cat.children.map(sub => (
+                        <div
+                          key={sub.name}
+                          style={{
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                            color: (activeCategory === cat.name && activeSubCategory === sub.name) ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                            fontWeight: (activeCategory === cat.name && activeSubCategory === sub.name) ? 700 : 500,
+                            borderRadius: '6px',
+                            background: (activeCategory === cat.name && activeSubCategory === sub.name) ? 'var(--color-highlight)' : 'transparent',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onClick={() => {
+                            setActiveCategory(cat.name);
+                            setActiveSubCategory(sub.name);
+                          }}
+                        >
+                          {sub.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -130,14 +166,23 @@ export default function Storefront() {
                 {activeCategory}
               </h2>
 
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setDietaryFilter(dietaryFilter === 'eggless' ? 'all' : 'eggless')} style={{ padding: '6px 16px', borderRadius: '24px', background: dietaryFilter === 'eggless' ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.85rem', fontWeight: 600, color: dietaryFilter === 'eggless' ? '#FFF' : 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                  Eggless
-                </button>
-                <button onClick={() => setDietaryFilter(dietaryFilter === 'egg' ? 'all' : 'egg')} style={{ padding: '6px 16px', borderRadius: '24px', background: dietaryFilter === 'egg' ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.85rem', fontWeight: 600, color: dietaryFilter === 'egg' ? '#FFF' : 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                  Egg
-                </button>
-              </div>
+              {subCategories.length > 0 && (
+                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginTop: '16px', paddingBottom: '4px' }}>
+                  <button 
+                    onClick={() => setActiveSubCategory("All")} 
+                    style={{ whiteSpace: 'nowrap', padding: '6px 16px', borderRadius: '24px', background: activeSubCategory === 'All' ? 'var(--color-text-main)' : '#FFF', border: '1px solid var(--color-border)', fontSize: '0.85rem', fontWeight: 600, color: activeSubCategory === 'All' ? '#FFF' : 'var(--color-text-main)', cursor: 'pointer' }}>
+                    All
+                  </button>
+                  {subCategories.map(sub => (
+                    <button 
+                      key={sub.id}
+                      onClick={() => setActiveSubCategory(sub.name)} 
+                      style={{ whiteSpace: 'nowrap', padding: '6px 16px', borderRadius: '24px', background: activeSubCategory === sub.name ? 'var(--color-text-main)' : '#FFF', border: '1px solid var(--color-border)', fontSize: '0.85rem', fontWeight: 600, color: activeSubCategory === sub.name ? '#FFF' : 'var(--color-text-main)', cursor: 'pointer' }}>
+                      {sub.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="product-grid">
@@ -236,9 +281,7 @@ export default function Storefront() {
           {/* Mobile Filter Options */}
           {isMobileFiltersOpen && (
             <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', padding: '12px', background: '#FFF', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-              <button onClick={() => setDietaryFilter('all')} style={{ flex: 1, padding: '8px', borderRadius: '24px', background: dietaryFilter === 'all' ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.85rem', fontWeight: 600, color: dietaryFilter === 'all' ? '#FFF' : 'var(--color-primary)', cursor: 'pointer' }}>All</button>
-              <button onClick={() => setDietaryFilter('eggless')} style={{ flex: 1, padding: '8px', borderRadius: '24px', background: dietaryFilter === 'eggless' ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.85rem', fontWeight: 600, color: dietaryFilter === 'eggless' ? '#FFF' : 'var(--color-primary)', cursor: 'pointer' }}>Eggless</button>
-              <button onClick={() => setDietaryFilter('egg')} style={{ flex: 1, padding: '8px', borderRadius: '24px', background: dietaryFilter === 'egg' ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.85rem', fontWeight: 600, color: dietaryFilter === 'egg' ? '#FFF' : 'var(--color-primary)', cursor: 'pointer' }}>Egg</button>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Additional filters are not available at this time.</p>
             </div>
           )}
 
@@ -255,16 +298,38 @@ export default function Storefront() {
               </div>
 
               {expandedCategories[cat.name] && (
-                <div className="product-grid mobile-product-grid">
-                  {products
-                    .filter(p => p.category === cat.name && (dietaryFilter === 'all' || (dietaryFilter === 'eggless' ? p.isVeg : !p.isVeg)) && p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                    .map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        product={product}
-                        onSelect={setSelectedProduct}
-                      />
-                    ))}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {cat.children && cat.children.length > 0 && (
+                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '0 16px 12px 16px' }}>
+                      <button 
+                        onClick={() => setActiveSubCategory("All")} 
+                        style={{ whiteSpace: 'nowrap', padding: '4px 12px', borderRadius: '16px', background: activeSubCategory === 'All' ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.8rem', fontWeight: 600, color: activeSubCategory === 'All' ? '#FFF' : 'var(--color-primary)' }}>
+                        All
+                      </button>
+                      {cat.children.map(sub => (
+                        <button 
+                          key={sub.name}
+                          onClick={() => {
+                            setActiveCategory(cat.name);
+                            setActiveSubCategory(sub.name);
+                          }} 
+                          style={{ whiteSpace: 'nowrap', padding: '4px 12px', borderRadius: '16px', background: activeSubCategory === sub.name ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.8rem', fontWeight: 600, color: activeSubCategory === sub.name ? '#FFF' : 'var(--color-primary)' }}>
+                          {sub.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="product-grid mobile-product-grid">
+                    {products
+                      .filter(p => (p.category === cat.name || p.parentCategory === cat.name) && (activeSubCategory === "All" || p.category === activeSubCategory) && p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                      .map((product) => (
+                        <ProductCard
+                          key={product.id}
+                          product={product}
+                          onSelect={setSelectedProduct}
+                        />
+                      ))}
+                  </div>
                 </div>
               )}
             </div>

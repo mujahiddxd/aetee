@@ -1,12 +1,16 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const products = await prisma.product.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
-        category: true,
+        category: {
+          include: { parent: true }
+        },
         options: true,
       },
     });
@@ -18,6 +22,7 @@ export async function GET() {
       price: Number(prod.price),
       categoryId: prod.categoryId,
       category: prod.category ? prod.category.name : 'Uncategorized',
+      parentCategory: prod.category?.parent ? prod.category.parent.name : null,
       image: prod.imageUrl || 'https://placehold.co/400x300/FDF3D5/4A2C1D?text=No+Image',
       isFeatured: prod.isFeatured,
       isBestSelling: prod.isBestSeller,
@@ -26,7 +31,8 @@ export async function GET() {
       addons: prod.options.map(opt => ({
         id: opt.id,
         name: opt.name,
-        price: Number(opt.extraPrice)
+        price: Number(opt.extraPrice),
+        image: opt.imageUrl
       })),
       sizes: [], // The schema doesn't differentiate sizes, so we leave it empty
     }));
@@ -49,8 +55,8 @@ export async function POST(request) {
 
     // Combine sizes and addons into ProductOptions
     const allOptions = [
-      ...(sizes || []).map(s => ({ name: s.name, extraPrice: Number(s.price) })),
-      ...(addons || []).map(a => ({ name: a.name, extraPrice: Number(a.price) }))
+      ...(sizes || []).map(s => ({ name: s.name, extraPrice: Number(s.price), imageUrl: s.image || null })),
+      ...(addons || []).map(a => ({ name: a.name, extraPrice: Number(a.price), imageUrl: a.image || null }))
     ].filter(opt => opt.name.trim() !== '');
 
     const product = await prisma.product.create({
@@ -84,7 +90,7 @@ export async function POST(request) {
       isFeatured: product.isFeatured,
       isBestSelling: product.isBestSeller,
       isSoldOut: product.isSoldOut,
-      addons: product.options.map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice) })),
+      addons: product.options.map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
       sizes: [],
     }, { status: 201 });
   } catch (error) {
