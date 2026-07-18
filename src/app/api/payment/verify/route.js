@@ -11,6 +11,10 @@ export async function POST(req) {
       razorpay_signature,
     } = body;
 
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+    }
+
     // 1. Re-generate the signature
     const secret = process.env.RAZORPAY_KEY_SECRET;
     const generated_signature = crypto

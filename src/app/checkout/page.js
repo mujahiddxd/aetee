@@ -132,10 +132,18 @@ export default function Checkout() {
             },
             theme: {
               color: "#5A3424"
+            },
+            modal: {
+              ondismiss: function() {
+                setShowModal({ isOpen: true, type: 'error', message: 'Payment was cancelled by the user.' });
+              }
             }
           };
 
           const paymentObject = new window.Razorpay(options);
+          paymentObject.on('payment.failed', function (response){
+            setShowModal({ isOpen: true, type: 'error', message: 'Payment failed: ' + response.error.description });
+          });
           paymentObject.open();
         } else {
           setShowModal({ isOpen: true, type: 'error', message: data.error || 'Failed to initiate payment.' });

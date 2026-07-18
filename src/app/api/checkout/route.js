@@ -54,8 +54,11 @@ export async function POST(req) {
     });
 
     // 3. Create Razorpay Order
-    // In production, recalculate totalAmount from DB prices to prevent tampering!
     const amountInPaise = Math.round(totalAmount * 100);
+    if (amountInPaise < 100) {
+      return NextResponse.json({ success: false, error: 'Minimum amount must be at least 100 paise' }, { status: 400 });
+    }
+
     const options = {
       amount: amountInPaise,
       currency: 'INR',
@@ -91,6 +94,11 @@ export async function POST(req) {
     });
   } catch (error) {
     console.error('Error in checkout:', error);
+    
+    if (error.statusCode === 401) {
+      return NextResponse.json({ success: false, error: 'Authentication failed' }, { status: 401 });
+    }
+
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to process checkout' },
       { status: 500 }
