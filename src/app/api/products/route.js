@@ -1,13 +1,19 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const products = await prisma.product.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { sortOrder: 'asc' },
+        { createdAt: 'desc' }
+      ],
       include: {
         category: true,
         options: true,
+        filters: true,
       },
     });
 
@@ -18,6 +24,7 @@ export async function GET() {
       price: Number(prod.price),
       categoryId: prod.categoryId,
       category: prod.category ? prod.category.name : 'Uncategorized',
+      parentCategory: prod.category?.parent ? prod.category.parent.name : null,
       image: prod.imageUrl || 'https://placehold.co/400x300/FDF3D5/4A2C1D?text=No+Image',
       isFeatured: prod.isFeatured,
       isBestSelling: prod.isBestSeller,
@@ -26,9 +33,12 @@ export async function GET() {
       addons: prod.options.map(opt => ({
         id: opt.id,
         name: opt.name,
-        price: Number(opt.extraPrice)
+        price: Number(opt.extraPrice),
+        image: opt.imageUrl
       })),
       sizes: [], // The schema doesn't differentiate sizes, so we leave it empty
+      filters: prod.filters.map(f => f.id),
+      filterTags: prod.filters.map(f => ({ id: f.id, name: f.name }))
     }));
 
     return NextResponse.json(formatted);
@@ -41,16 +51,20 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, description, price, categoryId, sizes, addons, isFeatured, isBestSelling, isSoldOut, image } = body;
+    const { name, description, price, categoryId, sizes, addons, isFeatured, isBestSelling, isSoldOut, image, filterIds } = body;
 
     if (!name || !price || !categoryId) {
       return NextResponse.json({ error: 'Name, price, and category are required' }, { status: 400 });
     }
 
+    if (Number(price) < 0) {
+      return NextResponse.json({ error: 'Price cannot be negative' }, { status: 400 });
+    }
+
     // Combine sizes and addons into ProductOptions
     const allOptions = [
-      ...(sizes || []).map(s => ({ name: s.name, extraPrice: Number(s.price) })),
-      ...(addons || []).map(a => ({ name: a.name, extraPrice: Number(a.price) }))
+      ...(sizes || []).map(s => ({ name: s.name, extraPrice: Math.max(0, Number(s.price)), imageUrl: s.image || null })),
+      ...(addons || []).map(a => ({ name: a.name, extraPrice: Math.max(0, Number(a.price)), imageUrl: a.image || null }))
     ].filter(opt => opt.name.trim() !== '');
 
     const product = await prisma.product.create({
@@ -65,11 +79,15 @@ export async function POST(request) {
         isSoldOut: Boolean(isSoldOut),
         options: {
           create: allOptions,
+        },
+        filters: {
+          connect: (filterIds || []).map(id => ({ id }))
         }
       },
       include: {
         category: true,
         options: true,
+        filters: true,
       }
     });
 
@@ -84,8 +102,9 @@ export async function POST(request) {
       isFeatured: product.isFeatured,
       isBestSelling: product.isBestSeller,
       isSoldOut: product.isSoldOut,
-      addons: product.options.map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice) })),
+      addons: product.options.map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
       sizes: [],
+      filters: product.filters.map(f => f.id)
     }, { status: 201 });
   } catch (error) {
     console.error('Failed to create product:', error);

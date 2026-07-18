@@ -5,16 +5,20 @@ export async function PUT(request, { params }) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, description, price, categoryId, sizes, addons, isFeatured, isBestSelling, isSoldOut, image } = body;
+    const { name, description, price, categoryId, sizes, addons, isFeatured, isBestSelling, isSoldOut, image, filterIds } = body;
 
     if (!name || !price || !categoryId) {
       return NextResponse.json({ error: 'Name, price, and category are required' }, { status: 400 });
     }
 
+    if (Number(price) < 0) {
+      return NextResponse.json({ error: 'Price cannot be negative' }, { status: 400 });
+    }
+
     // Combine sizes and addons into ProductOptions
     const allOptions = [
-      ...(sizes || []).map(s => ({ name: s.name, extraPrice: Number(s.price) })),
-      ...(addons || []).map(a => ({ name: a.name, extraPrice: Number(a.price) }))
+      ...(sizes || []).map(s => ({ name: s.name, extraPrice: Math.max(0, Number(s.price)), imageUrl: s.image || null })),
+      ...(addons || []).map(a => ({ name: a.name, extraPrice: Math.max(0, Number(a.price)), imageUrl: a.image || null }))
     ].filter(opt => opt.name.trim() !== '');
 
     // In a real app we'd intelligently update/delete options. Here we just delete all and recreate for simplicity.
@@ -35,11 +39,15 @@ export async function PUT(request, { params }) {
         isSoldOut: Boolean(isSoldOut),
         options: {
           create: allOptions,
+        },
+        filters: {
+          set: (filterIds || []).map(id => ({ id }))
         }
       },
       include: {
         category: true,
         options: true,
+        filters: true,
       }
     });
 
@@ -54,8 +62,9 @@ export async function PUT(request, { params }) {
       isFeatured: product.isFeatured,
       isBestSelling: product.isBestSeller,
       isSoldOut: product.isSoldOut,
-      addons: product.options.map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice) })),
+      addons: product.options.map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
       sizes: [],
+      filters: product.filters.map(f => f.id)
     });
   } catch (error) {
     console.error('Failed to update product:', error);

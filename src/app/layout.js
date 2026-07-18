@@ -23,7 +23,6 @@ const nunito = Nunito({
 export const metadata = {
   title: "Aetees Bakehouse",
   description: "#OrderDirect from Aetees Bakehouse. Beautiful mobile menu for dine-in, take-away and online ordering.",
-  themeColor: "#000000",
   openGraph: {
     title: "Aetees Bakehouse",
     type: "website",
@@ -47,6 +46,10 @@ export const metadata = {
     description: "#OrderDirect from Aetees Bakehouse",
     images: ["https://airmenusimages.blr1.cdn.digitaloceanspaces.com/brands/brands_1636_1752772565667_Nanz_bakehouse_BROWN_LOGO.png"],
   },
+};
+
+export const viewport = {
+  themeColor: '#000000',
 };
 
 export default function RootLayout({ children }) {

@@ -2,30 +2,30 @@
 
 import { useState, useEffect } from "react";
 
-export default function AdminCategories() {
-  const [categories, setCategories] = useState([]);
-  const [newCategory, setNewCategory] = useState("");
+export default function AdminFilters() {
+  const [filters, setFilters] = useState([]);
+  const [newFilter, setNewFilter] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState(new Set());
+  const [selectedFilterIds, setSelectedFilterIds] = useState(new Set());
 
   useEffect(() => {
-    fetchCategories();
+    fetchFilters();
   }, []);
 
-  const fetchCategories = async () => {
+  const fetchFilters = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/categories", { cache: 'no-store' });
-      if (!res.ok) throw new Error("Failed to fetch categories");
+      const res = await fetch("/api/filters", { cache: 'no-store' });
+      if (!res.ok) throw new Error("Failed to fetch filters");
       const data = await res.json();
-      setCategories(data);
+      setFilters(data);
       setError("");
     } catch (err) {
-      setError("Failed to load categories. Please try again.");
+      setError("Failed to load filters. Please try again.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -34,29 +34,29 @@ export default function AdminCategories() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!newCategory.trim()) return;
+    if (!newFilter.trim()) return;
 
     try {
       setSubmitting(true);
       setError("");
       
-      const url = isEditing ? `/api/categories/${editingId}` : "/api/categories";
+      const url = isEditing ? `/api/filters/${editingId}` : "/api/filters";
       const method = isEditing ? "PUT" : "POST";
       
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          name: newCategory
+          name: newFilter
         }),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || `Failed to ${isEditing ? "update" : "add"} category`);
+        throw new Error(data.error || `Failed to ${isEditing ? "update" : "add"} filter`);
       }
 
-      await fetchCategories();
+      await fetchFilters();
       resetForm();
     } catch (err) {
       setError(err.message);
@@ -65,69 +65,69 @@ export default function AdminCategories() {
     }
   };
 
-  const openEditForm = (cat) => {
+  const openEditForm = (filter) => {
     setIsEditing(true);
-    setEditingId(cat.id);
-    setNewCategory(cat.name);
+    setEditingId(filter.id);
+    setNewFilter(filter.name);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const resetForm = () => {
     setIsEditing(false);
     setEditingId(null);
-    setNewCategory("");
+    setNewFilter("");
   };
 
-  const handleRemoveCategory = async (id) => {
-    if (!confirm("Are you sure you want to delete this category?")) return;
+  const handleRemoveFilter = async (id) => {
+    if (!confirm("Are you sure you want to delete this filter?")) return;
 
     try {
       setError("");
-      const res = await fetch(`/api/categories/${id}`, {
+      const res = await fetch(`/api/filters/${id}`, {
         method: "DELETE",
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to delete category");
+        throw new Error(data.error || "Failed to delete filter");
       }
-      await fetchCategories();
+      await fetchFilters();
     } catch (err) {
       setError(err.message);
     }
   };
 
-  const handleSelectCategory = (id) => {
-    const newSelected = new Set(selectedCategoryIds);
+  const handleSelectFilter = (id) => {
+    const newSelected = new Set(selectedFilterIds);
     if (newSelected.has(id)) newSelected.delete(id);
     else newSelected.add(id);
-    setSelectedCategoryIds(newSelected);
+    setSelectedFilterIds(newSelected);
   };
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      const allIds = flattenedCategories.map(c => c.id);
-      setSelectedCategoryIds(new Set(allIds));
+      const allIds = filters.map(c => c.id);
+      setSelectedFilterIds(new Set(allIds));
     } else {
-      setSelectedCategoryIds(new Set());
+      setSelectedFilterIds(new Set());
     }
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`Are you sure you want to delete ${selectedCategoryIds.size} categories? Products in these categories will not be deleted, but will lose their category assignment.`)) return;
+    if (!confirm(`Are you sure you want to delete ${selectedFilterIds.size} filters?`)) return;
     
     try {
       setLoading(true);
-      const res = await fetch('/api/categories/bulk', {
+      const res = await fetch('/api/filters/bulk', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: Array.from(selectedCategoryIds) })
+        body: JSON.stringify({ ids: Array.from(selectedFilterIds) })
       });
       
-      if (!res.ok) throw new Error("Failed to delete categories");
+      if (!res.ok) throw new Error("Failed to delete filters");
       
-      await fetchCategories();
-      setSelectedCategoryIds(new Set());
+      await fetchFilters();
+      setSelectedFilterIds(new Set());
     } catch (err) {
       setError(err.message);
     } finally {
@@ -135,20 +135,18 @@ export default function AdminCategories() {
     }
   };
 
-  const flattenedCategories = categories.map(cat => ({ ...cat, isChild: false }));
-
   return (
     <div>
       <div className="page-header">
-        <h1>Manage Categories</h1>
+        <h1>Manage Filters</h1>
         <div style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', fontWeight: 600 }}>
-          Total Main: {categories.length}
+          Total Filters: {filters.length}
         </div>
       </div>
 
-      {selectedCategoryIds.size > 0 && (
+      {selectedFilterIds.size > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--color-bg-grey)', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--color-border)' }}>
-          <span style={{ fontWeight: 600 }}>{selectedCategoryIds.size} categor{selectedCategoryIds.size > 1 ? 'ies' : 'y'} selected</span>
+          <span style={{ fontWeight: 600 }}>{selectedFilterIds.size} filter{selectedFilterIds.size > 1 ? 's' : ''} selected</span>
           <button className="btn btn-secondary" onClick={handleBulkDelete} style={{ color: '#ff3b30', borderColor: '#ff3b30', background: 'rgba(255,59,48,0.1)' }}>
             Delete Selected
           </button>
@@ -162,16 +160,16 @@ export default function AdminCategories() {
       )}
 
       <div className="card mb-lg">
-        <h2 style={{ marginBottom: '16px', fontSize: '1.2rem' }}>{isEditing ? "Edit Category" : "Add New Category"}</h2>
+        <h2 style={{ marginBottom: '16px', fontSize: '1.2rem' }}>{isEditing ? "Edit Filter" : "Add New Filter"}</h2>
         <form onSubmit={handleSubmit} className="flex gap-sm items-end" style={{ flexWrap: 'wrap' }}>
           <div className="input-group" style={{ flex: 1, minWidth: '200px', margin: 0 }}>
-            <label>Category Name</label>
+            <label>Filter Name</label>
             <input 
               type="text" 
               className="input" 
-              placeholder="e.g. Cakes, Eggless" 
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
+              placeholder="e.g. Vegetarian, Must Try!" 
+              value={newFilter}
+              onChange={(e) => setNewFilter(e.target.value)}
               disabled={submitting}
               required
               minLength={2}
@@ -198,47 +196,47 @@ export default function AdminCategories() {
                 <input 
                   type="checkbox" 
                   onChange={handleSelectAll}
-                  checked={flattenedCategories.length > 0 && selectedCategoryIds.size === flattenedCategories.length}
+                  checked={filters.length > 0 && selectedFilterIds.size === filters.length}
                 />
               </th>
-              <th>Category Name</th>
+              <th>Filter Name</th>
               <th width="120">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="2" style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>Loading categories...</td>
+                <td colSpan="3" style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>Loading filters...</td>
               </tr>
-            ) : flattenedCategories.length === 0 ? (
+            ) : filters.length === 0 ? (
               <tr>
-                <td colSpan="2" style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>No categories found.</td>
+                <td colSpan="3" style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>No filters found.</td>
               </tr>
             ) : (
-              flattenedCategories.map((cat) => (
-                <tr key={cat.id} style={{ backgroundColor: cat.isChild ? '#fdfdfd' : 'transparent' }}>
+              filters.map((filter) => (
+                <tr key={filter.id}>
                   <td>
                     <input 
                       type="checkbox" 
-                      checked={selectedCategoryIds.has(cat.id)}
-                      onChange={() => handleSelectCategory(cat.id)}
+                      checked={selectedFilterIds.has(filter.id)}
+                      onChange={() => handleSelectFilter(filter.id)}
                     />
                   </td>
                   <td style={{ paddingLeft: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <div>
                         <strong style={{ fontSize: '1.1rem', color: 'var(--color-text-main)' }}>
-                          {cat.name}
+                          {filter.name}
                         </strong>
                       </div>
                     </div>
                   </td>
                   <td>
                     <div className="flex gap-sm">
-                      <button onClick={() => openEditForm(cat)} className="btn-icon" title="Edit">
+                      <button onClick={() => openEditForm(filter)} className="btn-icon" title="Edit">
                         <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                       </button>
-                      <button onClick={() => handleRemoveCategory(cat.id)} className="btn-icon danger" title="Remove">
+                      <button onClick={() => handleRemoveFilter(filter.id)} className="btn-icon danger" title="Remove">
                         <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                       </button>
                     </div>

@@ -42,11 +42,11 @@ model Address {
 
 model Category {
   id        String    @id @default(uuid())
-  name      String    @unique @db.VarChar(255)
+  name      String    @db.VarChar(255)
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
 
-  products Product[]
+  products  Product[]
 
   @@map("categories")
 }
@@ -61,14 +61,27 @@ model Product {
   isFeatured   Boolean  @default(false) @map("is_featured")
   isBestSeller Boolean  @default(false) @map("is_best_seller")
   isSoldOut    Boolean  @default(false) @map("is_sold_out")
+  sortOrder    Int      @default(0) @map("sort_order")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
 
   category Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   options  ProductOption[]
   orderItems OrderItem[]
+  filters    FilterTag[]
 
   @@map("products")
+}
+
+model FilterTag {
+  id        String    @id @default(uuid())
+  name      String    @db.VarChar(100) @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  products  Product[]
+
+  @@map("filter_tags")
 }
 
 model ProductOption {
@@ -76,6 +89,7 @@ model ProductOption {
   productId  String   @map("product_id")
   name       String   @db.VarChar(255)
   extraPrice Decimal  @default(0.00) @map("extra_price") @db.Decimal(10, 2)
+  imageUrl   String?  @map("image_url") @db.VarChar(1024)
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
 

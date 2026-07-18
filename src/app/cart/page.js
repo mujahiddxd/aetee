@@ -24,10 +24,10 @@ export default function Cart() {
     setItemToDelete(null);
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotal = parseFloat(cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2));
   const delivery = subtotal > 0 ? 50 : 0;
-  const taxes = subtotal * 0.05;
-  const total = subtotal + delivery + taxes;
+  const taxes = parseFloat((subtotal * 0.05).toFixed(2));
+  const total = parseFloat((subtotal + delivery + taxes).toFixed(2));
 
   const validPincodes = ['110001', '110002', '110011', '110012', '110013', '110020'];
 

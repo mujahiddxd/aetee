@@ -1,12 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-// DELETE /api/categories/[id] — Delete a category by ID
 export async function DELETE(request, { params }) {
   try {
     const { id } = await params;
 
-    await prisma.category.delete({
+    await prisma.filterTag.delete({
       where: { id },
     });
 
@@ -14,19 +13,18 @@ export async function DELETE(request, { params }) {
   } catch (error) {
     if (error.code === 'P2025') {
       return NextResponse.json(
-        { error: 'Category not found' },
+        { error: 'Filter not found' },
         { status: 404 }
       );
     }
-    console.error('Failed to delete category:', error);
+    console.error('Failed to delete filter:', error);
     return NextResponse.json(
-      { error: 'Failed to delete category' },
+      { error: 'Failed to delete filter' },
       { status: 500 }
     );
   }
 }
 
-// PUT /api/categories/[id] — Update a category by ID
 export async function PUT(request, { params }) {
   try {
     const { id } = await params;
@@ -35,29 +33,35 @@ export async function PUT(request, { params }) {
 
     if (!name || !name.trim()) {
       return NextResponse.json(
-        { error: 'Category name is required' },
+        { error: 'Filter name is required' },
         { status: 400 }
       );
     }
 
-    const updatedCategory = await prisma.category.update({
+    const updatedFilter = await prisma.filterTag.update({
       where: { id },
       data: {
         name: name.trim()
       },
     });
 
-    return NextResponse.json(updatedCategory);
+    return NextResponse.json(updatedFilter);
   } catch (error) {
     if (error.code === 'P2025') {
       return NextResponse.json(
-        { error: 'Category not found' },
+        { error: 'Filter not found' },
         { status: 404 }
       );
     }
-    console.error('Failed to update category:', error);
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'A filter with this name already exists' },
+        { status: 409 }
+      );
+    }
+    console.error('Failed to update filter:', error);
     return NextResponse.json(
-      { error: 'Failed to update category' },
+      { error: 'Failed to update filter' },
       { status: 500 }
     );
   }

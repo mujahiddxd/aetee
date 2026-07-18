@@ -73,14 +73,21 @@ export default function Checkout() {
     if (Object.keys(newErrors).length === 0) {
       try {
         // 1. Create order on backend
-        const response = await fetch('/api/payment/create-order', {
+        const response = await fetch('/api/checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            userId: 'dummy-user-id', // Replace with real logged-in user ID
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            addressLine1: `${formData.houseNo}, ${formData.address}`,
+            addressLine2: formData.landmark || null,
+            city: 'Mumbai',
+            postalCode: formData.pincode,
             totalAmount: grandTotal,
             items: cartItems.map(item => ({
-              productId: item.productId || 'dummy-product-id', // Ensure productId is passed
+              productId: item.product.id,
               quantity: item.quantity,
               price: item.price
             }))
@@ -142,9 +149,9 @@ export default function Checkout() {
     }
   };
 
-  const itemTotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const itemTotal = parseFloat(cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2));
   const deliveryCharges = 60;
-  const grandTotal = itemTotal + deliveryCharges;
+  const grandTotal = parseFloat((itemTotal + deliveryCharges).toFixed(2));
 
   return (
     <div className="checkout-container">
@@ -326,6 +333,7 @@ export default function Checkout() {
                 value={formData.date}
                 onChange={handleInputChange}
                 className={`form-input ${errors.date ? 'error' : ''}`}
+                required
               />
               {errors.date && <div className="error-message">{errors.date}</div>}
             </div>
@@ -336,6 +344,7 @@ export default function Checkout() {
                 value={formData.time}
                 onChange={handleInputChange}
                 className={`form-input ${errors.time ? 'error' : ''}`}
+                required
               >
                 <option value="" disabled>Select Time </option>
                 <option value="9-11">9:00 AM – 11:00 AM</option>
@@ -362,6 +371,8 @@ export default function Checkout() {
                 onChange={handleInputChange}
                 className={`form-input ${errors.firstName ? 'error' : ''}`} 
                 placeholder="First Name" 
+                required
+                minLength={2}
               />
               {errors.firstName && <div className="error-message">{errors.firstName}</div>}
             </div>
@@ -373,6 +384,8 @@ export default function Checkout() {
                 onChange={handleInputChange}
                 className={`form-input ${errors.lastName ? 'error' : ''}`} 
                 placeholder="Last Name" 
+                required
+                minLength={2}
               />
               {errors.lastName && <div className="error-message">{errors.lastName}</div>}
             </div>
@@ -386,6 +399,7 @@ export default function Checkout() {
               onChange={handleInputChange}
               className={`form-input ${errors.email ? 'error' : ''}`} 
               placeholder="Email Address" 
+              required
             />
             {errors.email && <div className="error-message">{errors.email}</div>}
           </div>
@@ -416,6 +430,10 @@ export default function Checkout() {
                 className={`form-input ${errors.phone ? 'error' : ''}`}
                 placeholder="Phone Number"
                 style={{ borderRadius: '0 12px 12px 0' }}
+                required
+                pattern="[0-9]{10}"
+                maxLength={10}
+                minLength={10}
               />
             </div>
             {errors.phone && <div className="error-message">{errors.phone}</div>}
@@ -435,6 +453,7 @@ export default function Checkout() {
               placeholder="Delivery Address"
               rows="3"
               style={{ resize: 'vertical' }}
+              required
             ></textarea>
             {errors.address && <div className="error-message">{errors.address}</div>}
           </div>
@@ -447,6 +466,7 @@ export default function Checkout() {
               onChange={handleInputChange}
               className={`form-input ${errors.houseNo ? 'error' : ''}`} 
               placeholder="House No / Apartment" 
+              required
             />
             {errors.houseNo && <div className="error-message">{errors.houseNo}</div>}
           </div>
@@ -471,6 +491,8 @@ export default function Checkout() {
                 className={`form-input ${errors.pincode ? 'error' : ''}`} 
                 placeholder="Pincode (Mumbai Only)" 
                 maxLength="6"
+                required
+                pattern="^400[0-9]{3}$"
               />
               {errors.pincode && <div className="error-message">{errors.pincode}</div>}
             </div>
