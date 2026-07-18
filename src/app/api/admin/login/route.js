@@ -1,22 +1,21 @@
 import { NextResponse } from 'next/server';
+import { generateAdminToken } from '@/lib/auth';
 
 export async function POST(request) {
   try {
     const { username, password } = await request.json();
 
     const validUsername = process.env.ADMIN_USERNAME || 'admin';
-    const validPassword = process.env.ADMIN_PASSWORD || 'aetee@2026'; // fallback to old default just in case
-
-    console.log('Login attempt:', { providedUsername: username, validUsername, validPasswordProvided: process.env.ADMIN_PASSWORD ? true : false });
+    const validPassword = process.env.ADMIN_PASSWORD || 'aetee@2026';
 
     if (username === validUsername && password === validPassword) {
-      // Create a response
+      const token = generateAdminToken();
+
       const response = NextResponse.json({ success: true, message: 'Logged in successfully' }, { status: 200 });
       
-      // Set the admin token cookie (HttpOnly for security)
       response.cookies.set({
         name: 'admin_token',
-        value: 'authenticated', // In a real app, use a JWT here
+        value: token,
         httpOnly: true,
         path: '/',
         secure: process.env.NODE_ENV === 'production',

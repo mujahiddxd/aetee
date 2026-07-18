@@ -1,17 +1,44 @@
 import { NextResponse } from 'next/server';
 
-export function middleware(request) {
+// NOTE: This file uses the deprecated "middleware" convention in Next.js 16.
+// It still works correctly. A future migration to route-level auth checks
+// may be needed when Next.js fully removes middleware support.
+
+/**
+ * Verify the admin token using Web Crypto API (Edge Runtime compatible).
+ * This computes the same HMAC-SHA256 as src/lib/auth.js (Node.js runtime).
+ */
+async function verifyAdminToken(tokenValue) {
+  if (!tokenValue) return false;
+  
+  const secret = process.env.ADMIN_SECRET || 'aetee-default-secret-key-2026';
+  const encoder = new TextEncoder();
+  
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode('admin-session'));
+  const expectedToken = Array.from(new Uint8Array(signature))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+  
+  return tokenValue === expectedToken;
+}
+
+export async function proxy(request) {
   const { pathname } = request.nextUrl;
 
   // Protect specific API routes
   const protectedRoutes = ['/api/products', '/api/categories', '/api/orders'];
 
-  // Check if it's an admin path that modifies data or accesses secure data
   const isProtectedApi = protectedRoutes.some(route => pathname.startsWith(route));
 
   if (isProtectedApi) {
-    // Only protect POST, PUT, DELETE for products/categories. GET is public.
-    // For orders, all methods might be protected (admin only) EXCEPT checkout/payment.
     const isModifying = ['POST', 'PUT', 'DELETE'].includes(request.method);
 
     let requiresAuth = false;
@@ -19,14 +46,14 @@ export function middleware(request) {
     if (pathname.startsWith('/api/products') || pathname.startsWith('/api/categories')) {
       if (isModifying) requiresAuth = true;
     } else if (pathname.startsWith('/api/orders')) {
-      // Orders API requires auth for all operations (admin view/update)
       requiresAuth = true;
     }
 
     if (requiresAuth) {
       const token = request.cookies.get('admin_token');
+      const isValid = await verifyAdminToken(token?.value);
 
-      if (!token || token.value !== 'authenticated') {
+      if (!isValid) {
         return NextResponse.json({ error: 'Unauthorized access' }, { status: 401 });
       }
     }
@@ -35,9 +62,9 @@ export function middleware(request) {
   // Protect Admin UI Pages (except the login page itself)
   if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
     const token = request.cookies.get('admin_token');
+    const isValid = await verifyAdminToken(token?.value);
 
-    if (!token || token.value !== 'authenticated') {
-      // Redirect unauthenticated users to the admin login page
+    if (!isValid) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
   }
@@ -46,6 +73,5 @@ export function middleware(request) {
 }
 
 export const config = {
-  // Apply middleware to API routes and admin routes
   matcher: ['/api/:path*', '/admin/:path*'],
 };

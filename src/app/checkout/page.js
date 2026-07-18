@@ -73,14 +73,21 @@ export default function Checkout() {
     if (Object.keys(newErrors).length === 0) {
       try {
         // 1. Create order on backend
-        const response = await fetch('/api/payment/create-order', {
+        const response = await fetch('/api/checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            userId: 'dummy-user-id', // Replace with real logged-in user ID
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            addressLine1: `${formData.houseNo}, ${formData.address}`,
+            addressLine2: formData.landmark || null,
+            city: 'Mumbai',
+            postalCode: formData.pincode,
             totalAmount: grandTotal,
             items: cartItems.map(item => ({
-              productId: item.productId || 'dummy-product-id', // Ensure productId is passed
+              productId: item.product.id,
               quantity: item.quantity,
               price: item.price
             }))

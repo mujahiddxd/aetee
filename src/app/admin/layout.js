@@ -1,16 +1,26 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import './admin.css';
 
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
+  const router = useRouter();
   
   // Don't show sidebar/topbar on login page
   if (pathname === '/admin/login') {
     return children;
   }
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
+    router.push('/admin/login');
+  };
 
   return (
     <div className="admin-layout-wrapper">
@@ -37,9 +47,9 @@ export default function AdminLayout({ children }) {
         {/* Top Navbar */}
         <header className="admin-topbar">
           <div className="admin-topbar-title">Admin Panel</div>
-          <Link href="/admin/login" className="btn btn-secondary" style={{ padding: '6px 16px', fontSize: '0.8rem' }}>
+          <button onClick={handleLogout} className="btn btn-secondary" style={{ padding: '6px 16px', fontSize: '0.8rem' }}>
             Logout
-          </Link>
+          </button>
         </header>
 
         {/* Content */}
