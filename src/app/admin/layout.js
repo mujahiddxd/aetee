@@ -39,6 +39,9 @@ export default function AdminLayout({ children }) {
           <Link href="/admin/products" className={`admin-nav-item ${pathname === '/admin/products' ? 'active' : ''}`}>
             Products
           </Link>
+          <Link href="/admin/filters" className={`admin-nav-item ${pathname === '/admin/filters' ? 'active' : ''}`}>
+            Filters
+          </Link>
         </nav>
       </aside>
 

@@ -3,10 +3,9 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-// GET /api/categories — Fetch all categories with product count
 export async function GET() {
   try {
-    const categories = await prisma.category.findMany({
+    const filters = await prisma.filterTag.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
         _count: {
@@ -15,24 +14,23 @@ export async function GET() {
       },
     });
 
-    const formatted = categories.map((cat) => ({
-      id: cat.id,
-      name: cat.name,
-      products: cat._count.products,
-      createdAt: cat.createdAt,
+    const formatted = filters.map((f) => ({
+      id: f.id,
+      name: f.name,
+      products: f._count.products,
+      createdAt: f.createdAt,
     }));
 
     return NextResponse.json(formatted);
   } catch (error) {
-    console.error('Failed to fetch categories:', error);
+    console.error('Failed to fetch filters:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch categories' },
+      { error: 'Failed to fetch filters' },
       { status: 500 }
     );
   }
 }
 
-// POST /api/categories — Create a new category
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -40,32 +38,29 @@ export async function POST(request) {
 
     if (!name || !name.trim()) {
       return NextResponse.json(
-        { error: 'Category name is required' },
+        { error: 'Filter name is required' },
         { status: 400 }
       );
     }
 
-    const category = await prisma.category.create({
-      data: { 
-        name: name.trim()
-      },
+    const filter = await prisma.filterTag.create({
+      data: { name: name.trim() },
     });
 
     return NextResponse.json(
-      { id: category.id, name: category.name, products: 0, createdAt: category.createdAt },
+      { id: filter.id, name: filter.name, products: 0, createdAt: filter.createdAt },
       { status: 201 }
     );
   } catch (error) {
-    // Handle unique constraint violation
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'A category with this name already exists' },
+        { error: 'A filter with this name already exists' },
         { status: 409 }
       );
     }
-    console.error('Failed to create category:', error);
+    console.error('Failed to create filter:', error);
     return NextResponse.json(
-      { error: 'Failed to create category' },
+      { error: 'Failed to create filter' },
       { status: 500 }
     );
   }

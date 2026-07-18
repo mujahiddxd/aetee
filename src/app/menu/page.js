@@ -9,10 +9,12 @@ import { ProductCard } from '../components/ProductCard';
 export default function Storefront() {
   const { cartItems, updateQuantity } = useCart();
   const [activeCategory, setActiveCategory] = useState("All");
-  const [activeSubCategory, setActiveSubCategory] = useState("All");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
+  const [filters, setFilters] = useState([]);
+  const [selectedFilters, setSelectedFilters] = useState(new Set());
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedCategories, setExpandedCategories] = useState({});
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
@@ -22,14 +24,16 @@ export default function Storefront() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [catsRes, prodsRes] = await Promise.all([
+        const [catsRes, prodsRes, filtersRes] = await Promise.all([
           fetch('/api/categories', { cache: 'no-store' }),
-          fetch('/api/products', { cache: 'no-store' })
+          fetch('/api/products', { cache: 'no-store' }),
+          fetch('/api/filters', { cache: 'no-store' })
         ]);
         
-        if (catsRes.ok && prodsRes.ok) {
+        if (catsRes.ok && prodsRes.ok && filtersRes.ok) {
           const catsData = await catsRes.json();
           const prodsData = await prodsRes.json();
+          const filtersData = await filtersRes.json();
           
           const formattedCats = catsData.map(c => ({
             ...c,
@@ -46,6 +50,7 @@ export default function Storefront() {
 
           setCategories(formattedCats);
           setProducts(formattedProds);
+          setFilters(filtersData);
           setExpandedCategories(formattedCats.reduce((acc, cat) => ({ ...acc, [cat.name]: true }), {}));
         }
       } catch (error) {
@@ -66,18 +71,72 @@ export default function Storefront() {
 
   const handleCategoryClick = (categoryName) => {
     setActiveCategory(categoryName);
-    setActiveSubCategory("All");
+  };
+
+  const toggleFilter = (filterId) => {
+    const newFilters = new Set(selectedFilters);
+    if (newFilters.has(filterId)) newFilters.delete(filterId);
+    else newFilters.add(filterId);
+    setSelectedFilters(newFilters);
   };
 
   const filteredProducts = useMemo(() => products.filter(p => {
-    const matchesCategory = activeCategory === "All" || p.category === activeCategory || p.parentCategory === activeCategory;
-    const matchesSubCategory = activeSubCategory === "All" || p.category === activeSubCategory;
+    const matchesCategory = activeCategory === "All" || p.category === activeCategory;
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSubCategory && matchesSearch;
-  }), [activeCategory, activeSubCategory, searchQuery, products]);
+    
+    // AND logic for filters (must have all selected filters)
+    let matchesFilters = true;
+    if (selectedFilters.size > 0) {
+      if (!p.filters || p.filters.length === 0) {
+        matchesFilters = false;
+      } else {
+        for (const fid of selectedFilters) {
+          if (!p.filters.includes(fid)) {
+            matchesFilters = false;
+            break;
+          }
+        }
+      }
+    }
+    
+    return matchesCategory && matchesSearch && matchesFilters;
+  }), [activeCategory, searchQuery, products, selectedFilters]);
+
+  // Dynamically filter categories to only show those that have matching products
+  const filteredCategories = useMemo(() => {
+    if (selectedFilters.size === 0 && !searchQuery) return categories;
+    
+    return categories.filter(cat => {
+      if (cat.name === "All") return true;
+      
+      // Does this category have at least one product that matches the search AND the selected filters?
+      const hasMatchingProduct = products.some(p => {
+        if (p.category !== cat.name) return false;
+        
+        if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+        
+        if (selectedFilters.size > 0) {
+          if (!p.filters || p.filters.length === 0) return false;
+          for (const fid of selectedFilters) {
+            if (!p.filters.includes(fid)) return false;
+          }
+        }
+        
+        return true;
+      });
+      
+      return hasMatchingProduct;
+    });
+  }, [categories, products, selectedFilters, searchQuery]);
+
+  // If the active category gets hidden by a filter, switch back to 'All'
+  useEffect(() => {
+    if (activeCategory !== "All" && !filteredCategories.some(c => c.name === activeCategory)) {
+      setActiveCategory("All");
+    }
+  }, [filteredCategories, activeCategory]);
 
   const currentCatData = categories.find(c => c.name === activeCategory);
-  const subCategories = currentCatData?.children || [];
 
   return (
     <div style={{ backgroundColor: 'var(--color-bg-grey)', minHeight: '100vh', paddingBottom: '60px' }}>
@@ -90,8 +149,8 @@ export default function Storefront() {
             <h1 style={{ margin: 0, fontSize: '2rem', fontFamily: "'Inter', sans-serif", fontWeight: 800, textTransform: 'none', letterSpacing: 'normal', color: 'var(--color-text-main)' }}>Our Menu</h1>
           </div>
 
-          <div style={{ flex: '1 1 300px', maxWidth: '400px' }}>
-            <div style={{ position: 'relative' }}>
+          <div style={{ flex: '1 1 300px', maxWidth: '400px', display: 'flex', gap: '12px' }}>
+            <div style={{ position: 'relative', flex: 1 }}>
               <input
                 type="text"
                 placeholder="Search here"
@@ -102,6 +161,45 @@ export default function Storefront() {
               <svg width="18" height="18" fill="none" stroke="var(--color-gold)" strokeWidth="2" viewBox="0 0 24 24" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
               </svg>
+            </div>
+            
+            <div style={{ position: 'relative' }}>
+              <button 
+                onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+                style={{ width: '46px', height: '46px', borderRadius: '8px', border: '1px solid var(--color-border)', background: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--color-text-main)', position: 'relative' }}
+              >
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                </svg>
+                {selectedFilters.size > 0 && (
+                  <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '18px', height: '18px', background: 'var(--color-primary)', color: '#FFF', fontSize: '0.7rem', fontWeight: 'bold', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {selectedFilters.size}
+                  </span>
+                )}
+              </button>
+              
+              {isFilterDropdownOpen && (
+                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', width: '220px', background: '#FFF', border: '1px solid var(--color-border)', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', zIndex: 100, padding: '12px' }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Filters</h4>
+                  {filters.length === 0 ? (
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>No filters available</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {filters.map(f => (
+                        <label key={f.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={selectedFilters.has(f.id)}
+                            onChange={() => toggleFilter(f.id)}
+                            style={{ accentColor: 'var(--color-primary)', width: '16px', height: '16px' }}
+                          />
+                          {f.name}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -117,51 +215,16 @@ export default function Storefront() {
           {/* Sidebar Navigation */}
           <div className="menu-sidebar">
             <div className="category-list">
-              {categories.map(cat => (
+              {filteredCategories.map(cat => (
                 <div key={cat.name}>
                   <div
-                    className={`category-item ${activeCategory === cat.name && activeSubCategory === "All" ? "active" : ""}`}
+                    className={`category-item ${activeCategory === cat.name ? "active" : ""}`}
                     onClick={() => handleCategoryClick(cat.name)}
-                    style={{ marginBottom: cat.children && cat.children.length > 0 ? '4px' : '0' }}
+                    style={{ marginBottom: '4px' }}
                   >
                     <img src={cat.icon} alt={cat.name} className="category-icon" />
                     <span>{cat.name}</span>
                   </div>
-                  {/* Nested Subcategories */}
-                  {cat.children && cat.children.length > 0 && (
-                    <div style={{ 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      marginLeft: '28px', /* Center of the parent icon */
-                      borderLeft: '1px solid var(--color-border)', 
-                      paddingLeft: '16px', /* Align text nicely */
-                      gap: '2px', 
-                      marginTop: '4px',
-                      marginBottom: '16px' 
-                    }}>
-                      {cat.children.map(sub => (
-                        <div
-                          key={sub.name}
-                          style={{
-                            padding: '8px 12px',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem',
-                            color: (activeCategory === cat.name && activeSubCategory === sub.name) ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                            fontWeight: (activeCategory === cat.name && activeSubCategory === sub.name) ? 700 : 500,
-                            borderRadius: '6px',
-                            background: (activeCategory === cat.name && activeSubCategory === sub.name) ? 'rgba(90, 52, 36, 0.05)' : 'transparent',
-                            transition: 'all 0.2s ease'
-                          }}
-                          onClick={() => {
-                            setActiveCategory(cat.name);
-                            setActiveSubCategory(sub.name);
-                          }}
-                        >
-                          {sub.name}
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
@@ -174,24 +237,6 @@ export default function Storefront() {
               <h2 style={{ fontSize: '1.5rem', fontFamily: "'Inter', sans-serif", fontWeight: 700, margin: '0 0 16px 0', textTransform: 'none', letterSpacing: 'normal', color: 'var(--color-text-main)' }}>
                 {activeCategory}
               </h2>
-
-              {subCategories.length > 0 && (
-                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', marginTop: '16px', paddingBottom: '4px' }}>
-                  <button 
-                    onClick={() => setActiveSubCategory("All")} 
-                    style={{ whiteSpace: 'nowrap', padding: '6px 16px', borderRadius: '24px', background: activeSubCategory === 'All' ? 'var(--color-text-main)' : '#FFF', border: '1px solid var(--color-border)', fontSize: '0.85rem', fontWeight: 600, color: activeSubCategory === 'All' ? '#FFF' : 'var(--color-text-main)', cursor: 'pointer' }}>
-                    All
-                  </button>
-                  {subCategories.map(sub => (
-                    <button 
-                      key={sub.id}
-                      onClick={() => setActiveSubCategory(sub.name)} 
-                      style={{ whiteSpace: 'nowrap', padding: '6px 16px', borderRadius: '24px', background: activeSubCategory === sub.name ? 'var(--color-text-main)' : '#FFF', border: '1px solid var(--color-border)', fontSize: '0.85rem', fontWeight: 600, color: activeSubCategory === sub.name ? '#FFF' : 'var(--color-text-main)', cursor: 'pointer' }}>
-                      {sub.name}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
 
             <div className="product-grid">
@@ -240,7 +285,7 @@ export default function Storefront() {
                   <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontWeight: 600, color: 'var(--color-text-main)' }}>Total:</span>
                     <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--color-primary)' }}>
-                      ₹{cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)}
+                      ₹{cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}
                     </span>
                   </div>
                   <a href="/cart" style={{ textDecoration: 'none' }}>
@@ -266,11 +311,40 @@ export default function Storefront() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                 </svg>
               </button>
-              <button onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid var(--color-border)', background: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-main)', cursor: 'pointer' }}>
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-                </svg>
-              </button>
+              <div style={{ position: 'relative' }}>
+                <button onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '1px solid var(--color-border)', background: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-main)', cursor: 'pointer', position: 'relative' }}>
+                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                  </svg>
+                  {selectedFilters.size > 0 && (
+                    <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '16px', height: '16px', background: 'var(--color-primary)', color: '#FFF', fontSize: '0.65rem', fontWeight: 'bold', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {selectedFilters.size}
+                    </span>
+                  )}
+                </button>
+                
+                {isMobileFiltersOpen && (
+                  <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', width: '220px', background: '#FFF', border: '1px solid var(--color-border)', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 100, padding: '16px' }}>
+                    {filters.length === 0 ? (
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>No filters available</p>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        {filters.map(f => (
+                          <label key={f.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '1rem', fontWeight: 600, color: 'var(--color-text-main)' }}>
+                            <input 
+                              type="checkbox" 
+                              checked={selectedFilters.has(f.id)}
+                              onChange={() => toggleFilter(f.id)}
+                              style={{ accentColor: 'var(--color-primary)', width: '18px', height: '18px', margin: 0 }}
+                            />
+                            {f.name}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -287,14 +361,8 @@ export default function Storefront() {
             </div>
           )}
 
-          {/* Mobile Filter Options */}
-          {isMobileFiltersOpen && (
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', padding: '12px', background: '#FFF', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Additional filters are not available at this time.</p>
-            </div>
-          )}
 
-          {categories.map(cat => (
+          {filteredCategories.map(cat => (
             <div key={cat.name} className="mobile-category-section">
               <div
                 className="mobile-category-header"
@@ -308,29 +376,9 @@ export default function Storefront() {
 
               {expandedCategories[cat.name] && (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {cat.children && cat.children.length > 0 && (
-                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '0 16px 12px 16px' }}>
-                      <button 
-                        onClick={() => setActiveSubCategory("All")} 
-                        style={{ whiteSpace: 'nowrap', padding: '4px 12px', borderRadius: '16px', background: activeSubCategory === 'All' ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.8rem', fontWeight: 600, color: activeSubCategory === 'All' ? '#FFF' : 'var(--color-primary)' }}>
-                        All
-                      </button>
-                      {cat.children.map(sub => (
-                        <button 
-                          key={sub.name}
-                          onClick={() => {
-                            setActiveCategory(cat.name);
-                            setActiveSubCategory(sub.name);
-                          }} 
-                          style={{ whiteSpace: 'nowrap', padding: '4px 12px', borderRadius: '16px', background: activeSubCategory === sub.name ? 'var(--color-primary)' : 'var(--color-highlight)', border: 'none', fontSize: '0.8rem', fontWeight: 600, color: activeSubCategory === sub.name ? '#FFF' : 'var(--color-primary)' }}>
-                          {sub.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                   <div className="product-grid mobile-product-grid">
-                    {products
-                      .filter(p => (p.category === cat.name || p.parentCategory === cat.name) && (activeSubCategory === "All" || p.category === activeSubCategory) && p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                    {filteredProducts
+                      .filter(p => p.category === cat.name)
                       .map((product) => (
                         <ProductCard
                           key={product.id}

@@ -5,7 +5,7 @@ export async function PUT(request, { params }) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, description, price, categoryId, sizes, addons, isFeatured, isBestSelling, isSoldOut, image } = body;
+    const { name, description, price, categoryId, sizes, addons, isFeatured, isBestSelling, isSoldOut, image, filterIds } = body;
 
     if (!name || !price || !categoryId) {
       return NextResponse.json({ error: 'Name, price, and category are required' }, { status: 400 });
@@ -35,11 +35,15 @@ export async function PUT(request, { params }) {
         isSoldOut: Boolean(isSoldOut),
         options: {
           create: allOptions,
+        },
+        filters: {
+          set: (filterIds || []).map(id => ({ id }))
         }
       },
       include: {
         category: true,
         options: true,
+        filters: true,
       }
     });
 
@@ -56,6 +60,7 @@ export async function PUT(request, { params }) {
       isSoldOut: product.isSoldOut,
       addons: product.options.map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
       sizes: [],
+      filters: product.filters.map(f => f.id)
     });
   } catch (error) {
     console.error('Failed to update product:', error);

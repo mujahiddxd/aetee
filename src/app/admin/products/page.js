@@ -5,21 +5,43 @@ import { useState, useEffect } from "react";
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [filters, setFilters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
-  // New states for feature request
+  const uploadImage = async (file) => {
+    try {
+      setIsUploading(true);
+      const dataForm = new FormData();
+      dataForm.append('file', file);
+      
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: dataForm
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      return data.url;
+    } catch (err) {
+      alert(err.message);
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
   const [filterCategoryId, setFilterCategoryId] = useState("all");
   const [selectedProductIds, setSelectedProductIds] = useState(new Set());
   const [draggedItemId, setDraggedItemId] = useState(null);
   const [isReordering, setIsReordering] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: "", description: "", price: "", categoryId: "", sizes: [], addons: [],
-    isSoldOut: false, isBestSelling: false, isFeatured: false, image: "https://placehold.co/400x300/FDF3D5/4A2C1D?text=New+Item"
+    name: "", description: "", price: "", categoryId: "", sizes: [], addons: [], filterIds: [],
+    isSoldOut: false, isBestSelling: false, isFeatured: false, image: ""
   });
 
   useEffect(() => {
@@ -29,18 +51,21 @@ export default function AdminProducts() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [prodRes, catRes] = await Promise.all([
+      const [prodRes, catRes, filterRes] = await Promise.all([
         fetch("/api/products", { cache: 'no-store' }),
-        fetch("/api/categories", { cache: 'no-store' })
+        fetch("/api/categories", { cache: 'no-store' }),
+        fetch("/api/filters", { cache: 'no-store' })
       ]);
       
-      if (!prodRes.ok || !catRes.ok) throw new Error("Failed to fetch data");
+      if (!prodRes.ok || !catRes.ok || !filterRes.ok) throw new Error("Failed to fetch data");
       
       const prods = await prodRes.json();
       const cats = await catRes.json();
+      const filts = await filterRes.json();
       
       setProducts(prods);
       setCategories(cats);
+      setFilters(filts);
       setError("");
     } catch (err) {
       setError("Failed to load data. Please refresh.");
@@ -109,8 +134,8 @@ export default function AdminProducts() {
   const openAddForm = () => {
     setIsEditing(false);
     setFormData({
-      name: "", description: "", price: "", categoryId: flatCats.length > 0 ? flatCats[0].id : "", sizes: [], addons: [],
-      isSoldOut: false, isBestSelling: false, isFeatured: false, image: "https://placehold.co/400x300/FDF3D5/4A2C1D?text=New+Item"
+      name: "", description: "", price: "", categoryId: flatCats.length > 0 ? flatCats[0].id : "", sizes: [], addons: [], filterIds: [],
+      isSoldOut: false, isBestSelling: false, isFeatured: false, image: ""
     });
     setCurrentProduct({ isNew: true });
   };
@@ -119,7 +144,8 @@ export default function AdminProducts() {
     setIsEditing(true);
     setFormData({ 
       ...prod,
-      categoryId: prod.categoryId || (flatCats.length > 0 ? flatCats[0].id : "")
+      categoryId: prod.categoryId || (flatCats.length > 0 ? flatCats[0].id : ""),
+      filterIds: prod.filters || []
     });
     setCurrentProduct(prod);
   };
@@ -345,8 +371,21 @@ export default function AdminProducts() {
           <h2 style={{ marginBottom: '24px' }}>{isEditing ? "Edit Product" : "Add New Product"}</h2>
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'flex', gap: '24px', marginBottom: '24px' }}>
-              <div style={{ width: '200px', height: '200px', backgroundColor: '#f3f4f6', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--color-border)', color: 'var(--color-text-muted)' }}>
-                <span style={{ fontSize: '0.875rem' }}>Drag & Drop Image</span>
+              <div style={{ width: '200px', height: '200px', backgroundColor: '#f3f4f6', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--color-border)', color: 'var(--color-text-muted)', overflow: 'hidden', position: 'relative' }}>
+                {formData.image ? (
+                  <img src={formData.image} alt="Product preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <span style={{ fontSize: '0.875rem' }}>No Image</span>
+                )}
+                <label style={{ position: 'absolute', bottom: '8px', background: 'rgba(0,0,0,0.7)', color: 'white', padding: '4px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+                  {isUploading ? "..." : "Upload Image"}
+                  <input type="file" accept="image/*" style={{ display: 'none' }} disabled={isUploading || submitting} onChange={async (e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      const url = await uploadImage(e.target.files[0]);
+                      if (url) setFormData({ ...formData, image: url });
+                    }
+                  }} />
+                </label>
               </div>
               <div style={{ flex: 1 }}>
                 <div className="input-group">
@@ -389,9 +428,10 @@ export default function AdminProducts() {
                     <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'var(--color-text-main)', border: '1px solid var(--color-border)', padding: '6px 12px', borderRadius: '6px', background: '#FFF' }}>
                       <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                       Image
-                      <input type="file" accept="image/*" style={{ display: 'none' }} disabled={submitting} onChange={(e) => {
+                      <input type="file" accept="image/*" style={{ display: 'none' }} disabled={isUploading || submitting} onChange={async (e) => {
                         if (e.target.files && e.target.files[0]) {
-                          handleSizeChange(index, 'image', `https://placehold.co/100x100/FDF3D5/4A2C1D?text=${encodeURIComponent(size.name || 'Size')}`);
+                          const url = await uploadImage(e.target.files[0]);
+                          if (url) handleSizeChange(index, 'image', url);
                         }
                       }} />
                     </label>
@@ -417,9 +457,10 @@ export default function AdminProducts() {
                     <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'var(--color-text-main)', border: '1px solid var(--color-border)', padding: '6px 12px', borderRadius: '6px', background: '#FFF' }}>
                       <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                       Image
-                      <input type="file" accept="image/*" style={{ display: 'none' }} disabled={submitting} onChange={(e) => {
+                      <input type="file" accept="image/*" style={{ display: 'none' }} disabled={isUploading || submitting} onChange={async (e) => {
                         if (e.target.files && e.target.files[0]) {
-                          handleAddonChange(index, 'image', `https://placehold.co/100x100/FDF3D5/4A2C1D?text=${encodeURIComponent(addon.name || 'Addon')}`);
+                          const url = await uploadImage(e.target.files[0]);
+                          if (url) handleAddonChange(index, 'image', url);
                         }
                       }} />
                     </label>
@@ -433,6 +474,31 @@ export default function AdminProducts() {
               <button type="button" className="btn btn-secondary" onClick={handleAddOption} style={{ alignSelf: 'flex-start', marginTop: '8px' }} disabled={submitting}>
                 + Add Option
               </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', margin: '32px 0', padding: '24px', backgroundColor: 'var(--color-bg-grey)', borderRadius: '12px' }}>
+              <h3 style={{ fontSize: '1rem', marginBottom: '8px' }}>Filters & Tags</h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                {filters.length === 0 ? (
+                  <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>No filters created yet. Create them in the Filters page.</span>
+                ) : filters.map(f => (
+                  <label key={f.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', cursor: 'pointer' }}>
+                    <input 
+                      type="checkbox" 
+                      disabled={submitting}
+                      checked={formData.filterIds.includes(f.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData({ ...formData, filterIds: [...formData.filterIds, f.id] });
+                        } else {
+                          setFormData({ ...formData, filterIds: formData.filterIds.filter(id => id !== f.id) });
+                        }
+                      }}
+                    />
+                    {f.name}
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', margin: '32px 0', padding: '24px', backgroundColor: 'var(--color-bg-grey)', borderRadius: '12px' }}>
@@ -529,6 +595,11 @@ export default function AdminProducts() {
                         {prod.isFeatured && <span className="badge badge-featured">Featured</span>}
                         {prod.isBestSelling && <span className="badge badge-best-seller">Best Seller!</span>}
                         {prod.isSoldOut && <span className="badge badge-sold-out">Sold Out</span>}
+                        {prod.filterTags && prod.filterTags.map(ft => (
+                          <span key={ft.id} style={{ background: '#e2e8f0', color: '#475569', fontSize: '0.7rem', padding: '4px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                            {ft.name}
+                          </span>
+                        ))}
                       </div>
                     </td>
                     <td>

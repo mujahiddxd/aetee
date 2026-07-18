@@ -11,10 +11,9 @@ export async function GET() {
         { createdAt: 'desc' }
       ],
       include: {
-        category: {
-          include: { parent: true }
-        },
+        category: true,
         options: true,
+        filters: true,
       },
     });
 
@@ -38,6 +37,8 @@ export async function GET() {
         image: opt.imageUrl
       })),
       sizes: [], // The schema doesn't differentiate sizes, so we leave it empty
+      filters: prod.filters.map(f => f.id),
+      filterTags: prod.filters.map(f => ({ id: f.id, name: f.name }))
     }));
 
     return NextResponse.json(formatted);
@@ -50,7 +51,7 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, description, price, categoryId, sizes, addons, isFeatured, isBestSelling, isSoldOut, image } = body;
+    const { name, description, price, categoryId, sizes, addons, isFeatured, isBestSelling, isSoldOut, image, filterIds } = body;
 
     if (!name || !price || !categoryId) {
       return NextResponse.json({ error: 'Name, price, and category are required' }, { status: 400 });
@@ -74,11 +75,15 @@ export async function POST(request) {
         isSoldOut: Boolean(isSoldOut),
         options: {
           create: allOptions,
+        },
+        filters: {
+          connect: (filterIds || []).map(id => ({ id }))
         }
       },
       include: {
         category: true,
         options: true,
+        filters: true,
       }
     });
 
@@ -95,6 +100,7 @@ export async function POST(request) {
       isSoldOut: product.isSoldOut,
       addons: product.options.map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
       sizes: [],
+      filters: product.filters.map(f => f.id)
     }, { status: 201 });
   } catch (error) {
     console.error('Failed to create product:', error);

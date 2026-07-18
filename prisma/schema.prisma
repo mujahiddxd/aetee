@@ -43,12 +43,9 @@ model Address {
 model Category {
   id        String    @id @default(uuid())
   name      String    @db.VarChar(255)
-  parentId  String?   @map("parent_id")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
 
-  parent    Category?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: SetNull)
-  children  Category[] @relation("SubCategories")
   products  Product[]
 
   @@map("categories")
@@ -71,8 +68,20 @@ model Product {
   category Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   options  ProductOption[]
   orderItems OrderItem[]
+  filters    FilterTag[]
 
   @@map("products")
+}
+
+model FilterTag {
+  id        String    @id @default(uuid())
+  name      String    @db.VarChar(100) @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  products  Product[]
+
+  @@map("filter_tags")
 }
 
 model ProductOption {
