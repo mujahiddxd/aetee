@@ -29,14 +29,19 @@ export async function GET() {
       isFeatured: prod.isFeatured,
       isBestSelling: prod.isBestSeller,
       isSoldOut: prod.isSoldOut,
-      // We map database options to the addons array for the frontend
-      addons: prod.options.map(opt => ({
+      // We map database options back to sizes and addons using prefixes
+      addons: prod.options.filter(opt => !opt.name.startsWith('SIZE:::')).map(opt => ({
         id: opt.id,
-        name: opt.name,
+        name: opt.name.startsWith('ADDON:::') ? opt.name.replace('ADDON:::', '') : opt.name,
         price: Number(opt.extraPrice),
         image: opt.imageUrl
       })),
-      sizes: [], // The schema doesn't differentiate sizes, so we leave it empty
+      sizes: prod.options.filter(opt => opt.name.startsWith('SIZE:::')).map(opt => ({
+        id: opt.id,
+        name: opt.name.replace('SIZE:::', ''),
+        price: Number(opt.extraPrice),
+        image: opt.imageUrl
+      })),
       filters: prod.filters.map(f => f.id),
       filterTags: prod.filters.map(f => ({ id: f.id, name: f.name }))
     }));
@@ -61,11 +66,11 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Price cannot be negative' }, { status: 400 });
     }
 
-    // Combine sizes and addons into ProductOptions
+    // Combine sizes and addons into ProductOptions using prefixes to differentiate them
     const allOptions = [
-      ...(sizes || []).map(s => ({ name: s.name, extraPrice: Math.max(0, Number(s.price)), imageUrl: s.image || null })),
-      ...(addons || []).map(a => ({ name: a.name, extraPrice: Math.max(0, Number(a.price)), imageUrl: a.image || null }))
-    ].filter(opt => opt.name.trim() !== '');
+      ...(sizes || []).map(s => ({ name: `SIZE:::${s.name}`, extraPrice: Math.max(0, Number(s.price)), imageUrl: s.image || null })),
+      ...(addons || []).map(a => ({ name: `ADDON:::${a.name}`, extraPrice: Math.max(0, Number(a.price)), imageUrl: a.image || null }))
+    ].filter(opt => opt.name.replace('SIZE:::', '').replace('ADDON:::', '').trim() !== '');
 
     const product = await prisma.product.create({
       data: {
@@ -102,8 +107,8 @@ export async function POST(request) {
       isFeatured: product.isFeatured,
       isBestSelling: product.isBestSeller,
       isSoldOut: product.isSoldOut,
-      addons: product.options.map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
-      sizes: [],
+      addons: product.options.filter(opt => !opt.name.startsWith('SIZE:::')).map(opt => ({ id: opt.id, name: opt.name.startsWith('ADDON:::') ? opt.name.replace('ADDON:::', '') : opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
+      sizes: product.options.filter(opt => opt.name.startsWith('SIZE:::')).map(opt => ({ id: opt.id, name: opt.name.replace('SIZE:::', ''), price: Number(opt.extraPrice), image: opt.imageUrl })),
       filters: product.filters.map(f => f.id)
     }, { status: 201 });
   } catch (error) {

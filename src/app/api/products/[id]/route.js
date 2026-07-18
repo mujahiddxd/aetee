@@ -15,11 +15,11 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: 'Price cannot be negative' }, { status: 400 });
     }
 
-    // Combine sizes and addons into ProductOptions
+    // Combine sizes and addons into ProductOptions using prefixes to differentiate them
     const allOptions = [
-      ...(sizes || []).map(s => ({ name: s.name, extraPrice: Math.max(0, Number(s.price)), imageUrl: s.image || null })),
-      ...(addons || []).map(a => ({ name: a.name, extraPrice: Math.max(0, Number(a.price)), imageUrl: a.image || null }))
-    ].filter(opt => opt.name.trim() !== '');
+      ...(sizes || []).map(s => ({ name: `SIZE:::${s.name}`, extraPrice: Math.max(0, Number(s.price)), imageUrl: s.image || null })),
+      ...(addons || []).map(a => ({ name: `ADDON:::${a.name}`, extraPrice: Math.max(0, Number(a.price)), imageUrl: a.image || null }))
+    ].filter(opt => opt.name.replace('SIZE:::', '').replace('ADDON:::', '').trim() !== '');
 
     // In a real app we'd intelligently update/delete options. Here we just delete all and recreate for simplicity.
     await prisma.productOption.deleteMany({
@@ -62,8 +62,8 @@ export async function PUT(request, { params }) {
       isFeatured: product.isFeatured,
       isBestSelling: product.isBestSeller,
       isSoldOut: product.isSoldOut,
-      addons: product.options.map(opt => ({ id: opt.id, name: opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
-      sizes: [],
+      addons: product.options.filter(opt => !opt.name.startsWith('SIZE:::')).map(opt => ({ id: opt.id, name: opt.name.startsWith('ADDON:::') ? opt.name.replace('ADDON:::', '') : opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
+      sizes: product.options.filter(opt => opt.name.startsWith('SIZE:::')).map(opt => ({ id: opt.id, name: opt.name.replace('SIZE:::', ''), price: Number(opt.extraPrice), image: opt.imageUrl })),
       filters: product.filters.map(f => f.id)
     });
   } catch (error) {
