@@ -36,10 +36,8 @@ export async function POST(req) {
     // 3. Defense-in-depth: re-check limit before marking PAID
     const order = await prisma.order.findUnique({
       where: { razorpayOrderId: razorpay_order_id },
-      select: { userId: true, status: true },
+      select: { userId: true },
     });
-    
-    const wasAlreadyPaid = order && order.status !== 'PENDING';
 
     if (order) {
       const recentPaidOrders = await prisma.order.count({
@@ -92,15 +90,22 @@ export async function POST(req) {
     }
 
     // 4. Signature is valid, update the order in the database to PAID
-    const updatedOrder = await prisma.order.update({
+    const updateResult = await prisma.order.updateMany({
       where: {
         razorpayOrderId: razorpay_order_id,
+        status: 'PENDING'
       },
       data: {
         status: 'PAID',
         razorpayPaymentId: razorpay_payment_id,
         razorpaySignature: razorpay_signature,
       },
+    });
+
+    const wasAlreadyPaid = updateResult.count === 0;
+
+    const updatedOrder = await prisma.order.findUnique({
+      where: { razorpayOrderId: razorpay_order_id }
     });
 
     // 5. Send Telegram Message Instantly
@@ -136,13 +141,13 @@ export async function POST(req) {
 
         const startOfDay = new Date(`${todayStr}T00:00:00+05:30`);
         const serialNumber = await prisma.order.count({
-          where: { 
+          where: {
             createdAt: { gte: startOfDay, lte: fullOrder.createdAt },
             status: { notIn: ['PENDING', 'FAILED', 'CANCELLED'] }
           }
         });
 
-        const finalDeliveryText = fullOrder.deliveryDate 
+        const finalDeliveryText = fullOrder.deliveryDate
           ? new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(fullOrder.deliveryDate))
           : (orderHourIST < 12 ? `SAME DAY (${todayStr})` : `NEXT DAY (${tomorrowStr})`);
 

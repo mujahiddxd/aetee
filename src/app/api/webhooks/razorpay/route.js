@@ -63,6 +63,16 @@ export async function POST(req) {
         return NextResponse.json({ success: true, message: 'Order not found in DB' });
       }
 
+      // Atomically check-and-set status to prevent duplicate messages from concurrent webhooks
+      const updateResult = await prisma.order.updateMany({
+        where: { id: order.id, status: 'PENDING' },
+        data: { status: 'PAID' }
+      });
+
+      if (updateResult.count === 0) {
+        return NextResponse.json({ success: true, message: 'Order already processed concurrently' });
+      }
+
       // Format Telegram message
       let itemsText = '';
       order.items.forEach((item, index) => {
