@@ -15,7 +15,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
     if (!isOpen) return;
 
     const initAutocomplete = () => {
-      if (window.google && inputRef.current && !autocompleteRef.current) {
+      if (window.google && window.google.maps && window.google.maps.places && inputRef.current && !autocompleteRef.current) {
         autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
           componentRestrictions: { country: "IN" },
           fields: ["formatted_address", "geometry", "name"],
@@ -35,24 +35,21 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
       }
     };
 
-    if (!window.google) {
+    if (!window.google || !window.google.maps || !window.google.maps.places) {
       const scriptId = "google-maps-script";
-      let script = document.getElementById(scriptId);
-      if (!script) {
-        script = document.createElement("script");
-        // Hardcoded API key to bypass Next.js env caching issues temporarily
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBjAyW_UtiIA5KbQ82s2Ra8xI_Fjs08uDs&libraries=places`;
-        script.async = true;
-        script.defer = true;
-        document.head.appendChild(script);
+      const script = document.getElementById(scriptId);
+      if (script) {
+        script.addEventListener("load", initAutocomplete);
+        script.addEventListener("error", () => {
+          setError("Network Error: Failed to load Google Maps. Please disable ad-blockers and try again.");
+        });
+        return () => {
+          script.removeEventListener("load", initAutocomplete);
+        };
+      } else {
+        // Fallback if script tag is not found
+        setTimeout(initAutocomplete, 1000);
       }
-      script.addEventListener("load", initAutocomplete);
-      script.addEventListener("error", () => {
-        setError("Network Error: Failed to load Google Maps. Please disable ad-blockers and try again.");
-      });
-      return () => {
-        script.removeEventListener("load", initAutocomplete);
-      };
     } else {
       initAutocomplete();
     }
