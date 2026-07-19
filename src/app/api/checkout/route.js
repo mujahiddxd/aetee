@@ -46,9 +46,9 @@ export async function POST(req) {
         },
       });
 
-      if (recentPaidOrders >= 2) {
+      if (recentPaidOrders >= 5) {
         return NextResponse.json(
-          { success: false, error: 'Sorry for the inconvenience, but you have reached the maximum limit of 2 orders in a day. Please try ordering again tomorrow.' },
+          { success: false, error: 'Sorry for the inconvenience, but you have reached the maximum limit of 5 orders in a day. Please try ordering again tomorrow.' },
           { status: 429 }
         );
       }
