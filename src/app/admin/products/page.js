@@ -590,7 +590,11 @@ export default function AdminProducts() {
                       </div>
                     </td>
                     <td>
-                      <img src={prod.image} alt={prod.name} style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px' }} />
+                      {prod.image ? (
+                        <img src={prod.image} alt={prod.name} style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px' }} />
+                      ) : (
+                        <div style={{ width: '48px', height: '48px', backgroundColor: '#eaeaea', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#888' }}>No Img</div>
+                      )}
                     </td>
                     <td>
                       <strong>{prod.name}</strong>

@@ -84,9 +84,6 @@ export async function DELETE(request, { params }) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error.code === 'P2003') {
-      return NextResponse.json({ error: 'Cannot delete this product because it has existing orders. Mark it as sold out instead.' }, { status: 409 });
-    }
     console.error('Failed to delete product:', error);
     return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });
   }

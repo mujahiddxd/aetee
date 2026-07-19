@@ -135,6 +135,39 @@ export default function AdminCategories() {
     }
   };
 
+  const saveOrder = async (orderedIds) => {
+    try {
+      await fetch('/api/categories/reorder', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderedIds })
+      });
+    } catch (err) {
+      console.error('Failed to save order:', err);
+      setError('Failed to save order.');
+    }
+  };
+
+  const handleMoveUp = async (index) => {
+    if (index === 0) return;
+    const newCategories = [...categories];
+    const temp = newCategories[index];
+    newCategories[index] = newCategories[index - 1];
+    newCategories[index - 1] = temp;
+    setCategories(newCategories);
+    await saveOrder(newCategories.map(c => c.id));
+  };
+
+  const handleMoveDown = async (index) => {
+    if (index === categories.length - 1) return;
+    const newCategories = [...categories];
+    const temp = newCategories[index];
+    newCategories[index] = newCategories[index + 1];
+    newCategories[index + 1] = temp;
+    setCategories(newCategories);
+    await saveOrder(newCategories.map(c => c.id));
+  };
+
   const flattenedCategories = categories.map(cat => ({ ...cat, isChild: false }));
 
   return (
@@ -202,6 +235,7 @@ export default function AdminCategories() {
                 />
               </th>
               <th>Category Name</th>
+              <th width="80" style={{ textAlign: 'center' }}>Order</th>
               <th width="120">Actions</th>
             </tr>
           </thead>
@@ -231,6 +265,16 @@ export default function AdminCategories() {
                           {cat.name}
                         </strong>
                       </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="flex gap-sm" style={{ justifyContent: 'center' }}>
+                      <button onClick={() => handleMoveUp(flattenedCategories.indexOf(cat))} disabled={flattenedCategories.indexOf(cat) === 0} className="btn-icon" title="Move Up" style={{ opacity: flattenedCategories.indexOf(cat) === 0 ? 0.3 : 1 }}>
+                        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"></path></svg>
+                      </button>
+                      <button onClick={() => handleMoveDown(flattenedCategories.indexOf(cat))} disabled={flattenedCategories.indexOf(cat) === flattenedCategories.length - 1} className="btn-icon" title="Move Down" style={{ opacity: flattenedCategories.indexOf(cat) === flattenedCategories.length - 1 ? 0.3 : 1 }}>
+                        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"></path></svg>
+                      </button>
                     </div>
                   </td>
                   <td>

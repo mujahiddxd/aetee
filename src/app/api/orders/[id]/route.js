@@ -53,8 +53,8 @@ export async function GET(request, { params }) {
       items: order.items.map(item => ({
         id: item.id,
         productId: item.productId,
-        name: item.product.name,
-        image: item.product.imageUrl,
+        name: item.product?.name || 'Deleted Product',
+        image: item.product?.imageUrl || null,
         quantity: item.quantity,
         price: Number(item.price),
         size: item.size,
