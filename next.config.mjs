@@ -47,17 +47,17 @@ const nextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()',
+            value: 'camera=(), microphone=(), geolocation=(self)',
           },
           {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'none'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://placehold.co https://*.razorpay.com https://airmenusimages.blr1.cdn.digitaloceanspaces.com",
-              "font-src 'self' data:",
-              "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://checkout.razorpay.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://maps.googleapis.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: blob: https://placehold.co https://*.razorpay.com https://airmenusimages.blr1.cdn.digitaloceanspaces.com https://maps.googleapis.com https://maps.gstatic.com",
+              "font-src 'self' data: https://fonts.gstatic.com",
+              "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://checkout.razorpay.com https://maps.googleapis.com",
               "frame-src https://api.razorpay.com https://checkout.razorpay.com",
               "object-src 'none'",
               "base-uri 'none'",

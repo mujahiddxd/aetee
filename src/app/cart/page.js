@@ -5,14 +5,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
+import AddressModal from '../components/AddressModal';
 
 export default function Cart() {
   const router = useRouter();
   const { cartItems, updateQuantity, removeFromCart, isLoaded } = useCart();
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [pincode, setPincode] = useState('');
-  const [pincodeStatus, setPincodeStatus] = useState(''); // '', 'format_error', 'not_deliverable', 'deliverable'
-  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
 
   const confirmRemove = () => {
     if (itemToDelete) {
@@ -26,20 +25,7 @@ export default function Cart() {
   };
 
   const subtotal = parseFloat(cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2));
-  const delivery = subtotal > 0 ? 1 : 0;
-  const total = parseFloat((subtotal + delivery).toFixed(2));
-
-  const checkPincode = () => {
-    if (!/^\d{6}$/.test(pincode)) {
-      setPincodeStatus('format_error');
-      return;
-    }
-    if (/^400\d{3}$/.test(pincode)) {
-      setPincodeStatus('deliverable');
-    } else {
-      setPincodeStatus('not_deliverable');
-    }
-  };
+  const total = subtotal;
 
   if (cartItems.length === 0) {
     return (
@@ -172,48 +158,7 @@ export default function Cart() {
         ))}
       </div>
 
-      {/* 3. Check Delivery */}
-      <div style={{ padding: '0 24px 24px 24px' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '16px', color: '#333' }}>Delivery Details</h3>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <input
-            type="text"
-            placeholder="Enter Delivery Pincode (e.g. 110001)"
-            value={pincode}
-            onChange={(e) => {
-              // Allow only numbers
-              const val = e.target.value.replace(/\D/g, '');
-              setPincode(val);
-              setPincodeStatus('');
-            }}
-            maxLength="6"
-            style={{
-              flex: 1, padding: '14px 16px', borderRadius: '8px', 
-              border: `1px solid ${pincodeStatus === 'format_error' || pincodeStatus === 'not_deliverable' ? '#D32F2F' : (pincodeStatus === 'deliverable' ? '#4CAF50' : '#DDD')}`,
-              backgroundColor: pincodeStatus === 'format_error' || pincodeStatus === 'not_deliverable' ? '#FEF6F6' : '#FFF',
-              fontSize: '1rem', outline: 'none'
-            }}
-          />
-          <button 
-            onClick={checkPincode}
-            style={{
-              backgroundColor: '#000', color: '#FFF', padding: '0 24px', borderRadius: '8px',
-              fontWeight: 'bold', border: 'none', cursor: 'pointer'
-            }}
-          >
-            Check
-          </button>
-        </div>
-        {pincodeStatus === 'format_error' && (
-          <p style={{ color: '#D32F2F', fontSize: '0.85rem', marginTop: '8px', marginBottom: 0 }}>Please enter a valid 6-digit pincode.</p>
-        )}
-        {pincodeStatus === 'not_deliverable' && (
-          <p style={{ color: '#D32F2F', fontSize: '0.85rem', marginTop: '8px', marginBottom: 0 }}>Sorry, we do not deliver to this pincode yet.</p>
-        )}
-        {pincodeStatus === 'deliverable' && (
-          <p style={{ color: '#4CAF50', fontSize: '0.85rem', marginTop: '8px', marginBottom: 0 }}>Great news! We deliver to your area.</p>
-        )}
-      </div>
+
 
       {/* 4. Payment Summary */}
       <div style={{
@@ -225,13 +170,16 @@ export default function Cart() {
           <span>₹{subtotal.toFixed(2)}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', color: '#555' }}>
-          <span>Delivery</span>
-          <span>₹{delivery.toFixed(2)}</span>
+          <span>Shipping</span>
+          <span style={{ fontWeight: '500', color: '#888', fontSize: '0.9rem' }}>Calculated at checkout</span>
         </div>
-        <div style={{ borderTop: '1px solid #E5E5E5', margin: '12px 0' }}></div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem', color: '#000', marginTop: '16px' }}>
-          <span>Grand Total</span>
-          <span>₹{total.toFixed(2)}</span>
+        <div style={{ borderTop: '1px solid #E5E5E5', margin: '16px 0' }}></div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#333' }}>Total</span>
+          <span style={{ fontWeight: '800', fontSize: '1.4rem', color: '#000' }}>
+            <span style={{ fontSize: '0.85rem', color: '#888', fontWeight: 'normal', marginRight: '8px' }}>INR</span>
+            ₹{total.toFixed(2)}
+          </span>
         </div>
       </div>
 
@@ -239,18 +187,7 @@ export default function Cart() {
       <div style={{ padding: '0 24px' }}>
         <button 
           className="checkout-btn"
-          onClick={() => {
-            if (pincodeStatus === 'deliverable') {
-              router.push('/checkout');
-            } else {
-              setShowErrorModal(true);
-              if (!/^\d{6}$/.test(pincode)) {
-                setPincodeStatus('format_error');
-              } else if (!validPincodes.includes(pincode)) {
-                setPincodeStatus('not_deliverable');
-              }
-            }
-          }}
+          onClick={() => setShowAddressModal(true)}
         >
           Proceed to Checkout
         </button>
@@ -300,40 +237,14 @@ export default function Cart() {
         </div>
       )}
 
-      {/* Pincode Error Modal */}
-      {showErrorModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '24px'
-        }}>
-          <div style={{
-            backgroundColor: '#FFF',
-            padding: '32px 24px',
-            borderRadius: '16px',
-            width: '100%',
-            maxWidth: '360px',
-            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-            textAlign: 'center'
-          }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#D32F2F', marginBottom: '12px' }}>Action Required</h3>
-            <p style={{ color: '#666', marginBottom: '24px', fontSize: '0.95rem' }}>Please enter a valid and deliverable pincode before proceeding to checkout.</p>
-            <button
-              onClick={() => setShowErrorModal(false)}
-              style={{
-                width: '100%', padding: '12px', borderRadius: '12px', border: 'none',
-                backgroundColor: '#5A3424', color: '#FFF', fontWeight: 'bold', cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(90, 52, 36, 0.2)'
-              }}
-            >OK, Got it</button>
-          </div>
-        </div>
-      )}
+      <AddressModal 
+        isOpen={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        onSuccess={(deliveryInfo) => {
+          setShowAddressModal(false);
+          router.push('/checkout');
+        }}
+      />
     </div>
   );
 }

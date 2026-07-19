@@ -116,19 +116,43 @@ export async function POST(req) {
       });
     }
 
-    // Add shipping (must match frontend calculation)
-    const deliveryCharges = serverCalculatedTotal > 0 ? 1 : 0;
+    // ── 3.5 Calculate Distance and Delivery Charges ─────────────────
+    let deliveryCharges = 0;
+    
+    if (serverCalculatedTotal > 0) {
+      try {
+        const origin = "NDR 9, B-703 Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089";
+        const destination = `${safeAddressLine1}, ${safeAddressLine2 ? safeAddressLine2 + ', ' : ''}${safeCity}, ${postalCode}`;
+        const apiKey = "AIzaSyBjAyW_UtiIA5KbQ82s2Ra8xI_Fjs08uDs";
+        
+        const googleUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origin)}&destinations=${encodeURIComponent(destination)}&key=${apiKey}`;
+        
+        const distanceRes = await fetch(googleUrl);
+        const distanceData = await distanceRes.json();
+        
+        if (distanceData.status === 'OK' && distanceData.rows[0].elements[0].status === 'OK') {
+          const distanceInMeters = distanceData.rows[0].elements[0].distance.value;
+          const distanceInKm = distanceInMeters / 1000;
+          
+          if (distanceInKm > 40) {
+             return NextResponse.json({ success: false, error: `Sorry, your location is ${distanceInKm.toFixed(1)}km away. We do not deliver beyond 40km.` }, { status: 400 });
+          }
+          
+          // Cost per KM (You can change this value)
+          const COST_PER_KM = 10;
+          deliveryCharges = Math.ceil(distanceInKm * COST_PER_KM);
+        } else {
+           console.error("Google Maps API error:", distanceData);
+           return NextResponse.json({ success: false, error: 'Could not calculate delivery distance. Please check your address.' }, { status: 400 });
+        }
+      } catch (err) {
+        console.error("Distance calculation error:", err);
+        return NextResponse.json({ success: false, error: 'Failed to verify delivery address.' }, { status: 500 });
+      }
+    }
+
     serverCalculatedTotal += deliveryCharges;
     serverCalculatedTotal = parseFloat(serverCalculatedTotal.toFixed(2));
-
-    // Compare with frontend total (allow tiny floating point tolerance)
-    if (Math.abs(serverCalculatedTotal - totalAmount) > 0.50) {
-      console.error(`Price mismatch! Frontend: ${totalAmount}, Server: ${serverCalculatedTotal}`);
-      return NextResponse.json(
-        { success: false, error: 'Price verification failed. Please refresh your cart and try again.' },
-        { status: 400 }
-      );
-    }
 
     // Use the server-calculated total for all downstream operations
     const verifiedTotal = serverCalculatedTotal;

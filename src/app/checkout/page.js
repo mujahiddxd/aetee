@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
 import Image from 'next/image';
@@ -25,6 +25,31 @@ export default function Checkout() {
   });
   const [errors, setErrors] = useState({});
   const [showModal, setShowModal] = useState({ isOpen: false, type: '', message: '' });
+  const [distance, setDistance] = useState(0);
+
+  useEffect(() => {
+    const savedLocation = sessionStorage.getItem('deliveryLocation');
+    if (savedLocation) {
+      try {
+        const info = JSON.parse(savedLocation);
+        let extractedPincode = '400001';
+        const pinMatch = info.address.match(/\b(400\d{3})\b/);
+        if (pinMatch) {
+          extractedPincode = pinMatch[1];
+        }
+        setFormData(prev => ({
+          ...prev,
+          address: info.address || '',
+          pincode: extractedPincode
+        }));
+        if (info.distance) {
+          setDistance(info.distance);
+        }
+      } catch (e) {
+        console.error("Could not parse delivery location from session", e);
+      }
+    }
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -181,7 +206,8 @@ export default function Checkout() {
   };
 
   const itemTotal = parseFloat(cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2));
-  const deliveryCharges = itemTotal > 0 ? 1 : 0;
+  const COST_PER_KM = 10;
+  const deliveryCharges = itemTotal > 0 && distance > 0 ? Math.ceil(distance * COST_PER_KM) : 0;
   const grandTotal = parseFloat((itemTotal + deliveryCharges).toFixed(2));
 
   return (
