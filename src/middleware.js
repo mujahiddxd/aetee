@@ -47,6 +47,12 @@ export async function middleware(request) {
         rewriteRequired = true;
       }
     }
+  } else {
+    // Block direct access to /admin on the main domain
+    if (url.pathname.startsWith('/admin')) {
+      url.pathname = '/404'; 
+      return NextResponse.rewrite(url);
+    }
   }
 
   // Use the evaluated path for authentication checks
