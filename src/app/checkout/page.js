@@ -151,6 +151,12 @@ export default function Checkout() {
             modal: {
               ondismiss: function () {
                 setShowModal({ isOpen: true, type: 'error', message: 'Payment was cancelled by the user.' });
+                // Mark the abandoned order as CANCELLED in the database
+                fetch(`/api/orders/${data.dbOrderId}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ status: 'CANCELLED' })
+                }).catch(e => console.error('Failed to cancel order in DB', e));
               }
             }
           };

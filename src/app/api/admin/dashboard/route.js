@@ -27,15 +27,39 @@ export async function GET() {
     
     let realBestSellers = [];
     if (topSales.length > 0) {
-      const productIds = topSales.map(ts => ts.productId);
-      const prods = await prisma.product.findMany({
-        where: { id: { in: productIds } },
-        include: { category: true }
-      });
+      const validProductIds = topSales.map(ts => ts.productId).filter(id => id !== null);
+      
+      const prods = validProductIds.length > 0
+        ? await prisma.product.findMany({
+            where: { id: { in: validProductIds } },
+            include: { category: true }
+          })
+        : [];
       
       realBestSellers = topSales.map(ts => {
+        if (ts.productId === null) {
+          return {
+            id: 'deleted-product',
+            name: 'Deleted Product',
+            price: 0,
+            category: 'N/A',
+            imageUrl: null,
+            totalSold: ts._sum.quantity
+          };
+        }
+        
         const p = prods.find(pr => pr.id === ts.productId);
-        if (!p) return null;
+        if (!p) {
+          return {
+            id: ts.productId,
+            name: 'Unknown Product',
+            price: 0,
+            category: 'N/A',
+            imageUrl: null,
+            totalSold: ts._sum.quantity
+          };
+        }
+        
         return {
           id: p.id,
           name: p.name,
@@ -44,7 +68,7 @@ export async function GET() {
           imageUrl: p.imageUrl,
           totalSold: ts._sum.quantity
         };
-      }).filter(Boolean);
+      });
     }
 
     const formattedFlagged = flaggedBestSellers.map(p => ({
