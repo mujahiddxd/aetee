@@ -9,6 +9,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'placehold.co',
       },
+      {
+        protocol: 'https',
+        hostname: 'airmenusimages.blr1.cdn.digitaloceanspaces.com',
+      },
     ],
   },
   async rewrites() {
@@ -51,7 +55,7 @@ const nextConfig = {
               "default-src 'none'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://placehold.co https://*.razorpay.com",
+              "img-src 'self' data: blob: https://placehold.co https://*.razorpay.com https://airmenusimages.blr1.cdn.digitaloceanspaces.com",
               "font-src 'self' data:",
               "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://checkout.razorpay.com",
               "frame-src https://api.razorpay.com https://checkout.razorpay.com",
