@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import Link from 'next/link';
+import Image from 'next/image';
 
 
 export function ProductModal({ product, onClose, onRepeatSelect }) {
@@ -57,7 +58,7 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
         <div className="product-modal-body">
           {/* Image */}
           <div style={{ width: '100%', position: 'relative', aspectRatio: '16/9' }}>
-            <img src={product.image} alt={product.name} style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', backgroundColor: '#FAFAF8' }} />
+            <Image src={product.image} alt={product.name} fill sizes="(max-width: 768px) 100vw, 600px" style={{ objectFit: 'cover', backgroundColor: '#FAFAF8' }} />
           </div>
 
           {/* Content */}
@@ -100,7 +101,7 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
                           style={{ width: '20px', height: '20px', accentColor: 'var(--color-primary)' }}
                         />
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          {size.image && <div style={{ width: 48, height: 48, flexShrink: 0 }}><img src={size.image} alt={size.name} style={{ width: '100%', height: '100%', borderRadius: 4, objectFit: 'cover', border: '1px solid var(--color-border)' }} /></div>}
+                          {size.image && <div style={{ width: 48, height: 48, flexShrink: 0, position: 'relative' }}><Image src={size.image} alt={size.name} fill sizes="48px" style={{ borderRadius: 4, objectFit: 'cover', border: '1px solid var(--color-border)' }} /></div>}
                           <span style={{ fontSize: '1rem', color: 'var(--color-primary)' }}>{size.name}</span>
                         </div>
                       </div>
@@ -129,7 +130,7 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
                           style={{ width: '20px', height: '20px', accentColor: 'var(--color-primary)' }}
                         />
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          {addon.image && <div style={{ width: 48, height: 48, flexShrink: 0 }}><img src={addon.image} alt={addon.name} style={{ width: '100%', height: '100%', borderRadius: 4, objectFit: 'cover', border: '1px solid #EBEBEB' }} /></div>}
+                          {addon.image && <div style={{ width: 48, height: 48, flexShrink: 0, position: 'relative' }}><Image src={addon.image} alt={addon.name} fill sizes="48px" style={{ borderRadius: 4, objectFit: 'cover', border: '1px solid #EBEBEB' }} /></div>}
                           <span style={{ fontSize: '1rem', color: 'var(--color-primary)' }}>{addon.name}</span>
                         </div>
                       </div>

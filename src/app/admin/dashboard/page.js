@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -78,7 +79,7 @@ export default function AdminDashboard() {
                   <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--color-primary)', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.9rem' }}>
                     {index + 1}
                   </div>
-                  <img src={item.imageUrl || 'https://placehold.co/100'} alt={item.name} style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px' }} />
+                  <div style={{ width: '48px', height: '48px', position: 'relative', flexShrink: 0 }}><Image src={item.imageUrl || 'https://placehold.co/100'} alt={item.name} fill sizes="48px" style={{ objectFit: 'cover', borderRadius: '8px' }} /></div>
                   <div style={{ flex: 1 }}>
                     <strong style={{ display: 'block' }}>{item.name}</strong>
                     <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{item.category}</span>
@@ -104,7 +105,7 @@ export default function AdminDashboard() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {stats.flaggedBestSellers.map(item => (
                 <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px', border: '1px solid var(--color-border)', borderRadius: '8px' }}>
-                  <img src={item.imageUrl || 'https://placehold.co/100'} alt={item.name} style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px' }} />
+                  <div style={{ width: '48px', height: '48px', position: 'relative', flexShrink: 0 }}><Image src={item.imageUrl || 'https://placehold.co/100'} alt={item.name} fill sizes="48px" style={{ objectFit: 'cover', borderRadius: '8px' }} /></div>
                   <div style={{ flex: 1 }}>
                     <strong style={{ display: 'block' }}>{item.name}</strong>
                     <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{item.category}</span>

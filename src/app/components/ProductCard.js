@@ -2,6 +2,7 @@
 import React from 'react';
 
 import { useCart } from '../context/CartContext';
+import Image from 'next/image';
 
 export function ProductCard({ product, onSelect, onRepeatSelect }) {
   const { cartItems, addToCart, updateQuantity } = useCart();
@@ -13,7 +14,7 @@ export function ProductCard({ product, onSelect, onRepeatSelect }) {
   return (
     <div className="product-card" style={{ opacity: product.isSoldOut ? 0.6 : 1 }}>
       <div className="product-image-container" onClick={() => onSelect(product)} style={{ cursor: 'pointer', position: 'relative' }}>
-        <img src={product.image} alt={product.name} className="product-image" />
+        <Image src={product.image} alt={product.name} className="product-image" fill sizes="(max-width: 768px) 100vw, 300px" style={{ objectFit: 'cover' }} />
       </div>
 
       <div className="product-content">

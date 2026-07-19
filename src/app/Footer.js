@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Footer() {
   return (
@@ -9,7 +10,7 @@ export default function Footer() {
 
         {/* Logo Column */}
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <img src="/logo.png" alt="Aetee's Bakehouse" style={{ width: '180px', height: 'auto', objectFit: 'contain', mixBlendMode: 'multiply', transform: 'translateY(-52px)' }} />
+          <Image src="/logo.png" alt="Aetee's Bakehouse" width={180} height={100} style={{ width: '180px', height: 'auto', objectFit: 'contain', mixBlendMode: 'multiply', transform: 'translateY(-52px)' }} />
         </div>
 
         {/* Shop Column */}

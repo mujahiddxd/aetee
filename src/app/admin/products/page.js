@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
@@ -377,7 +378,7 @@ export default function AdminProducts() {
             <div style={{ display: 'flex', gap: '24px', marginBottom: '24px' }}>
               <div style={{ width: '200px', height: '200px', backgroundColor: '#f3f4f6', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--color-border)', color: 'var(--color-text-muted)', overflow: 'hidden', position: 'relative' }}>
                 {formData.image ? (
-                  <img src={formData.image} alt="Product preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <Image src={formData.image} alt="Product preview" fill sizes="200px" style={{ objectFit: 'cover' }} />
                 ) : (
                   <span style={{ fontSize: '0.875rem' }}>No Image</span>
                 )}
@@ -439,7 +440,7 @@ export default function AdminProducts() {
                         }
                       }} />
                     </label>
-                    {size.image && <img src={size.image} alt="preview" style={{ width: '28px', height: '28px', borderRadius: '4px', objectFit: 'cover' }} />}
+                    {size.image && <div style={{ width: '28px', height: '28px', position: 'relative', flexShrink: 0 }}><Image src={size.image} alt="preview" fill sizes="28px" style={{ borderRadius: '4px', objectFit: 'cover' }} /></div>}
                   </div>
                   <button type="button" className="btn-icon danger" onClick={() => handleRemoveSize(index)} disabled={submitting}>
                     <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -468,7 +469,7 @@ export default function AdminProducts() {
                         }
                       }} />
                     </label>
-                    {addon.image && <img src={addon.image} alt="preview" style={{ width: '28px', height: '28px', borderRadius: '4px', objectFit: 'cover' }} />}
+                    {addon.image && <div style={{ width: '28px', height: '28px', position: 'relative', flexShrink: 0 }}><Image src={addon.image} alt="preview" fill sizes="28px" style={{ borderRadius: '4px', objectFit: 'cover' }} /></div>}
                   </div>
                   <button type="button" className="btn-icon danger" onClick={() => handleRemoveOption(index)} disabled={submitting}>
                     <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -591,7 +592,7 @@ export default function AdminProducts() {
                     </td>
                     <td>
                       {prod.image ? (
-                        <img src={prod.image} alt={prod.name} style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px' }} />
+                        <div style={{ width: '48px', height: '48px', position: 'relative' }}><Image src={prod.image} alt={prod.name} fill sizes="48px" style={{ objectFit: 'cover', borderRadius: '8px' }} /></div>
                       ) : (
                         <div style={{ width: '48px', height: '48px', backgroundColor: '#eaeaea', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#888' }}>No Img</div>
                       )}

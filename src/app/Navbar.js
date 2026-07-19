@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useCart } from './context/CartContext';
+import Image from 'next/image';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -18,7 +19,7 @@ export default function Navbar() {
       <header className="desktop-nav" style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: '#FFFFFF' }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 32px', width: '100%' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-            <img src="/logo.png" alt="Aetee's Bakehouse" style={{ height: '70px', width: 'auto', objectFit: 'contain', mixBlendMode: 'multiply' }} />
+            <Image src="/logo.png" alt="Aetee's Bakehouse" width={200} height={70} style={{ height: '70px', width: 'auto', objectFit: 'contain', mixBlendMode: 'multiply' }} priority />
           </Link>
           <nav style={{ display: 'flex', alignItems: 'center', gap: '32px', fontSize: '1.25rem', color: 'var(--color-text-muted)', fontWeight: '500' }}>
             <Link href="/menu" style={{ color: 'inherit', textDecoration: 'none' }}>Menu</Link>
