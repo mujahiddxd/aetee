@@ -435,6 +435,8 @@ input[type="checkbox"].sr-only {
   height: 220px;
   overflow: hidden;
   background: #EFEFEF;
+  border-top-left-radius: calc(var(--radius-lg) - 1px);
+  border-top-right-radius: calc(var(--radius-lg) - 1px);
 }
 
 .desktop-product-image {
@@ -468,6 +470,8 @@ input[type="checkbox"].sr-only {
   overflow: hidden;
   background: #EFEFEF;
   flex-shrink: 0;
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
 }
 
 .mobile-product-image {
@@ -823,6 +827,8 @@ input[type="checkbox"].sr-only {
   justify-content: center;
   align-items: center;
   margin-bottom: 0;
+  border-top-left-radius: calc(var(--radius-md) - 1px);
+  border-top-right-radius: calc(var(--radius-md) - 1px);
 }
 
 .product-image {
