@@ -27,19 +27,28 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
 
   if (!ctx) return null;
 
-  canvas.width = pixelCrop.width;
-  canvas.height = pixelCrop.height;
+  const targetX = Math.max(0, Math.round(pixelCrop.x));
+  const targetY = Math.max(0, Math.round(pixelCrop.y));
+  const targetWidth = Math.min(image.width - targetX, Math.round(pixelCrop.width));
+  const targetHeight = Math.min(image.height - targetY, Math.round(pixelCrop.height));
+
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+
+  // Set white background in case of transparency to prevent black borders
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.drawImage(
     image,
-    pixelCrop.x,
-    pixelCrop.y,
-    pixelCrop.width,
-    pixelCrop.height,
+    targetX,
+    targetY,
+    targetWidth,
+    targetHeight,
     0,
     0,
-    pixelCrop.width,
-    pixelCrop.height
+    targetWidth,
+    targetHeight
   );
 
   return new Promise((resolve, reject) => {
