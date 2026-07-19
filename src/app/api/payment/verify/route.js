@@ -130,7 +130,7 @@ export async function POST(req) {
         const dateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
         const todayStr = dateFormatter.format(fullOrder.createdAt);
         const tomorrowStr = dateFormatter.format(new Date(fullOrder.createdAt.getTime() + 24 * 60 * 60 * 1000));
-        const deliveryNote = orderHourIST < 12 ? `🚚 *Delivery:* SAME DAY (${todayStr})` : `📅 *Delivery:* NEXT DAY (${tomorrowStr})`;
+        const deliveryNote = orderHourIST < 12 ? `🚚 <b>Delivery:</b> SAME DAY (${todayStr})` : `📅 <b>Delivery:</b> NEXT DAY (${tomorrowStr})`;
 
         const startOfDay = new Date(`${todayStr}T00:00:00+05:30`);
         const serialNumber = await prisma.order.count({
@@ -142,27 +142,27 @@ export async function POST(req) {
           : null;
 
         const message = `
-🎉 *NEW ORDER RECEIVED! (Daily #${serialNumber})* 🎉
+🎉 <b>NEW ORDER RECEIVED! (Daily #${serialNumber})</b> 🎉
 
-*Daily Order No:* #${serialNumber}
-*System ID:* ${fullOrder.id}
-*Razorpay ID:* ${fullOrder.razorpayOrderId}
-*Customer:* ${fullOrder.user.firstName} ${fullOrder.user.lastName}
-*Phone:* ${fullOrder.user.phone || 'N/A'}
-*Address:* ${addressText}
-*Amount Paid:* ₹${fullOrder.totalAmount}
-📅 *Delivery Date:* ${deliveryDateStr || 'Not specified'}
+<b>Daily Order No:</b> #${serialNumber}
+<b>System ID:</b> ${fullOrder.id}
+<b>Razorpay ID:</b> ${fullOrder.razorpayOrderId}
+<b>Customer:</b> ${fullOrder.user.firstName} ${fullOrder.user.lastName}
+<b>Phone:</b> ${fullOrder.user.phone || 'N/A'}
+<b>Address:</b> ${addressText}
+<b>Amount Paid:</b> ₹${fullOrder.totalAmount}
+📅 <b>Delivery Date:</b> ${deliveryDateStr || 'Not specified'}
 ${deliveryNote}
-${fullOrder.notes ? `\n📝 *Special Instructions:*\n${fullOrder.notes}\n` : ''}
+${fullOrder.notes ? `\n📝 <b>Special Instructions:</b>\n${fullOrder.notes}\n` : ''}
 
-*Items Ordered:*
+<b>Items Ordered:</b>
 ${itemsText}
         `.trim();
 
         fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: message, parse_mode: 'Markdown' }),
+          body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML' }),
         }).catch(e => console.error('Telegram error:', e));
       }
     } catch (err) {

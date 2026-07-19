@@ -90,7 +90,7 @@ export async function POST(req) {
       const todayStr = dateFormatter.format(order.createdAt);
       const tomorrowStr = dateFormatter.format(new Date(order.createdAt.getTime() + 24 * 60 * 60 * 1000));
       
-      const deliveryNote = orderHourIST < 12 ? `🚚 *Delivery:* SAME DAY (${todayStr})` : `📅 *Delivery:* NEXT DAY (${tomorrowStr})`;
+      const deliveryNote = orderHourIST < 12 ? `🚚 <b>Delivery:</b> SAME DAY (${todayStr})` : `📅 <b>Delivery:</b> NEXT DAY (${tomorrowStr})`;
 
       // Calculate Daily Serial Number
       const startOfDay = new Date(`${todayStr}T00:00:00+05:30`);
@@ -108,20 +108,20 @@ export async function POST(req) {
         : null;
 
       const message = `
-🎉 *NEW ORDER RECEIVED! (Daily #${serialNumber})* 🎉
+🎉 <b>NEW ORDER RECEIVED! (Daily #${serialNumber})</b> 🎉
 
-*Daily Order No:* #${serialNumber}
-*System ID:* ${order.id}
-*Razorpay ID:* ${order.razorpayOrderId}
-*Customer:* ${order.user.firstName} ${order.user.lastName}
-*Phone:* ${order.user.phone || 'N/A'}
-*Address:* ${addressText}
-*Amount Paid:* ₹${order.totalAmount}
-📅 *Delivery Date:* ${deliveryDateStr || 'Not specified'}
+<b>Daily Order No:</b> #${serialNumber}
+<b>System ID:</b> ${order.id}
+<b>Razorpay ID:</b> ${order.razorpayOrderId}
+<b>Customer:</b> ${order.user.firstName} ${order.user.lastName}
+<b>Phone:</b> ${order.user.phone || 'N/A'}
+<b>Address:</b> ${addressText}
+<b>Amount Paid:</b> ₹${order.totalAmount}
+📅 <b>Delivery Date:</b> ${deliveryDateStr || 'Not specified'}
 ${deliveryNote}
-${order.notes ? `\n📝 *Special Instructions:*\n${order.notes}\n` : ''}
+${order.notes ? `\n📝 <b>Special Instructions:</b>\n${order.notes}\n` : ''}
 
-*Items Ordered:*
+<b>Items Ordered:</b>
 ${itemsText}
       `.trim();
 
@@ -135,7 +135,7 @@ ${itemsText}
         body: JSON.stringify({
           chat_id: process.env.TELEGRAM_CHAT_ID,
           text: message,
-          parse_mode: 'Markdown',
+          parse_mode: 'HTML',
         }),
       });
 
