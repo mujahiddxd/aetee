@@ -87,7 +87,9 @@ export async function POST(req) {
 
       // Add option extras if size/addons were selected
       if (item.size && product.options) {
-        const sizeOption = product.options.find(opt => opt.name.toLowerCase() === item.size.toLowerCase());
+        const expectedSizeName = `size:::${item.size.toLowerCase()}`;
+        const rawSizeName = item.size.toLowerCase();
+        const sizeOption = product.options.find(opt => opt.name.toLowerCase() === expectedSizeName || opt.name.toLowerCase() === rawSizeName);
         if (sizeOption) {
           itemPrice += Number(sizeOption.extraPrice);
         }
@@ -96,7 +98,8 @@ export async function POST(req) {
       if (item.addons && product.options) {
         const addonNames = item.addons.split(',').map(a => a.trim().toLowerCase());
         for (const addonName of addonNames) {
-          const addonOption = product.options.find(opt => opt.name.toLowerCase() === addonName);
+          const expectedAddonName = `addon:::${addonName}`;
+          const addonOption = product.options.find(opt => opt.name.toLowerCase() === expectedAddonName || opt.name.toLowerCase() === addonName);
           if (addonOption) {
             itemPrice += Number(addonOption.extraPrice);
           }
