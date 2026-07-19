@@ -440,6 +440,7 @@ input[type="checkbox"].sr-only {
   height: 220px;
   overflow: hidden;
   background: #EFEFEF;
+  flex-shrink: 0;
 }
 
 .desktop-product-image {
@@ -839,6 +840,7 @@ input[type="checkbox"].sr-only {
   justify-content: center;
   align-items: center;
   margin-bottom: 0;
+  flex-shrink: 0;
 }
 
 .product-image {
