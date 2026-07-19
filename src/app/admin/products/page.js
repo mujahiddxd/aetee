@@ -376,9 +376,9 @@ export default function AdminProducts() {
           <h2 style={{ marginBottom: '24px' }}>{isEditing ? "Edit Product" : "Add New Product"}</h2>
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'flex', gap: '24px', marginBottom: '24px' }}>
-              <div style={{ width: '320px', height: '200px', flexShrink: 0, backgroundColor: '#f3f4f6', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--color-border)', color: 'var(--color-text-muted)', overflow: 'hidden', position: 'relative' }}>
+              <div style={{ width: '380px', height: '220px', backgroundColor: '#f3f4f6', borderRadius: '0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--color-border)', color: 'var(--color-text-muted)', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
                 {formData.image ? (
-                  <Image src={formData.image} alt="Product preview" fill sizes="320px" style={{ objectFit: 'cover' }} />
+                  <Image src={formData.image} alt="Product preview" fill sizes="380px" style={{ objectFit: 'cover' }} />
                 ) : (
                   <span style={{ fontSize: '0.875rem' }}>No Image</span>
                 )}
