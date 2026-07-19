@@ -1,23 +1,18 @@
-import { Geist, Geist_Mono, Nunito } from "next/font/google";
+import { Inter, Oswald } from "next/font/google";
 import "./globals.css";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { CartProvider } from "./context/CartContext";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const oswald = Oswald({
+  variable: "--font-oswald",
   subsets: ["latin"],
-});
-
-const nunito = Nunito({
-  variable: "--font-nunito",
-  subsets: ["latin"],
-  weight: ["200", "300", "400", "600", "700", "800", "900"],
+  weight: ["500", "600", "700"],
 });
 
 export const metadata = {
@@ -54,7 +49,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${nunito.variable}`}>
+    <html lang="en" className={`${inter.variable} ${oswald.variable}`}>
       <body>
         <CartProvider>
           <div style={{ backgroundColor: 'var(--color-bg-white)', minHeight: '100vh', position: 'relative', display: 'flex', flexDirection: 'column' }}>

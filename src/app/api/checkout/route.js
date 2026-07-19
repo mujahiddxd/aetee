@@ -114,7 +114,7 @@ export async function POST(req) {
     }
 
     // Add shipping (must match frontend calculation)
-    const deliveryCharges = 0.1;
+    const deliveryCharges = serverCalculatedTotal > 0 ? 1 : 0;
     serverCalculatedTotal += deliveryCharges;
     serverCalculatedTotal = parseFloat(serverCalculatedTotal.toFixed(2));
 

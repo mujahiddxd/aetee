@@ -2,6 +2,53 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Cropper from 'react-easy-crop';
+
+const readFile = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.addEventListener('load', () => resolve(reader.result), false);
+    reader.readAsDataURL(file);
+  });
+};
+
+const createImage = (url) =>
+  new Promise((resolve, reject) => {
+    const image = new window.Image();
+    image.addEventListener('load', () => resolve(image));
+    image.addEventListener('error', (error) => reject(error));
+    image.src = url;
+  });
+
+const getCroppedImg = async (imageSrc, pixelCrop) => {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  if (!ctx) return null;
+
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+
+  ctx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    pixelCrop.width,
+    pixelCrop.height
+  );
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((file) => {
+      resolve(file);
+    }, 'image/jpeg');
+  });
+};
+
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
@@ -13,6 +60,12 @@ export default function AdminProducts() {
   const [currentProduct, setCurrentProduct] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Cropper states
+  const [cropImageSrc, setCropImageSrc] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
   const uploadImage = async (file) => {
     try {
@@ -320,6 +373,37 @@ export default function AdminProducts() {
 
   return (
     <div>
+      {cropImageSrc && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <Cropper
+              image={cropImageSrc}
+              crop={crop}
+              zoom={zoom}
+              aspect={300 / 174}
+              onCropChange={setCrop}
+              onCropComplete={(croppedArea, croppedAreaPixels) => setCroppedAreaPixels(croppedAreaPixels)}
+              onZoomChange={setZoom}
+            />
+          </div>
+          <div style={{ padding: '20px', background: '#fff', display: 'flex', justifyContent: 'center', gap: '16px' }}>
+            <button className="btn btn-secondary" onClick={() => setCropImageSrc(null)}>Cancel</button>
+            <button className="btn btn-primary" onClick={async () => {
+              try {
+                const croppedBlob = await getCroppedImg(cropImageSrc, croppedAreaPixels);
+                const file = new File([croppedBlob], "cropped.jpg", { type: "image/jpeg" });
+                setCropImageSrc(null);
+                const url = await uploadImage(file);
+                if (url) setFormData({ ...formData, image: url });
+              } catch (e) {
+                console.error(e);
+                alert("Failed to crop image");
+              }
+            }}>Crop & Upload</button>
+          </div>
+        </div>
+      )}
+
       <div className="page-header" style={{ flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <h1>Manage Products</h1>
@@ -376,9 +460,9 @@ export default function AdminProducts() {
           <h2 style={{ marginBottom: '24px' }}>{isEditing ? "Edit Product" : "Add New Product"}</h2>
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'flex', gap: '24px', marginBottom: '24px' }}>
-              <div style={{ width: '200px', height: '200px', backgroundColor: '#f3f4f6', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--color-border)', color: 'var(--color-text-muted)', overflow: 'hidden', position: 'relative' }}>
+              <div style={{ width: '300px', height: '174px', backgroundColor: '#f3f4f6', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--color-border)', color: 'var(--color-text-muted)', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
                 {formData.image ? (
-                  <Image src={formData.image} alt="Product preview" fill sizes="200px" style={{ objectFit: 'cover' }} />
+                  <Image src={formData.image} alt="Product preview" fill sizes="300px" style={{ objectFit: 'cover' }} />
                 ) : (
                   <span style={{ fontSize: '0.875rem' }}>No Image</span>
                 )}
@@ -386,8 +470,8 @@ export default function AdminProducts() {
                   {isUploading ? "..." : "Upload Image"}
                   <input type="file" accept="image/*" style={{ display: 'none' }} disabled={isUploading || submitting} onChange={async (e) => {
                     if (e.target.files && e.target.files[0]) {
-                      const url = await uploadImage(e.target.files[0]);
-                      if (url) setFormData({ ...formData, image: url });
+                      const imageDataUrl = await readFile(e.target.files[0]);
+                      setCropImageSrc(imageDataUrl);
                     }
                   }} />
                 </label>
