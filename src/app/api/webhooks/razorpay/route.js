@@ -12,7 +12,7 @@ export async function POST(req) {
     }
 
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
-    
+
     // Verify the webhook signature
     const generated_signature = crypto
       .createHmac('sha256', secret)
@@ -67,7 +67,7 @@ export async function POST(req) {
       let itemsText = '';
       order.items.forEach((item, index) => {
         const pName = item.product?.name || `Product #${item.productId}`;
-        
+
         let extras = [];
         if (item.size) extras.push(`Size: ${item.size}`);
         if (item.addons) extras.push(`Addons: ${item.addons}`);
@@ -78,18 +78,18 @@ export async function POST(req) {
 
       // Extract address
       const address = order.user.addresses && order.user.addresses.length > 0 ? order.user.addresses[0] : null;
-      const addressText = address 
+      const addressText = address
         ? `${address.addressLine1}${address.addressLine2 ? ', ' + address.addressLine2 : ''}, ${address.city} - ${address.postalCode}`
         : 'N/A';
 
       // Calculate Delivery Time (Before 12 PM IST = Same Day)
       const hourFormatter = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', hour12: false });
       const orderHourIST = parseInt(hourFormatter.format(order.createdAt), 10);
-      
+
       const dateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
       const todayStr = dateFormatter.format(order.createdAt);
       const tomorrowStr = dateFormatter.format(new Date(order.createdAt.getTime() + 24 * 60 * 60 * 1000));
-      
+
       const deliveryNote = orderHourIST < 12 ? `🚚 <b>Delivery:</b> SAME DAY (${todayStr})` : `📅 <b>Delivery:</b> NEXT DAY (${tomorrowStr})`;
 
       // Calculate Daily Serial Number
@@ -103,7 +103,7 @@ export async function POST(req) {
         }
       });
 
-      const deliveryDateStr = order.deliveryDate 
+      const deliveryDateStr = order.deliveryDate
         ? new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(order.deliveryDate))
         : null;
 

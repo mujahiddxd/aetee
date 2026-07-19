@@ -36,8 +36,10 @@ export async function POST(req) {
     // 3. Defense-in-depth: re-check limit before marking PAID
     const order = await prisma.order.findUnique({
       where: { razorpayOrderId: razorpay_order_id },
-      select: { userId: true },
+      select: { userId: true, status: true },
     });
+    
+    const wasAlreadyPaid = order && order.status !== 'PENDING';
 
     if (order) {
       const recentPaidOrders = await prisma.order.count({
@@ -111,7 +113,7 @@ export async function POST(req) {
         }
       });
 
-      if (fullOrder && process.env.TELEGRAM_BOT_TOKEN) {
+      if (fullOrder && process.env.TELEGRAM_BOT_TOKEN && !wasAlreadyPaid) {
         let itemsText = '';
         fullOrder.items.forEach((item, index) => {
           const pName = item.product?.name || `Product #${item.productId}`;
@@ -134,12 +136,15 @@ export async function POST(req) {
 
         const startOfDay = new Date(`${todayStr}T00:00:00+05:30`);
         const serialNumber = await prisma.order.count({
-          where: { createdAt: { gte: startOfDay, lte: fullOrder.createdAt } }
+          where: { 
+            createdAt: { gte: startOfDay, lte: fullOrder.createdAt },
+            status: { notIn: ['PENDING', 'FAILED', 'CANCELLED'] }
+          }
         });
 
-        const deliveryDateStr = fullOrder.deliveryDate 
+        const finalDeliveryText = fullOrder.deliveryDate 
           ? new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(fullOrder.deliveryDate))
-          : null;
+          : (orderHourIST < 12 ? `SAME DAY (${todayStr})` : `NEXT DAY (${tomorrowStr})`);
 
         const message = `
 🎉 <b>NEW ORDER RECEIVED! (Daily #${serialNumber})</b> 🎉
@@ -151,8 +156,7 @@ export async function POST(req) {
 <b>Phone:</b> ${fullOrder.user.phone || 'N/A'}
 <b>Address:</b> ${addressText}
 <b>Amount Paid:</b> ₹${fullOrder.totalAmount}
-📅 <b>Delivery Date:</b> ${deliveryDateStr || 'Not specified'}
-${deliveryNote}
+🚚 <b>Delivery:</b> ${finalDeliveryText}
 ${fullOrder.notes ? `\n📝 <b>Special Instructions:</b>\n${fullOrder.notes}\n` : ''}
 
 <b>Items Ordered:</b>
