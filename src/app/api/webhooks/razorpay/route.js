@@ -155,6 +155,40 @@ ${itemsText}
       } else {
         console.log('Successfully sent Telegram notification for order:', order.id);
       }
+    } else if (body.event === 'payment.failed') {
+      const razorpayOrderId = body.payload.payment?.entity?.order_id;
+      if (razorpayOrderId) {
+        const order = await prisma.order.findUnique({
+          where: { razorpayOrderId: razorpayOrderId },
+          include: { user: true }
+        });
+
+        if (order) {
+          const updateResult = await prisma.order.updateMany({
+            where: { id: order.id, status: 'PENDING' },
+            data: { status: 'FAILED' }
+          });
+
+          if (updateResult.count > 0) {
+            const failMessage = `
+❌ <b>PAYMENT FAILED!</b> ❌
+
+<b>System ID:</b> ${order.id}
+<b>Razorpay ID:</b> ${order.razorpayOrderId}
+<b>Customer:</b> ${order.user.firstName} ${order.user.lastName}
+<b>Phone:</b> ${order.user.phone || 'N/A'}
+<b>Amount:</b> ₹${order.totalAmount}
+<b>Error:</b> ${body.payload.payment?.entity?.error_description || 'Unknown error'}
+            `.trim();
+
+            await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: failMessage, parse_mode: 'HTML' })
+            }).catch(e => console.error(e));
+          }
+        }
+      }
     }
 
     return NextResponse.json({ success: true });
