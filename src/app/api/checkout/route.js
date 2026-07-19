@@ -47,6 +47,16 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: 'Invalid total amount' }, { status: 400 });
     }
 
+    // Validate delivery date is not in the past (IST)
+    if (deliveryDate) {
+      const now = new Date();
+      const istFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' });
+      const todayIST = istFormatter.format(now); // 'YYYY-MM-DD'
+      if (deliveryDate < todayIST) {
+        return NextResponse.json({ success: false, error: 'Delivery date cannot be in the past' }, { status: 400 });
+      }
+    }
+
     // ── 2. Sanitize text inputs ─────────────────────────────────────
     const safeFirstName = stripHtml(firstName);
     const safeLastName = stripHtml(lastName);
@@ -123,7 +133,7 @@ export async function POST(req) {
       try {
         const origin = "NDR 9, B-703 Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089";
         const destination = `${safeAddressLine1}, ${safeAddressLine2 ? safeAddressLine2 + ', ' : ''}${safeCity}, ${postalCode}`;
-        const apiKey = "AIzaSyBjAyW_UtiIA5KbQ82s2Ra8xI_Fjs08uDs";
+        const apiKey = process.env.GOOGLE_MAPS_SERVER_API_KEY;
         
         const googleUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origin)}&destinations=${encodeURIComponent(destination)}&key=${apiKey}`;
         

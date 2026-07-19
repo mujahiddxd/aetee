@@ -13,6 +13,35 @@ export default function Cart() {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [showAddressModal, setShowAddressModal] = useState(false);
 
+  // Bug 2: Validate cart items against the server on mount
+  useEffect(() => {
+    if (!isLoaded || cartItems.length === 0) return;
+
+    async function validateCart() {
+      try {
+        const res = await fetch('/api/products', { cache: 'no-store' });
+        if (!res.ok) return;
+        const serverProducts = await res.json();
+        const serverProductMap = {};
+        for (const p of serverProducts) {
+          serverProductMap[p.id] = p;
+        }
+
+        // Remove cart items whose product no longer exists on the server
+        for (const item of cartItems) {
+          if (!serverProductMap[item.product.id]) {
+            removeFromCart(item.cartItemId);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to validate cart against server', e);
+      }
+    }
+
+    validateCart();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded]);
+
   const confirmRemove = () => {
     if (itemToDelete) {
       removeFromCart(itemToDelete);
@@ -215,7 +244,9 @@ export default function Cart() {
             textAlign: 'center'
           }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#333', marginBottom: '12px' }}>Remove Item</h3>
-            <p style={{ color: '#666', marginBottom: '24px', fontSize: '0.95rem' }}>Are you sure you want to remove this item from your cart?</p>
+            <p style={{ color: '#666', marginBottom: '24px', fontSize: '0.95rem' }}>
+              Are you sure you want to remove <strong>{cartItems.find(i => i.cartItemId === itemToDelete)?.product?.name || 'this item'}</strong> from your cart?
+            </p>
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
                 onClick={cancelRemove}

@@ -2,12 +2,19 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useCart } from './context/CartContext';
 import Image from 'next/image';
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { cartItems, isLoaded } = useCart();
+
+  // Don't render navbar on admin pages
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
 
   const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 

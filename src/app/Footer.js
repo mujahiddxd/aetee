@@ -2,8 +2,16 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  // Don't render footer on admin pages
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   return (
     <footer style={{ backgroundColor: '#F9F8F6', padding: '64px 32px 32px', color: '#5A3424', borderTop: '1px solid #EBEBEB' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '48px' }}>

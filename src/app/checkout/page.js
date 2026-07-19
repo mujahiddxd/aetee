@@ -9,10 +9,21 @@ import { useCart } from '../context/CartContext';
 import './checkout.css';
 
 export default function Checkout() {
-  const { cartItems, isLoaded } = useCart();
+  const { cartItems, isLoaded, clearCart } = useCart();
   const [paymentMethod, setPaymentMethod] = useState('');
+
+  // Compute tomorrow's date in IST for minimum delivery date
+  const getTomorrowIST = () => {
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istNow = new Date(now.getTime() + istOffset + now.getTimezoneOffset() * 60 * 1000);
+    istNow.setDate(istNow.getDate() + 1);
+    return istNow.toISOString().split('T')[0];
+  };
+  const minDeliveryDate = getTomorrowIST();
+
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: minDeliveryDate,
     firstName: '',
     lastName: '',
     email: '',
@@ -69,7 +80,11 @@ export default function Checkout() {
   const handlePlaceOrder = async () => {
     const newErrors = {};
 
-    if (!formData.date) newErrors.date = "Delivery date is required.";
+    if (!formData.date) {
+      newErrors.date = "Delivery date is required.";
+    } else if (formData.date < minDeliveryDate) {
+      newErrors.date = "Delivery date must be tomorrow or later.";
+    }
     if (!formData.firstName.trim()) newErrors.firstName = "First name is required.";
     if (!formData.lastName.trim()) newErrors.lastName = "Last name is required.";
 
@@ -161,6 +176,7 @@ export default function Checkout() {
 
               const verifyData = await verifyRes.json();
               if (verifyData.success) {
+                clearCart();
                 setShowModal({ isOpen: true, type: 'success', message: 'Payment successful and order placed!' });
               } else {
                 setShowModal({ isOpen: true, type: 'error', message: 'Payment verification failed!' });
@@ -233,6 +249,7 @@ export default function Checkout() {
                 type="date"
                 name="date"
                 value={formData.date}
+                min={minDeliveryDate}
                 onChange={handleInputChange}
                 className={`form-input ${errors.date ? 'error' : ''}`}
                 required

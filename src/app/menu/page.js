@@ -154,7 +154,7 @@ export default function Storefront() {
   const currentCatData = categories.find(c => c.name === activeCategory);
 
   return (
-    <div style={{ backgroundColor: 'var(--color-bg-grey)', minHeight: '100vh', paddingBottom: '60px' }}>
+    <div style={{ backgroundColor: 'var(--color-bg-grey)', paddingBottom: '60px' }}>
 
       {/* Top Header Area (Desktop Only) */}
       <div className="desktop-only" style={{ backgroundColor: 'var(--color-bg-grey)', padding: '24px 0 16px 0' }}>
