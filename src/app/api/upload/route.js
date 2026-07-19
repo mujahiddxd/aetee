@@ -63,7 +63,7 @@ export async function POST(request) {
     const filename = `${uuid}.webp`;
     
     // 7. Ensure directory exists
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'public', 'uploads');
     await fs.mkdir(uploadDir, { recursive: true });
 
     // 8. Save file to disk
