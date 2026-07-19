@@ -433,7 +433,10 @@ input[type="checkbox"].sr-only {
 }
 
 .desktop-product-image-container {
-  width: 100%;
+  width: calc(100% + 2px);
+  margin-top: -1px;
+  margin-left: -1px;
+  margin-right: -1px;
   height: 220px;
   overflow: hidden;
   background: #EFEFEF;
@@ -827,7 +830,10 @@ input[type="checkbox"].sr-only {
 }
 
 .product-image-container {
-  width: 100%;
+  width: calc(100% + 2px);
+  margin-top: -1px;
+  margin-left: -1px;
+  margin-right: -1px;
   height: 160px;
   display: flex;
   justify-content: center;
