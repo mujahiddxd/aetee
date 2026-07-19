@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import ImageCropperModal from "@/app/components/ImageCropperModal";
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
@@ -13,6 +14,7 @@ export default function AdminProducts() {
   const [currentProduct, setCurrentProduct] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [cropConfig, setCropConfig] = useState(null);
 
   const uploadImage = async (file) => {
     try {
@@ -39,6 +41,34 @@ export default function AdminProducts() {
   const [selectedProductIds, setSelectedProductIds] = useState(new Set());
   const [draggedItemId, setDraggedItemId] = useState(null);
   const [isReordering, setIsReordering] = useState(false);
+
+  const handleFileSelect = (e, target) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setCropConfig({ imageSrc: reader.result, target });
+      });
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
+
+  const handleCropComplete = async (croppedBlob) => {
+    const target = cropConfig.target;
+    setCropConfig(null);
+    const file = new File([croppedBlob], 'cropped.jpg', { type: 'image/jpeg' });
+    const url = await uploadImage(file);
+    if (url) {
+      if (target === 'main') {
+        setFormData(prev => ({ ...prev, image: url }));
+      } else if (target.type === 'size') {
+        handleSizeChange(target.index, 'image', url);
+      } else if (target.type === 'addon') {
+        handleAddonChange(target.index, 'image', url);
+      }
+    }
+  };
 
   const [formData, setFormData] = useState({
     name: "", description: "", price: "", categoryId: "", sizes: [], addons: [], filterIds: [],
@@ -320,6 +350,13 @@ export default function AdminProducts() {
 
   return (
     <div>
+      {cropConfig && (
+        <ImageCropperModal
+          imageSrc={cropConfig.imageSrc}
+          onCropComplete={handleCropComplete}
+          onCancel={() => setCropConfig(null)}
+        />
+      )}
       <div className="page-header" style={{ flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <h1>Manage Products</h1>
@@ -384,12 +421,7 @@ export default function AdminProducts() {
                 )}
                 <label style={{ position: 'absolute', bottom: '8px', background: 'rgba(0,0,0,0.7)', color: 'white', padding: '4px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
                   {isUploading ? "..." : "Upload Image"}
-                  <input type="file" accept="image/*" style={{ display: 'none' }} disabled={isUploading || submitting} onChange={async (e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      const url = await uploadImage(e.target.files[0]);
-                      if (url) setFormData({ ...formData, image: url });
-                    }
-                  }} />
+                  <input type="file" accept="image/*" style={{ display: 'none' }} disabled={isUploading || submitting} onChange={(e) => handleFileSelect(e, 'main')} />
                 </label>
               </div>
               <div style={{ flex: 1 }}>
@@ -433,12 +465,7 @@ export default function AdminProducts() {
                     <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'var(--color-text-main)', border: '1px solid var(--color-border)', padding: '6px 12px', borderRadius: '6px', background: '#FFF' }}>
                       <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                       Image
-                      <input type="file" accept="image/*" style={{ display: 'none' }} disabled={isUploading || submitting} onChange={async (e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          const url = await uploadImage(e.target.files[0]);
-                          if (url) handleSizeChange(index, 'image', url);
-                        }
-                      }} />
+                      <input type="file" accept="image/*" style={{ display: 'none' }} disabled={isUploading || submitting} onChange={(e) => handleFileSelect(e, { type: 'size', index })} />
                     </label>
                     {size.image && <div style={{ width: '28px', height: '28px', position: 'relative', flexShrink: 0 }}><Image src={size.image} alt="preview" fill sizes="28px" style={{ borderRadius: '4px', objectFit: 'cover' }} /></div>}
                   </div>
@@ -462,12 +489,7 @@ export default function AdminProducts() {
                     <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85rem', color: 'var(--color-text-main)', border: '1px solid var(--color-border)', padding: '6px 12px', borderRadius: '6px', background: '#FFF' }}>
                       <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                       Image
-                      <input type="file" accept="image/*" style={{ display: 'none' }} disabled={isUploading || submitting} onChange={async (e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          const url = await uploadImage(e.target.files[0]);
-                          if (url) handleAddonChange(index, 'image', url);
-                        }
-                      }} />
+                      <input type="file" accept="image/*" style={{ display: 'none' }} disabled={isUploading || submitting} onChange={(e) => handleFileSelect(e, { type: 'addon', index })} />
                     </label>
                     {addon.image && <div style={{ width: '28px', height: '28px', position: 'relative', flexShrink: 0 }}><Image src={addon.image} alt="preview" fill sizes="28px" style={{ borderRadius: '4px', objectFit: 'cover' }} /></div>}
                   </div>
