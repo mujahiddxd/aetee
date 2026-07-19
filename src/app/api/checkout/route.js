@@ -138,9 +138,10 @@ export async function POST(req) {
              return NextResponse.json({ success: false, error: `Sorry, your location is ${distanceInKm.toFixed(1)}km away. We do not deliver beyond 40km.` }, { status: 400 });
           }
           
-          // Cost per KM (You can change this value)
+          // Base fee of ₹50 plus ₹10 per km
+          const BASE_DELIVERY_FEE = 50;
           const COST_PER_KM = 10;
-          deliveryCharges = Math.ceil(distanceInKm * COST_PER_KM);
+          deliveryCharges = BASE_DELIVERY_FEE + Math.ceil(distanceInKm * COST_PER_KM);
         } else {
            console.error("Google Maps API error:", distanceData);
            return NextResponse.json({ success: false, error: 'Could not calculate delivery distance. Please check your address.' }, { status: 400 });
