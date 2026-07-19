@@ -1,14 +1,10 @@
 import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import { prisma } from '@/lib/prisma';
+import { stripHtml } from '@/lib/sanitize';
 
 export async function POST(req) {
   try {
-    const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
-      key_secret: process.env.RAZORPAY_KEY_SECRET,
-    });
-
     const body = await req.json();
     const { 
       firstName, lastName, email, phone, 
@@ -16,17 +12,131 @@ export async function POST(req) {
       totalAmount, items, deliveryDate, additionalInfo 
     } = body;
 
+    // ── 1. Strict Input Validation ──────────────────────────────────
     if (!email || !firstName || !lastName || !addressLine1 || !city || !postalCode || !items || !items.length) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    // 1. Validate amount before any DB or API calls
-    const amountInPaise = Math.round(totalAmount * 100);
-    if (amountInPaise < 100) {
-      return NextResponse.json({ success: false, error: 'Minimum amount must be at least 100 paise' }, { status: 400 });
+    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ success: false, error: 'Invalid email format' }, { status: 400 });
     }
 
-    // 2. Rate limit: max 25 paid orders per 24 hours
+    if (typeof phone !== 'string' || !/^\d{10}$/.test(phone)) {
+      return NextResponse.json({ success: false, error: 'Phone must be exactly 10 digits' }, { status: 400 });
+    }
+
+    if (typeof firstName !== 'string' || firstName.length > 100 || typeof lastName !== 'string' || lastName.length > 100) {
+      return NextResponse.json({ success: false, error: 'Name fields are invalid' }, { status: 400 });
+    }
+
+    if (typeof postalCode !== 'string' || !/^400\d{3}$/.test(postalCode)) {
+      return NextResponse.json({ success: false, error: 'We only deliver to Mumbai (400xxx) pincodes' }, { status: 400 });
+    }
+
+    if (!Array.isArray(items) || items.length === 0 || items.length > 50) {
+      return NextResponse.json({ success: false, error: 'Invalid items list' }, { status: 400 });
+    }
+
+    for (const item of items) {
+      if (!item.productId || typeof item.quantity !== 'number' || item.quantity < 1 || item.quantity > 100) {
+        return NextResponse.json({ success: false, error: 'Invalid item in cart' }, { status: 400 });
+      }
+    }
+
+    if (typeof totalAmount !== 'number' || totalAmount <= 0) {
+      return NextResponse.json({ success: false, error: 'Invalid total amount' }, { status: 400 });
+    }
+
+    // ── 2. Sanitize text inputs ─────────────────────────────────────
+    const safeFirstName = stripHtml(firstName);
+    const safeLastName = stripHtml(lastName);
+    const safeAddressLine1 = stripHtml(addressLine1);
+    const safeAddressLine2 = addressLine2 ? stripHtml(addressLine2) : null;
+    const safeCity = stripHtml(city);
+    const safeAdditionalInfo = additionalInfo ? stripHtml(additionalInfo) : null;
+
+    // ── 3. Server-side Price Verification ───────────────────────────
+    // Look up actual product prices from the database
+    const productIds = items.map(i => i.productId);
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      include: { options: true }
+    });
+
+    const productMap = {};
+    for (const p of products) {
+      productMap[p.id] = p;
+    }
+
+    // Verify every item exists and recalculate the total
+    let serverCalculatedTotal = 0;
+    const verifiedItems = [];
+
+    for (const item of items) {
+      const product = productMap[item.productId];
+      if (!product) {
+        return NextResponse.json({ success: false, error: `Product not found: ${item.productId}` }, { status: 400 });
+      }
+
+      if (product.isSoldOut) {
+        return NextResponse.json({ success: false, error: `${product.name} is currently sold out` }, { status: 400 });
+      }
+
+      // Base price from the database (NOT from the frontend)
+      let itemPrice = Number(product.price);
+
+      // Add option extras if size/addons were selected
+      if (item.size && product.options) {
+        const sizeOption = product.options.find(opt => opt.name.toLowerCase() === item.size.toLowerCase());
+        if (sizeOption) {
+          itemPrice += Number(sizeOption.extraPrice);
+        }
+      }
+
+      if (item.addons && product.options) {
+        const addonNames = item.addons.split(',').map(a => a.trim().toLowerCase());
+        for (const addonName of addonNames) {
+          const addonOption = product.options.find(opt => opt.name.toLowerCase() === addonName);
+          if (addonOption) {
+            itemPrice += Number(addonOption.extraPrice);
+          }
+        }
+      }
+
+      serverCalculatedTotal += itemPrice * item.quantity;
+      verifiedItems.push({
+        productId: item.productId,
+        quantity: item.quantity,
+        price: itemPrice,
+        size: item.size || null,
+        addons: item.addons || null,
+      });
+    }
+
+    // Add shipping (must match frontend calculation)
+    const deliveryCharges = 0.1;
+    serverCalculatedTotal += deliveryCharges;
+    serverCalculatedTotal = parseFloat(serverCalculatedTotal.toFixed(2));
+
+    // Compare with frontend total (allow tiny floating point tolerance)
+    if (Math.abs(serverCalculatedTotal - totalAmount) > 0.50) {
+      console.error(`Price mismatch! Frontend: ${totalAmount}, Server: ${serverCalculatedTotal}`);
+      return NextResponse.json(
+        { success: false, error: 'Price verification failed. Please refresh your cart and try again.' },
+        { status: 400 }
+      );
+    }
+
+    // Use the server-calculated total for all downstream operations
+    const verifiedTotal = serverCalculatedTotal;
+
+    // ── 4. Validate minimum amount ──────────────────────────────────
+    const amountInPaise = Math.round(verifiedTotal * 100);
+    if (amountInPaise < 100) {
+      return NextResponse.json({ success: false, error: 'Minimum amount must be at least ₹1' }, { status: 400 });
+    }
+
+    // ── 5. Rate limit: max 5 paid orders per 24 hours ───────────────
     const existingUser = await prisma.user.findUnique({ where: { email } });
 
     if (existingUser) {
@@ -54,60 +164,53 @@ export async function POST(req) {
       }
     }
 
-    // 3. Create Razorpay Order (external API — cannot be rolled back)
+    // ── 6. Create Razorpay Order ────────────────────────────────────
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
     const razorpayOrder = await razorpay.orders.create({
       amount: amountInPaise,
       currency: 'INR',
       receipt: `receipt_${Date.now()}`,
     });
 
-    // 3. Wrap all DB writes in a transaction for atomicity
+    // ── 7. Wrap all DB writes in a transaction ──────────────────────
     const { user, dbOrder } = await prisma.$transaction(async (tx) => {
-      // Find or create User
-      let txUser = await tx.user.findUnique({
-        where: { email },
-      });
+      let txUser = await tx.user.findUnique({ where: { email } });
 
       if (!txUser) {
         txUser = await tx.user.create({
-          data: { firstName, lastName, email, phone },
+          data: { firstName: safeFirstName, lastName: safeLastName, email, phone },
         });
       } else {
-        // Update user details if they changed
         txUser = await tx.user.update({
           where: { id: txUser.id },
-          data: { firstName, lastName, phone },
+          data: { firstName: safeFirstName, lastName: safeLastName, phone },
         });
       }
 
-      // Create Address
       await tx.address.create({
         data: {
           userId: txUser.id,
-          addressLine1,
-          addressLine2: addressLine2 || null,
-          city,
+          addressLine1: safeAddressLine1,
+          addressLine2: safeAddressLine2,
+          city: safeCity,
           postalCode,
         },
       });
 
-      // Create Order with items
       const txOrder = await tx.order.create({
         data: {
           userId: txUser.id,
-          totalAmount: totalAmount,
+          totalAmount: verifiedTotal,
           status: 'PENDING',
           razorpayOrderId: razorpayOrder.id,
           deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
-          notes: additionalInfo || null,
+          notes: safeAdditionalInfo,
           items: {
-            create: items.map((item) => ({
-              productId: item.productId,
-              quantity: item.quantity,
-              price: item.price,
-              size: item.size || null,
-              addons: item.addons || null,
-            })),
+            create: verifiedItems,
           },
         },
       });
@@ -125,13 +228,13 @@ export async function POST(req) {
     });
   } catch (error) {
     console.error('Error in checkout:', error);
-    
+
     if (error.statusCode === 401) {
-      return NextResponse.json({ success: false, error: 'Authentication failed' }, { status: 401 });
+      return NextResponse.json({ success: false, error: 'Payment gateway authentication failed' }, { status: 401 });
     }
 
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to process checkout' },
+      { success: false, error: 'Failed to process checkout. Please try again.' },
       { status: 500 }
     );
   }
