@@ -37,6 +37,8 @@ export async function GET(request, { params }) {
       status: order.status,
       razorpayOrderId: order.razorpayOrderId,
       razorpayPaymentId: order.razorpayPaymentId,
+      deliveryDate: order.deliveryDate,
+      notes: order.notes,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
       customer: {
@@ -55,6 +57,8 @@ export async function GET(request, { params }) {
         image: item.product.imageUrl,
         quantity: item.quantity,
         price: Number(item.price),
+        size: item.size,
+        addons: item.addons,
         total: Number(item.price) * item.quantity
       }))
     };

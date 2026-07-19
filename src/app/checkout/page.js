@@ -86,6 +86,8 @@ export default function Checkout() {
             city: 'Mumbai',
             postalCode: formData.pincode,
             totalAmount: grandTotal,
+            deliveryDate: formData.date,
+            additionalInfo: formData.additionalInfo || null,
             items: cartItems.map(item => ({
               productId: item.product.id,
               quantity: item.quantity,

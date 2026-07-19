@@ -49,7 +49,6 @@ export default function Storefront() {
           
           const formattedProds = prodsData.map(p => ({
             ...p,
-            isVeg: true,
             customisable: p.addons && p.addons.length > 0
           }));
 

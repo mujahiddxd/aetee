@@ -5,7 +5,7 @@ export async function PUT(request, { params }) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, description, price, categoryId, sizes, addons, isFeatured, isBestSelling, isSoldOut, image, filterIds } = body;
+    const { name, description, price, categoryId, sizes, addons, isFeatured, isBestSelling, isSoldOut, isVeg, image, filterIds } = body;
 
     if (!name || !price || !categoryId) {
       return NextResponse.json({ error: 'Name, price, and category are required' }, { status: 400 });
@@ -37,6 +37,7 @@ export async function PUT(request, { params }) {
         isFeatured: Boolean(isFeatured),
         isBestSeller: Boolean(isBestSelling),
         isSoldOut: Boolean(isSoldOut),
+        isVeg: isVeg !== undefined ? Boolean(isVeg) : true,
         options: {
           create: allOptions,
         },
@@ -62,6 +63,7 @@ export async function PUT(request, { params }) {
       isFeatured: product.isFeatured,
       isBestSelling: product.isBestSeller,
       isSoldOut: product.isSoldOut,
+      isVeg: product.isVeg,
       addons: product.options.filter(opt => !opt.name.startsWith('SIZE:::')).map(opt => ({ id: opt.id, name: opt.name.startsWith('ADDON:::') ? opt.name.replace('ADDON:::', '') : opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
       sizes: product.options.filter(opt => opt.name.startsWith('SIZE:::')).map(opt => ({ id: opt.id, name: opt.name.replace('SIZE:::', ''), price: Number(opt.extraPrice), image: opt.imageUrl })),
       filters: product.filters.map(f => f.id)

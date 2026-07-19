@@ -41,7 +41,7 @@ export default function AdminProducts() {
 
   const [formData, setFormData] = useState({
     name: "", description: "", price: "", categoryId: "", sizes: [], addons: [], filterIds: [],
-    isSoldOut: false, isBestSelling: false, isFeatured: false, image: ""
+    isSoldOut: false, isBestSelling: false, isFeatured: false, isVeg: true, image: ""
   });
 
   const fetchData = async () => {
@@ -137,7 +137,7 @@ export default function AdminProducts() {
     setIsEditing(false);
     setFormData({
       name: "", description: "", price: "", categoryId: flatCats.length > 0 ? flatCats[0].id : "", sizes: [], addons: [], filterIds: [],
-      isSoldOut: false, isBestSelling: false, isFeatured: false, image: ""
+      isSoldOut: false, isBestSelling: false, isFeatured: false, isVeg: true, image: ""
     });
     setCurrentProduct({ isNew: true });
   };
@@ -522,6 +522,11 @@ export default function AdminProducts() {
                 <div className="toggle-switch"></div>
                 Mark as Sold Out
               </label>
+              <label className="toggle-label">
+                <input type="checkbox" className="sr-only" name="isVeg" checked={formData.isVeg} onChange={handleInputChange} disabled={submitting} />
+                <div className="toggle-switch"></div>
+                Is Eggless (Vegetarian)
+              </label>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid var(--color-border)' }}>
@@ -599,6 +604,7 @@ export default function AdminProducts() {
                         {prod.isFeatured && <span className="badge badge-featured">Featured</span>}
                         {prod.isBestSelling && <span className="badge badge-best-seller">Best Seller!</span>}
                         {prod.isSoldOut && <span className="badge badge-sold-out">Sold Out</span>}
+                        {prod.isVeg ? <span style={{ background: '#dcfce7', color: '#166534', fontSize: '0.7rem', padding: '4px 8px', borderRadius: '4px', fontWeight: 600 }}>Eggless</span> : <span style={{ background: '#fee2e2', color: '#991b1b', fontSize: '0.7rem', padding: '4px 8px', borderRadius: '4px', fontWeight: 600 }}>Contains Egg</span>}
                         {prod.filterTags && prod.filterTags.map(ft => (
                           <span key={ft.id} style={{ background: '#e2e8f0', color: '#475569', fontSize: '0.7rem', padding: '4px 8px', borderRadius: '4px', fontWeight: 600 }}>
                             {ft.name}

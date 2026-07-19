@@ -29,14 +29,11 @@ export async function POST(req) {
     // We can listen for 'order.paid' or 'payment.captured'
     if (body.event === 'order.paid' || body.event === 'payment.captured') {
       let razorpayOrderId = null;
-      let requestedDate = null;
 
       if (body.event === 'order.paid') {
         razorpayOrderId = body.payload.order?.entity?.id;
-        requestedDate = body.payload.order?.entity?.notes?.delivery_date;
       } else if (body.event === 'payment.captured') {
         razorpayOrderId = body.payload.payment?.entity?.order_id;
-        requestedDate = body.payload.payment?.entity?.notes?.delivery_date;
       }
 
       if (!razorpayOrderId) {
@@ -106,6 +103,10 @@ export async function POST(req) {
         }
       });
 
+      const deliveryDateStr = order.deliveryDate 
+        ? new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(order.deliveryDate))
+        : null;
+
       const message = `
 🎉 *NEW ORDER RECEIVED! (Daily #${serialNumber})* 🎉
 
@@ -116,8 +117,9 @@ export async function POST(req) {
 *Phone:* ${order.user.phone || 'N/A'}
 *Address:* ${addressText}
 *Amount Paid:* ₹${order.totalAmount}
-${requestedDate ? `*Requested Date:* ${requestedDate}` : ''}
+📅 *Delivery Date:* ${deliveryDateStr || 'Not specified'}
 ${deliveryNote}
+${order.notes ? `\n📝 *Special Instructions:*\n${order.notes}\n` : ''}
 
 *Items Ordered:*
 ${itemsText}

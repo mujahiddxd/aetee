@@ -28,6 +28,7 @@ export async function GET() {
       isFeatured: prod.isFeatured,
       isBestSelling: prod.isBestSeller,
       isSoldOut: prod.isSoldOut,
+      isVeg: prod.isVeg,
       // We map database options back to sizes and addons using prefixes
       addons: prod.options.filter(opt => !opt.name.startsWith('SIZE:::')).map(opt => ({
         id: opt.id,
@@ -55,7 +56,7 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, description, price, categoryId, sizes, addons, isFeatured, isBestSelling, isSoldOut, image, filterIds } = body;
+    const { name, description, price, categoryId, sizes, addons, isFeatured, isBestSelling, isSoldOut, isVeg, image, filterIds } = body;
 
     if (!name || !price || !categoryId) {
       return NextResponse.json({ error: 'Name, price, and category are required' }, { status: 400 });
@@ -81,6 +82,7 @@ export async function POST(request) {
         isFeatured: Boolean(isFeatured),
         isBestSeller: Boolean(isBestSelling),
         isSoldOut: Boolean(isSoldOut),
+        isVeg: isVeg !== undefined ? Boolean(isVeg) : true,
         options: {
           create: allOptions,
         },
@@ -106,6 +108,7 @@ export async function POST(request) {
       isFeatured: product.isFeatured,
       isBestSelling: product.isBestSeller,
       isSoldOut: product.isSoldOut,
+      isVeg: product.isVeg,
       addons: product.options.filter(opt => !opt.name.startsWith('SIZE:::')).map(opt => ({ id: opt.id, name: opt.name.startsWith('ADDON:::') ? opt.name.replace('ADDON:::', '') : opt.name, price: Number(opt.extraPrice), image: opt.imageUrl })),
       sizes: product.options.filter(opt => opt.name.startsWith('SIZE:::')).map(opt => ({ id: opt.id, name: opt.name.replace('SIZE:::', ''), price: Number(opt.extraPrice), image: opt.imageUrl })),
       filters: product.filters.map(f => f.id)

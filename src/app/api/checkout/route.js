@@ -13,7 +13,7 @@ export async function POST(req) {
     const { 
       firstName, lastName, email, phone, 
       addressLine1, addressLine2, city, postalCode,
-      totalAmount, items 
+      totalAmount, items, deliveryDate, additionalInfo 
     } = body;
 
     if (!email || !firstName || !lastName || !addressLine1 || !city || !postalCode || !items || !items.length) {
@@ -98,6 +98,8 @@ export async function POST(req) {
           totalAmount: totalAmount,
           status: 'PENDING',
           razorpayOrderId: razorpayOrder.id,
+          deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
+          notes: additionalInfo || null,
           items: {
             create: items.map((item) => ({
               productId: item.productId,

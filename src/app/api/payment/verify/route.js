@@ -137,6 +137,10 @@ export async function POST(req) {
           where: { createdAt: { gte: startOfDay, lte: fullOrder.createdAt } }
         });
 
+        const deliveryDateStr = fullOrder.deliveryDate 
+          ? new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(fullOrder.deliveryDate))
+          : null;
+
         const message = `
 🎉 *NEW ORDER RECEIVED! (Daily #${serialNumber})* 🎉
 
@@ -147,8 +151,9 @@ export async function POST(req) {
 *Phone:* ${fullOrder.user.phone || 'N/A'}
 *Address:* ${addressText}
 *Amount Paid:* ₹${fullOrder.totalAmount}
-${delivery_date ? `*Requested Date:* ${delivery_date}` : ''}
+📅 *Delivery Date:* ${deliveryDateStr || 'Not specified'}
 ${deliveryNote}
+${fullOrder.notes ? `\n📝 *Special Instructions:*\n${fullOrder.notes}\n` : ''}
 
 *Items Ordered:*
 ${itemsText}
