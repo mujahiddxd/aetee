@@ -165,6 +165,31 @@ ${itemsText}
       } else {
         console.log('Successfully sent Telegram notification for order:', order.id);
       }
+
+      // Send WhatsApp Receipt
+      if (order.user.phone && process.env.WHATSAPP_API_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {
+        const cleanPhone = order.user.phone.replace(/\D/g, '');
+        const waDeliveryNote = deliveryNote.replace(/<\/?b>/g, '*');
+        const waMessage = `🎉 *Payment Successful!* 🎉\n\nHi ${order.user.firstName},\nThank you for your order! Your payment of ₹${order.totalAmount} has been received.\n\n${waDeliveryNote}\n\nWe will notify you once it's out for delivery.`;
+        
+        const waUrl = `https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+        await fetch(waUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.WHATSAPP_API_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            recipient_type: 'individual',
+            to: cleanPhone,
+            type: 'text',
+            text: { body: waMessage },
+          })
+        }).then(async res => {
+           if (!res.ok) console.error('WhatsApp Receipt API Error:', await res.text());
+        }).catch(e => console.error('WhatsApp Receipt Exception:', e));
+      }
     } else if (body.event === 'payment.failed') {
       const razorpayOrderId = body.payload.payment?.entity?.order_id;
       if (razorpayOrderId) {
@@ -196,6 +221,30 @@ ${itemsText}
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: failMessage, parse_mode: 'HTML' })
             }).catch(e => console.error(e));
+
+            // Send WhatsApp Failure Alert
+            if (order.user.phone && process.env.WHATSAPP_API_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {
+              const cleanPhone = order.user.phone.replace(/\D/g, '');
+              const waFailMessage = `❌ *Payment Failed* ❌\n\nHi ${order.user.firstName},\nWe noticed your recent payment attempt of ₹${order.totalAmount} failed.\n\nPlease try again on our website or contact support if you need help.`;
+              
+              const waUrl = `https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+              await fetch(waUrl, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${process.env.WHATSAPP_API_TOKEN}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  messaging_product: 'whatsapp',
+                  recipient_type: 'individual',
+                  to: cleanPhone,
+                  type: 'text',
+                  text: { body: waFailMessage },
+                })
+              }).then(async res => {
+                 if (!res.ok) console.error('WhatsApp Failure Alert API Error:', await res.text());
+              }).catch(e => console.error('WhatsApp Failure Alert Exception:', e));
+            }
           }
         }
       }
