@@ -36,7 +36,7 @@ export async function middleware(request) {
   let rewriteRequired = false;
 
   // Subdomain routing for Admin Panel
-  if (hostname.includes('aeteesadmin.aeteesbakehouse.com')) {
+  if (hostname.includes('aeteesadmin.aeteesbakehouse.com') || hostname.includes('localhost')) {
     // Only rewrite non-API and non-static asset requests
     if (!url.pathname.startsWith('/api') && !url.pathname.startsWith('/_next') && !url.pathname.includes('.')) {
       if (url.pathname === '/') {
