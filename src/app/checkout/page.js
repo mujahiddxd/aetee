@@ -126,6 +126,7 @@ export default function Checkout() {
             addressLine2: formData.landmark || null,
             city: 'Mumbai',
             postalCode: formData.pincode,
+            distance: distance,
             totalAmount: grandTotal,
             deliveryDate: formData.date,
             additionalInfo: formData.additionalInfo || null,

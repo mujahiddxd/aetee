@@ -9,6 +9,7 @@ export async function POST(req) {
     const { 
       firstName, lastName, email, phone, 
       addressLine1, addressLine2, city, postalCode,
+      distance,
       totalAmount, items, deliveryDate, additionalInfo 
     } = body;
 
@@ -126,39 +127,22 @@ export async function POST(req) {
       });
     }
 
-    // ── 3.5 Calculate Distance and Delivery Charges ─────────────────
+    // ── 3.5 Calculate Delivery Charges from pre-validated distance ──
+    // Distance is validated client-side via AddressModal (cart → checkout)
     let deliveryCharges = 0;
     
     if (serverCalculatedTotal > 0) {
-      try {
-        const origin = "NDR 9, B-703 Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089";
-        const destination = `${safeAddressLine1}, ${safeAddressLine2 ? safeAddressLine2 + ', ' : ''}${safeCity}, ${postalCode}`;
-        const apiKey = process.env.GOOGLE_MAPS_SERVER_API_KEY;
-        
-        const googleUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origin)}&destinations=${encodeURIComponent(destination)}&key=${apiKey}`;
-        
-        const distanceRes = await fetch(googleUrl);
-        const distanceData = await distanceRes.json();
-        
-        if (distanceData.status === 'OK' && distanceData.rows[0].elements[0].status === 'OK') {
-          const distanceInMeters = distanceData.rows[0].elements[0].distance.value;
-          const distanceInKm = distanceInMeters / 1000;
-          
-          if (distanceInKm > 40) {
-             return NextResponse.json({ success: false, error: `Sorry, your location is ${distanceInKm.toFixed(1)}km away. We do not deliver beyond 40km.` }, { status: 400 });
-          }
-          
-          // Base fee of ₹50 plus ₹10 per km
-          const BASE_DELIVERY_FEE = 50;
-          const COST_PER_KM = 10;
-          deliveryCharges = BASE_DELIVERY_FEE + Math.ceil(distanceInKm * COST_PER_KM);
-        } else {
-           console.error("Google Maps API error:", distanceData);
-           return NextResponse.json({ success: false, error: 'Could not calculate delivery distance. Please check your address.' }, { status: 400 });
+      const parsedDistance = parseFloat(distance) || 0;
+      
+      if (parsedDistance > 0) {
+        if (parsedDistance > 40) {
+           return NextResponse.json({ success: false, error: `Sorry, your location is ${parsedDistance.toFixed(1)}km away. We do not deliver beyond 40km.` }, { status: 400 });
         }
-      } catch (err) {
-        console.error("Distance calculation error:", err);
-        return NextResponse.json({ success: false, error: 'Failed to verify delivery address.' }, { status: 500 });
+        
+        // Base fee of ₹50 plus ₹10 per km
+        const BASE_DELIVERY_FEE = 50;
+        const COST_PER_KM = 10;
+        deliveryCharges = BASE_DELIVERY_FEE + Math.ceil(parsedDistance * COST_PER_KM);
       }
     }
 
