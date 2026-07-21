@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { CartProvider } from "./context/CartContext";
+import Script from "next/script";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -51,10 +52,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${inter.variable} ${oswald.variable}`}>
       <body>
-        <script 
+        <Script 
           src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&loading=async&libraries=places`}
           id="google-maps-script"
-        ></script>
+          strategy="beforeInteractive"
+        />
 
         <CartProvider>
           <div style={{ backgroundColor: 'var(--color-bg-white)', minHeight: '100vh', position: 'relative', display: 'flex', flexDirection: 'column' }}>
