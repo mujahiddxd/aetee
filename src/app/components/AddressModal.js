@@ -153,7 +153,8 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
       (error) => {
         setLoading(false);
         setError("Location access denied or unavailable.");
-      }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
