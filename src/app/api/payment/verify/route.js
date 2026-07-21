@@ -173,6 +173,26 @@ ${itemsText}
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML' }),
         }).catch(e => console.error('Telegram error:', e));
+
+        // --- Send Email Receipt via Google Apps Script ---
+        if (fullOrder.user.email && process.env.GOOGLE_SCRIPT_URL) {
+          const emailPayload = {
+            customerEmail: fullOrder.user.email,
+            customerName: fullOrder.user.firstName || 'Customer',
+            orderId: `${serialNumber}`, // Or use fullOrder.id if you prefer the long ID
+            totalAmount: `${fullOrder.totalAmount}`,
+            deliveryDate: finalDeliveryText,
+            itemsText: itemsText
+          };
+
+          fetch(process.env.GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify(emailPayload) // Google Apps Script handles raw strings better sometimes, but this works with our JSON.parse
+          })
+          .then(res => res.json())
+          .then(data => console.log('Email Script Response:', data))
+          .catch(e => console.error('Email Script Error:', e));
+        }
       }
     } catch (err) {
       console.error('Error sending fallback telegram message:', err);
