@@ -26,7 +26,7 @@ export default function Navbar() {
       <header className="desktop-nav" style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: '#FFFFFF' }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 32px', width: '100%' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-            <Image src="/logo.png" alt="Aetee's Bakehouse" width={200} height={70} style={{ height: '70px', width: 'auto', objectFit: 'contain', mixBlendMode: 'multiply' }} priority />
+            <Image src="/logo.png" alt="Aetee's Bakehouse" width={200} height={70} style={{ height: 'auto', width: 'auto', objectFit: 'contain', mixBlendMode: 'multiply', maxHeight: '70px' }} priority />
           </Link>
           <nav style={{ display: 'flex', alignItems: 'center', gap: '32px', fontSize: '1.25rem', color: 'var(--color-text-muted)', fontWeight: '500' }}>
             <Link href="/menu" style={{ color: 'inherit', textDecoration: 'none' }}>Menu</Link>
