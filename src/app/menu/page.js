@@ -77,6 +77,8 @@ export default function Storefront() {
     };
   }, []);
 
+  const [vegFilter, setVegFilter] = useState("all"); // "all" | "eggless" | "egg"
+
   const toggleCategory = (categoryName) => {
     setExpandedCategories(prev => ({
       ...prev,
@@ -99,6 +101,13 @@ export default function Storefront() {
     const matchesCategory = activeCategory === "All" || p.category === activeCategory;
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
     
+    let matchesVeg = true;
+    if (vegFilter === "eggless") {
+      matchesVeg = !!p.isVeg;
+    } else if (vegFilter === "egg") {
+      matchesVeg = !p.isVeg;
+    }
+
     // AND logic for filters (must have all selected filters)
     let matchesFilters = true;
     if (selectedFilters.size > 0) {
@@ -114,12 +123,12 @@ export default function Storefront() {
       }
     }
     
-    return matchesCategory && matchesSearch && matchesFilters;
-  }), [activeCategory, searchQuery, products, selectedFilters]);
+    return matchesCategory && matchesSearch && matchesVeg && matchesFilters;
+  }), [activeCategory, searchQuery, products, selectedFilters, vegFilter]);
 
   // Dynamically filter categories to only show those that have matching products
   const filteredCategories = useMemo(() => {
-    if (selectedFilters.size === 0 && !searchQuery) return categories;
+    if (selectedFilters.size === 0 && !searchQuery && vegFilter === "all") return categories;
     
     return categories.filter(cat => {
       if (cat.name === "All") return true;
@@ -129,6 +138,9 @@ export default function Storefront() {
         if (p.category !== cat.name) return false;
         
         if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+
+        if (vegFilter === "eggless" && !p.isVeg) return false;
+        if (vegFilter === "egg" && p.isVeg) return false;
         
         if (selectedFilters.size > 0) {
           if (!p.filters || p.filters.length === 0) return false;
@@ -142,7 +154,7 @@ export default function Storefront() {
       
       return hasMatchingProduct;
     });
-  }, [categories, products, selectedFilters, searchQuery]);
+  }, [categories, products, selectedFilters, searchQuery, vegFilter]);
 
   // If the active category gets hidden by a filter, switch back to 'All'
   useEffect(() => {
@@ -186,33 +198,37 @@ export default function Storefront() {
                 <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
                 </svg>
-                {selectedFilters.size > 0 && (
+                {vegFilter !== 'all' && (
                   <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '18px', height: '18px', background: 'var(--color-primary)', color: '#FFF', fontSize: '0.7rem', fontWeight: 'bold', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {selectedFilters.size}
+                    1
                   </span>
                 )}
               </button>
               
               {isFilterDropdownOpen && (
-                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', width: '220px', background: '#FFF', border: '1px solid var(--color-border)', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', zIndex: 100, padding: '12px' }}>
-                  <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem' }}>Filters</h4>
-                  {filters.length === 0 ? (
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>No filters available</p>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {filters.map(f => (
-                        <label key={f.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem' }}>
-                          <input 
-                            type="checkbox" 
-                            checked={selectedFilters.has(f.id)}
-                            onChange={() => toggleFilter(f.id)}
-                            style={{ accentColor: 'var(--color-primary)', width: '16px', height: '16px' }}
-                          />
-                          {f.name}
-                        </label>
-                      ))}
-                    </div>
-                  )}
+                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', width: '180px', background: '#FFF', border: '1px solid var(--color-border)', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', zIndex: 100, padding: '16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-main)' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={vegFilter === 'eggless'}
+                        onChange={() => setVegFilter(vegFilter === 'eggless' ? 'all' : 'eggless')}
+                        style={{ accentColor: '#16a34a', width: '18px', height: '18px', margin: 0, cursor: 'pointer' }}
+                      />
+                      <span className="veg-icon"><span className="veg-dot"></span></span>
+                      <span>Eggless</span>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-main)' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={vegFilter === 'egg'}
+                        onChange={() => setVegFilter(vegFilter === 'egg' ? 'all' : 'egg')}
+                        style={{ accentColor: '#795548', width: '18px', height: '18px', margin: 0, cursor: 'pointer' }}
+                      />
+                      <span className="veg-icon non-veg-icon"><span className="veg-dot non-veg-dot"></span></span>
+                      <span>Egg</span>
+                    </label>
+                  </div>
                 </div>
               )}
             </div>
@@ -342,32 +358,37 @@ export default function Storefront() {
                   <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
                   </svg>
-                  {selectedFilters.size > 0 && (
+                  {vegFilter !== 'all' && (
                     <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '16px', height: '16px', background: 'var(--color-primary)', color: '#FFF', fontSize: '0.65rem', fontWeight: 'bold', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {selectedFilters.size}
+                      1
                     </span>
                   )}
                 </button>
                 
                 {isMobileFiltersOpen && (
-                  <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', width: '220px', background: '#FFF', border: '1px solid var(--color-border)', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 100, padding: '16px' }}>
-                    {filters.length === 0 ? (
-                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>No filters available</p>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        {filters.map(f => (
-                          <label key={f.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '1rem', fontWeight: 600, color: 'var(--color-text-main)' }}>
-                            <input 
-                              type="checkbox" 
-                              checked={selectedFilters.has(f.id)}
-                              onChange={() => toggleFilter(f.id)}
-                              style={{ accentColor: 'var(--color-primary)', width: '18px', height: '18px', margin: 0 }}
-                            />
-                            {f.name}
-                          </label>
-                        ))}
-                      </div>
-                    )}
+                  <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', width: '180px', background: '#FFF', border: '1px solid var(--color-border)', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 100, padding: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '1rem', fontWeight: 600, color: 'var(--color-text-main)' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={vegFilter === 'eggless'}
+                          onChange={() => setVegFilter(vegFilter === 'eggless' ? 'all' : 'eggless')}
+                          style={{ accentColor: '#16a34a', width: '18px', height: '18px', margin: 0, cursor: 'pointer' }}
+                        />
+                        <span className="veg-icon"><span className="veg-dot"></span></span>
+                        <span>Eggless</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '1rem', fontWeight: 600, color: 'var(--color-text-main)' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={vegFilter === 'egg'}
+                          onChange={() => setVegFilter(vegFilter === 'egg' ? 'all' : 'egg')}
+                          style={{ accentColor: '#795548', width: '18px', height: '18px', margin: 0, cursor: 'pointer' }}
+                        />
+                        <span className="veg-icon non-veg-icon"><span className="veg-dot non-veg-dot"></span></span>
+                        <span>Egg</span>
+                      </label>
+                    </div>
                   </div>
                 )}
               </div>

@@ -503,15 +503,26 @@ input[type="checkbox"].sr-only {
   justify-content: center;
   width: 16px;
   height: 16px;
-  border: 1.5px solid #22c55e;
+  border: 1.5px solid #16a34a;
   border-radius: 2px;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .veg-dot {
   width: 8px;
   height: 8px;
-  background-color: #22c55e;
+  background-color: #16a34a;
   border-radius: 50%;
+}
+
+.non-veg-icon {
+  border-color: #795548;
+}
+
+.non-veg-dot {
+  background-color: #795548;
 }
 
 .product-title {
@@ -818,17 +829,18 @@ input[type="checkbox"].sr-only {
 
 .product-image-container {
   width: 100%;
-  height: 160px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 0;
+  aspect-ratio: 4 / 3;
+  position: relative;
+  overflow: hidden;
+  border-top-left-radius: var(--radius-md);
+  border-top-right-radius: var(--radius-md);
 }
 
 .product-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
 }
 
 .product-card-veg-icon {
@@ -837,29 +849,12 @@ input[type="checkbox"].sr-only {
   right: 12px;
 }
 
-.veg-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 12px;
-  height: 12px;
-  border: 1.5px solid #22c55e;
-  border-radius: 2px;
-}
-
-.veg-dot {
-  width: 6px;
-  height: 6px;
-  background-color: #22c55e;
-  border-radius: 50%;
-}
-
 .non-veg-icon {
-  border-color: #ef4444;
+  border-color: #795548;
 }
 
 .non-veg-dot {
-  background-color: #ef4444;
+  background-color: #795548;
 }
 
 .product-content {

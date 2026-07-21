@@ -13,7 +13,7 @@ export function ProductCard({ product, onSelect, onRepeatSelect }) {
 
   return (
     <div className="product-card" style={{ opacity: product.isSoldOut ? 0.6 : 1 }}>
-      <div className="product-image-container" onClick={() => onSelect(product)} style={{ cursor: 'pointer', position: 'relative' }}>
+      <div className="product-image-container" onClick={() => onSelect(product)} style={{ cursor: 'pointer', position: 'relative', width: '100%', aspectRatio: '4/3', overflow: 'hidden' }}>
         <Image src={product.image} alt={product.name} className="product-image" fill sizes="(max-width: 768px) 100vw, 300px" style={{ objectFit: 'cover' }} />
       </div>
 
@@ -23,11 +23,11 @@ export function ProductCard({ product, onSelect, onRepeatSelect }) {
             <span style={{ backgroundColor: tagColor, color: 'white', fontSize: '0.65rem', fontWeight: 600, padding: '2px 6px', letterSpacing: '0.05em' }}>{tag}</span>
           ) : <div></div>}
 
-          <div className="product-card-veg-icon" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div className="product-card-veg-icon" style={{ display: 'flex', alignItems: 'center' }}>
             {product.isVeg ? (
-              <><span className="veg-icon"><span className="veg-dot"></span></span> <span style={{fontSize: '0.65rem', fontWeight: 700, color: '#22c55e', letterSpacing: '0.05em'}}>EGGLESS</span></>
+              <span className="veg-icon" title="Eggless"><span className="veg-dot"></span></span>
             ) : (
-              <><span className="veg-icon non-veg-icon"><span className="veg-dot non-veg-dot"></span></span> <span style={{fontSize: '0.65rem', fontWeight: 700, color: '#e53935', letterSpacing: '0.05em'}}>CONTAINS EGG</span></>
+              <span className="veg-icon non-veg-icon" title="Contains Egg"><span className="veg-dot non-veg-dot"></span></span>
             )}
           </div>
         </div>
