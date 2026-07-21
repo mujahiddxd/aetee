@@ -269,6 +269,7 @@ export default function Checkout() {
               <input
                 type="text"
                 name="firstName"
+                autoComplete="given-name"
                 value={formData.firstName}
                 onChange={handleInputChange}
                 className={`form-input ${errors.firstName ? 'error' : ''}`}
@@ -282,6 +283,7 @@ export default function Checkout() {
               <input
                 type="text"
                 name="lastName"
+                autoComplete="family-name"
                 value={formData.lastName}
                 onChange={handleInputChange}
                 className={`form-input ${errors.lastName ? 'error' : ''}`}
@@ -297,6 +299,7 @@ export default function Checkout() {
             <input
               type="email"
               name="email"
+              autoComplete="email"
               value={formData.email}
               onChange={handleInputChange}
               className={`form-input ${errors.email ? 'error' : ''}`}
@@ -327,6 +330,7 @@ export default function Checkout() {
               <input
                 type="tel"
                 name="phone"
+                autoComplete="tel-national"
                 value={formData.phone}
                 onChange={handleInputChange}
                 className={`form-input ${errors.phone ? 'error' : ''}`}
@@ -349,6 +353,7 @@ export default function Checkout() {
           <div className="input-group">
             <textarea
               name="address"
+              autoComplete="street-address"
               value={formData.address}
               onChange={handleInputChange}
               className={`form-input ${errors.address ? 'error' : ''}`}
@@ -364,6 +369,7 @@ export default function Checkout() {
             <input
               type="text"
               name="houseNo"
+              autoComplete="address-line2"
               value={formData.houseNo}
               onChange={handleInputChange}
               className={`form-input ${errors.houseNo ? 'error' : ''}`}
@@ -378,6 +384,7 @@ export default function Checkout() {
               <input
                 type="text"
                 name="landmark"
+                autoComplete="address-level3"
                 value={formData.landmark}
                 onChange={handleInputChange}
                 className="form-input"
@@ -388,6 +395,7 @@ export default function Checkout() {
               <input
                 type="text"
                 name="pincode"
+                autoComplete="postal-code"
                 value={formData.pincode}
                 onChange={handleInputChange}
                 className={`form-input ${errors.pincode ? 'error' : ''}`}
