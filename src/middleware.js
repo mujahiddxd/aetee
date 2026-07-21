@@ -36,7 +36,10 @@ export async function middleware(request) {
   let rewriteRequired = false;
 
   // Subdomain routing for Admin Panel
-  if (hostname.includes('aeteesadmin.aeteesbakehouse.com') || hostname.includes('localhost')) {
+  const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1');
+  const isAdminSubdomain = hostname.startsWith('aeteesadmin.');
+
+  if (isAdminSubdomain) {
     // Only rewrite non-API and non-static asset requests
     if (!url.pathname.startsWith('/api') && !url.pathname.startsWith('/_next') && !url.pathname.includes('.')) {
       if (url.pathname === '/') {
@@ -48,8 +51,8 @@ export async function middleware(request) {
       }
     }
   } else {
-    // Block direct access to /admin on the main domain
-    if (url.pathname.startsWith('/admin')) {
+    // Block direct access to /admin on the main domain (except on localhost for development)
+    if (url.pathname.startsWith('/admin') && !isLocalhost) {
       url.pathname = '/404'; 
       return NextResponse.rewrite(url);
     }

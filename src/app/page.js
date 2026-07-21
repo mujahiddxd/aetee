@@ -7,8 +7,9 @@ import Image from 'next/image';
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const slides = [
-    "https://placehold.co/1200x500/F0E6D2/5a3424?text=Slide+1",
-    "https://placehold.co/1200x500/E7F4FF/5a3424?text=Slide+2"
+    "/slide1.jpg",
+    "/slide2.jpg",
+    "/slide3.jpg"
   ];
 
   const nextSlide = () => {
@@ -26,20 +27,30 @@ export default function Home() {
         {/* Left Side (Yellow) */}
         <div className="home-split-left" style={{ backgroundColor: 'var(--color-highlight)' }}>
           <div style={{ maxWidth: '480px', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '3.5rem', lineHeight: '1.1', marginBottom: '24px' }}>WELCOME TO AETEES BAKEHOUSE MUMBAI</h2>
+            <h2 style={{ fontSize: '3.5rem', lineHeight: '1.1', marginBottom: '24px' }}>I DESERVE A
+              TREAT
+              MOMENT</h2>
             <p style={{ color: 'var(--color-text-main)', fontSize: '1rem', lineHeight: '1.6', marginBottom: '32px' }}>
-              Turn any occasion into a celebration with our easy-to-bake pastries or award-winning cakes - Mumbai&apos;s finest bakery delivered to you, perfect for gifting near or far!
+              Freshly baked. Freshly layered.
+
+              Every cheesecake and tiramisu is handcrafted only after you order, so every bite arrives as fresh
+              as it should be.
             </p>
             <Link href="/menu"><button className="btn btn-primary" style={{ padding: '16px 32px' }}>SEE THE MENU ↓</button></Link>
           </div>
         </div>
 
         {/* Right Side (Image + Box) */}
-        <div className="home-split-right" style={{ position: 'relative', backgroundImage: 'url("https://placehold.co/800x600/87CEEB/5a3424?text=Ice+Cream+Cake+Image")', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        <div className="home-split-right" style={{ position: 'relative', backgroundImage: 'url("/hero-cakes.jpg")', backgroundSize: 'cover', backgroundPosition: 'center' }}>
           <div style={{ backgroundColor: '#FFFFFF', padding: '40px', width: '90%', maxWidth: '400px', textAlign: 'center', boxShadow: 'var(--shadow-card)' }}>
-            <h2 style={{ fontSize: '2.5rem', lineHeight: '1.1', marginBottom: '16px' }}>ALPHONSO MANGO FRESH CREAM CAKE</h2>
+            <h2 style={{ fontSize: '2.5rem', lineHeight: '1.1', marginBottom: '16px' }}>CHEESECAKES.
+              TIRAMISUS.
+              MADE JUST
+              FOR YOU.</h2>
             <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', lineHeight: '1.6', marginBottom: '24px' }}>
-              Layers of classic Bombay mawa cake, premium Alphonso mango cream, and rich mango glaze in every bite. Available for a limited time.
+              No frozen stock. No shortcuts.<br />
+
+              Just creamy cheesecakes, dreamy tiramisus, and handcrafted desserts—because indulgence should never be rushed.
             </p>
             <Link href="/menu"><button className="btn btn-primary" style={{ padding: '14px 28px' }}>ORDER NOW</button></Link>
           </div>
@@ -50,7 +61,7 @@ export default function Home() {
       <section style={{ position: 'relative', width: '100%', maxWidth: '1200px', margin: '48px auto', overflow: 'hidden', borderRadius: '12px', boxShadow: 'var(--shadow-card)' }}>
         <div style={{ display: 'flex', transition: 'transform 0.5s ease-in-out', transform: `translateX(-${currentSlide * 100}%)` }}>
           {slides.map((slide, index) => (
-            <div key={index} style={{ width: '100%', position: 'relative', aspectRatio: '1200/500', flexShrink: 0 }}>
+            <div key={index} style={{ width: '100%', position: 'relative', aspectRatio: '16/9', flexShrink: 0, overflow: 'hidden' }}>
               <Image src={slide} alt={`Slide ${index + 1}`} fill sizes="100vw" style={{ objectFit: 'cover' }} priority={index === 0} />
             </div>
           ))}
@@ -74,15 +85,15 @@ export default function Home() {
       {/* Info Section (Image Left, Text Right) */}
       <section className="home-split-section">
         {/* Left Side (Image) */}
-        <div className="home-split-left" style={{ backgroundImage: 'url("https://placehold.co/800x600/e6d5b8/5a3424?text=Pastries")', backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '350px' }}>
+        <div className="home-split-left" style={{ backgroundImage: 'url("/pastries.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '350px' }}>
         </div>
 
         {/* Right Side (Text) */}
         <div className="home-split-right" style={{ backgroundColor: '#FFF7E6' }}>
           <div style={{ maxWidth: '480px', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '3.5rem', color: '#5A3424', textTransform: 'uppercase', marginBottom: '24px', lineHeight: '1' }}>FRESH FROM THE OVEN TO YOUR DOOR</h2>
+            <h2 style={{ fontSize: '3.5rem', color: '#5A3424', textTransform: 'uppercase', marginBottom: '24px', lineHeight: '1' }}>ONE SPOON. FIVE OBSESSIONS.</h2>
             <p style={{ color: '#5A3424', fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '40px' }}>
-              Experience the magic of Aetees Bakehouse. Award-winning cakes and signature pastries, delivered fresh.
+              From the timeless Classic, to our bold Filter Coffee, indulgent Nutella, caramelised Lotus Biscoff, and luxurious Pistachio—every tiramisu is layered with premium ingredients for the perfect balance of creamy, coffee-soaked, melt-in-your-mouth goodness.
             </p>
             <Link href="/menu"><button className="btn btn-primary" style={{ backgroundColor: '#5A3424', color: '#FFFFFF', padding: '16px 32px', border: 'none', borderRadius: '24px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', letterSpacing: '0.05em' }}>SEE THE MENU</button></Link>
           </div>

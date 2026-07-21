@@ -1,9 +1,39 @@
-export const metadata = {
-  title: 'Contact Us | Aetees Bakehouse',
-  description: 'Get in touch with Aetees Bakehouse for orders, inquiries, or feedback.',
-};
+"use client";
+
+import { useState } from 'react';
 
 export default function ContactPage() {
+  const [status, setStatus] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true);
+    setStatus('');
+    const formData = new FormData(e.target);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.get('name'),
+          email: formData.get('email'),
+          message: formData.get('message'),
+        }),
+      });
+      if (res.ok) {
+        setStatus('success');
+        e.target.reset();
+      } else {
+        setStatus('error');
+      }
+    } catch {
+      setStatus('error');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="container" style={{ paddingTop: '64px', paddingBottom: '64px' }}>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
@@ -25,22 +55,21 @@ export default function ContactPage() {
             <div>
               <h3 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Call Us</h3>
               <p style={{ color: 'var(--color-text-muted)', lineHeight: '1.6' }}>
-                <a href="tel:+918097077235" style={{ color: 'inherit', textDecoration: 'none' }}>+91 80970 77235</a>
+                <a href="tel:+919769000175" style={{ color: 'inherit', textDecoration: 'none' }}>+91 97690 00175</a>
               </p>
             </div>
             
             <div>
               <h3 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Email Us</h3>
               <p style={{ color: 'var(--color-text-muted)', lineHeight: '1.6' }}>
-                <a href="mailto:hello@aeteesbakehouse.com" style={{ color: 'inherit', textDecoration: 'none' }}>hello@aeteesbakehouse.com</a>
+                <a href="mailto:aeteesbakehouse@gmail.com" style={{ color: 'inherit', textDecoration: 'none' }}>aeteesbakehouse@gmail.com</a>
               </p>
             </div>
 
             <div>
               <h3 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Hours</h3>
               <p style={{ color: 'var(--color-text-muted)', lineHeight: '1.6' }}>
-                Mon - Fri: 8:00 AM - 8:00 PM <br />
-                Sat - Sun: 9:00 AM - 9:00 PM
+                Daily: 11:00 AM - 6:00 PM
               </p>
             </div>
           </div>
@@ -48,7 +77,7 @@ export default function ContactPage() {
           {/* Contact Form Card */}
           <div className="card">
             <h2 style={{ fontSize: '1.5rem', marginBottom: '24px', textTransform: 'uppercase' }}>Send a Message</h2>
-            <form action="#" method="POST" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div className="input-group" style={{ marginBottom: 0 }}>
                 <label htmlFor="name">Name</label>
                 <input type="text" id="name" name="name" className="input" placeholder="Your Name" required />
@@ -64,8 +93,11 @@ export default function ContactPage() {
                 <textarea id="message" name="message" className="input" rows="5" placeholder="How can we help you?" required style={{ resize: 'vertical' }}></textarea>
               </div>
               
-              <button type="submit" className="btn btn-primary" style={{ marginTop: '8px', padding: '14px' }}>
-                Send Message
+              {status === 'success' && <p style={{ color: 'green', margin: 0 }}>✅ Message sent successfully!</p>}
+              {status === 'error' && <p style={{ color: 'red', margin: 0 }}>Failed to send. Please try again.</p>}
+              
+              <button type="submit" className="btn btn-primary" style={{ marginTop: '8px', padding: '14px', opacity: loading ? 0.6 : 1 }} disabled={loading}>
+                {loading ? 'Sending...' : 'Send Message'}
               </button>
             </form>
           </div>
