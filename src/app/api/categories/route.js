@@ -49,7 +49,7 @@ export async function POST(request) {
     }
 
     const category = await prisma.category.create({
-      data: { 
+      data: {
         name: name.trim()
       },
     });

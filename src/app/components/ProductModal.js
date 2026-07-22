@@ -68,9 +68,9 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flex: 1 }}>
                 <div className="product-card-veg-icon" style={{ marginTop: '4px', display: 'flex', alignItems: 'center' }}>
                   {product.isVeg ? (
-                    <span className="veg-icon" title="Eggless"><span className="veg-dot"></span></span>
+                    <span className="veg-icon"><span className="veg-dot"></span></span>
                   ) : (
-                    <span className="veg-icon non-veg-icon" title="Contains Egg"><span className="veg-dot non-veg-dot"></span></span>
+                    <span className="veg-icon non-veg-icon"><span className="veg-dot non-veg-dot"></span></span>
                   )}
                 </div>
                 <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--color-primary)', fontWeight: 700, lineHeight: 1.3 }}>{product.name}</h2>

@@ -25,9 +25,9 @@ export function ProductCard({ product, onSelect, onRepeatSelect }) {
 
           <div className="product-card-veg-icon" style={{ display: 'flex', alignItems: 'center' }}>
             {product.isVeg ? (
-              <span className="veg-icon" title="Eggless"><span className="veg-dot"></span></span>
+              <span className="veg-icon"><span className="veg-dot"></span></span>
             ) : (
-              <span className="veg-icon non-veg-icon" title="Contains Egg"><span className="veg-dot non-veg-dot"></span></span>
+              <span className="veg-icon non-veg-icon"><span className="veg-dot non-veg-dot"></span></span>
             )}
           </div>
         </div>
