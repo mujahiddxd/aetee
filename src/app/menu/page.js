@@ -67,9 +67,9 @@ export default function Storefront() {
           ...c,
           icon: "https://placehold.co/100x100/FDF8F5/F5B041?text=" + (c.name ? c.name.substring(0, 2).toUpperCase() : 'CA')
         }));
-        
+
         formattedCats.unshift({ name: "All", icon: "https://placehold.co/100x100/FDF8F5/F5B041?text=ALL" });
-        
+
         const formattedProds = prodsData.map(p => ({
           ...p,
           category: p.category || 'Uncategorized',
@@ -79,7 +79,7 @@ export default function Storefront() {
         setCategories(formattedCats);
         setProducts(formattedProds);
         setFilters(filtersData);
-        
+
         setExpandedCategories(prev => {
           if (Object.keys(prev).length === 0) {
             return formattedCats.reduce((acc, cat) => ({ ...acc, [cat.name]: true }), {});
@@ -93,7 +93,7 @@ export default function Storefront() {
       }
     }
     fetchData();
-    
+
     return () => {
       isMounted = false;
     };
@@ -122,7 +122,7 @@ export default function Storefront() {
   const filteredProducts = useMemo(() => products.filter(p => {
     const matchesCategory = activeCategory === "All" || matchesCatName(p, activeCategory);
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     let matchesVeg = true;
     if (vegFilter === "eggless") {
       matchesVeg = !!p.isVeg;
@@ -144,36 +144,36 @@ export default function Storefront() {
         }
       }
     }
-    
+
     return matchesCategory && matchesSearch && matchesVeg && matchesFilters;
   }), [activeCategory, searchQuery, products, selectedFilters, vegFilter, matchesCatName]);
 
   // Dynamically filter categories to only show those that have matching products
   const filteredCategories = useMemo(() => {
     if (selectedFilters.size === 0 && !searchQuery && vegFilter === "all") return categories;
-    
+
     return categories.filter(cat => {
       if (cat.name === "All") return true;
-      
+
       // Does this category have at least one product that matches the search AND the selected filters?
       const hasMatchingProduct = products.some(p => {
         if (!matchesCatName(p, cat.name)) return false;
-        
+
         if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
 
         if (vegFilter === "eggless" && !p.isVeg) return false;
         if (vegFilter === "egg" && p.isVeg) return false;
-        
+
         if (selectedFilters.size > 0) {
           if (!p.filters || p.filters.length === 0) return false;
           for (const fid of selectedFilters) {
             if (!p.filters.includes(fid)) return false;
           }
         }
-        
+
         return true;
       });
-      
+
       return hasMatchingProduct;
     });
   }, [categories, products, selectedFilters, searchQuery, vegFilter, matchesCatName]);
@@ -195,11 +195,40 @@ export default function Storefront() {
       <div className="desktop-only" style={{ backgroundColor: 'var(--color-bg-grey)', padding: '24px 0 16px 0' }}>
         <div style={{ width: '100%', boxSizing: 'border-box', margin: '0', padding: '0 32px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h1 style={{ margin: 0, fontSize: '2rem', fontFamily: "'Inter', sans-serif", fontWeight: 800, textTransform: 'none', letterSpacing: 'normal', color: 'var(--color-text-main)' }}>Our Menu</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+            <h1 style={{ margin: 0, fontSize: '2rem', fontFamily: "'Inter', sans-serif", fontWeight: 800, textTransform: 'none', letterSpacing: 'normal', color: 'var(--color-text-main)', flexShrink: 0 }}>Our Menu</h1>
+            
+            <div style={{ 
+              backgroundColor: 'var(--color-primary)', 
+              borderRadius: '12px', 
+              padding: '12px 20px', 
+              position: 'relative', 
+              overflow: 'hidden',
+              boxShadow: 'var(--shadow-sm)',
+              minWidth: '350px'
+            }}>
+              <div style={{ position: 'absolute', top: 12, right: 12, opacity: 0.1 }}>
+                <svg width="40" height="40" fill="none" stroke="#FFF" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <h3 style={{ margin: '0 0 4px 0', fontSize: '1rem', color: '#FFF', fontWeight: 700, fontFamily: "'Inter', sans-serif", textTransform: 'none', letterSpacing: 'normal' }}>
+                Delivery Information
+              </h3>
+              <div style={{ margin: 0, fontSize: '0.85rem', color: '#FFF', lineHeight: 1.5, opacity: 0.95 }}>
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
+                  <span>•</span>
+                  <span><strong>Same-day delivery:</strong> Order before 12 PM</span>
+                </div>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <span>•</span>
+                  <span><strong>Delivery hours:</strong> 3 PM to 7 PM at delivery date</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div style={{ flex: '1 1 300px', maxWidth: '400px', display: 'flex', gap: '12px' }}>
+          <div style={{ flex: '1 1 300px', maxWidth: '350px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
             <div style={{ position: 'relative', flex: 1 }}>
               <input
                 type="text"
@@ -212,9 +241,9 @@ export default function Storefront() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
               </svg>
             </div>
-            
+
             <div style={{ position: 'relative' }}>
-              <button 
+              <button
                 onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
                 style={{ width: '46px', height: '46px', borderRadius: '8px', border: '1px solid var(--color-border)', background: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--color-text-main)', position: 'relative' }}
               >
@@ -227,13 +256,13 @@ export default function Storefront() {
                   </span>
                 )}
               </button>
-              
+
               {isFilterDropdownOpen && (
                 <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', width: '180px', background: '#FFF', border: '1px solid var(--color-border)', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', zIndex: 100, padding: '16px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-main)' }}>
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={vegFilter === 'eggless'}
                         onChange={() => setVegFilter(vegFilter === 'eggless' ? 'all' : 'eggless')}
                         style={{ accentColor: '#16a34a', width: '18px', height: '18px', margin: 0, cursor: 'pointer' }}
@@ -242,8 +271,8 @@ export default function Storefront() {
                       <span>Eggless</span>
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-main)' }}>
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={vegFilter === 'egg'}
                         onChange={() => setVegFilter(vegFilter === 'egg' ? 'all' : 'egg')}
                         style={{ accentColor: '#795548', width: '18px', height: '18px', margin: 0, cursor: 'pointer' }}
@@ -303,7 +332,7 @@ export default function Storefront() {
               <div style={{ padding: '48px 24px', textAlign: 'center', backgroundColor: '#FFF', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
                 <p style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '8px' }}>No menu items found</p>
                 <p style={{ fontSize: '0.95rem', color: 'var(--color-text-muted)', marginBottom: '20px' }}>Try clearing your active category filter or search query.</p>
-                <button 
+                <button
                   onClick={() => { setSearchQuery(''); setVegFilter('all'); setSelectedFilters(new Set()); setActiveCategory('All'); }}
                   className="btn btn-primary"
                 >
@@ -353,9 +382,9 @@ export default function Storefront() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <button onClick={() => updateQuantity(item.cartItemId, -1)} style={{ width: '24px', height: '24px', borderRadius: '50%', border: '1px solid var(--color-border)', background: '#FFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>-</button>
                           <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{item.quantity}</span>
-                          <button 
+                          <button
                             disabled={item.product.isSoldOut}
-                            onClick={() => { if (!item.product.isSoldOut) updateQuantity(item.cartItemId, 1) }} 
+                            onClick={() => { if (!item.product.isSoldOut) updateQuantity(item.cartItemId, 1) }}
                             style={{ width: '24px', height: '24px', borderRadius: '50%', border: '1px solid var(--color-border)', background: '#FFF', cursor: item.product.isSoldOut ? 'not-allowed' : 'pointer', opacity: item.product.isSoldOut ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                           >
                             +
@@ -382,6 +411,37 @@ export default function Storefront() {
 
         {/* Mobile Layout */}
         <div className="mobile-accordion-layout mobile-only" style={{ paddingTop: '16px' }}>
+          
+          <div style={{ padding: '0 0 16px 0' }}>
+            <div style={{ 
+              backgroundColor: 'var(--color-primary)', 
+              borderRadius: '12px', 
+              padding: '16px', 
+              position: 'relative', 
+              overflow: 'hidden',
+              boxShadow: 'var(--shadow-sm)'
+            }}>
+              <div style={{ position: 'absolute', top: 12, right: 12, opacity: 0.1 }}>
+                <svg width="40" height="40" fill="none" stroke="#FFF" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <h3 style={{ margin: '0 0 6px 0', fontSize: '1rem', color: '#FFF', fontWeight: 700, fontFamily: "'Inter', sans-serif", textTransform: 'none', letterSpacing: 'normal' }}>
+                Delivery Information
+              </h3>
+              <div style={{ margin: 0, fontSize: '0.85rem', color: '#FFF', lineHeight: 1.5, opacity: 0.95 }}>
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
+                  <span>•</span>
+                  <span><strong>Same-day delivery:</strong> Order before 12 PM</span>
+                </div>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <span>•</span>
+                  <span><strong>Delivery hours:</strong> 3 PM to 7 PM at delivery date</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Mobile Search/Filter Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid var(--color-border)', paddingBottom: '16px', margin: '0 -32px 16px', padding: '0 32px 16px' }}>
             <button style={{ padding: '8px 24px', borderRadius: '24px', background: 'var(--color-primary)', border: 'none', fontSize: '1rem', fontWeight: 600, color: '#FFF' }}>
@@ -404,13 +464,13 @@ export default function Storefront() {
                     </span>
                   )}
                 </button>
-                
+
                 {isMobileFiltersOpen && (
                   <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', width: '180px', background: '#FFF', border: '1px solid var(--color-border)', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 100, padding: '16px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '1rem', fontWeight: 600, color: 'var(--color-text-main)' }}>
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={vegFilter === 'eggless'}
                           onChange={() => setVegFilter(vegFilter === 'eggless' ? 'all' : 'eggless')}
                           style={{ accentColor: '#16a34a', width: '18px', height: '18px', margin: 0, cursor: 'pointer' }}
@@ -419,8 +479,8 @@ export default function Storefront() {
                         <span>Eggless</span>
                       </label>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '1rem', fontWeight: 600, color: 'var(--color-text-main)' }}>
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={vegFilter === 'egg'}
                           onChange={() => setVegFilter(vegFilter === 'egg' ? 'all' : 'egg')}
                           style={{ accentColor: '#795548', width: '18px', height: '18px', margin: 0, cursor: 'pointer' }}
@@ -453,41 +513,41 @@ export default function Storefront() {
             .filter(cat => cat.name !== "All")
             .filter(cat => activeCategory === "All" || cat.name === activeCategory)
             .map(cat => (
-            <div key={cat.name} className="mobile-category-section">
-              <div
-                className="mobile-category-header"
-                onClick={() => toggleCategory(cat.name)}
-              >
-                <h3>{cat.name}</h3>
-                <span className="category-toggle-icon">
-                  {expandedCategories[cat.name] ? <ChevronUp /> : <ChevronDown />}
-                </span>
-              </div>
-
-              {expandedCategories[cat.name] && (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <div className="product-grid mobile-product-grid">
-                    {filteredProducts
-                      .filter(p => matchesCatName(p, cat.name))
-                      .map((product) => (
-                        <ProductCard
-                          key={product.id}
-                          product={product}
-                          onSelect={setSelectedProduct}
-                          onRepeatSelect={setSelectedRepeatProduct}
-                        />
-                      ))}
-                  </div>
+              <div key={cat.name} className="mobile-category-section">
+                <div
+                  className="mobile-category-header"
+                  onClick={() => toggleCategory(cat.name)}
+                >
+                  <h3>{cat.name}</h3>
+                  <span className="category-toggle-icon">
+                    {expandedCategories[cat.name] ? <ChevronUp /> : <ChevronDown />}
+                  </span>
                 </div>
-              )}
-            </div>
-          ))}
+
+                {expandedCategories[cat.name] && (
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div className="product-grid mobile-product-grid">
+                      {filteredProducts
+                        .filter(p => matchesCatName(p, cat.name))
+                        .map((product) => (
+                          <ProductCard
+                            key={product.id}
+                            product={product}
+                            onSelect={setSelectedProduct}
+                            onRepeatSelect={setSelectedRepeatProduct}
+                          />
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
 
           {!isLoading && filteredProducts.length === 0 && (
             <div style={{ padding: '48px 16px', textAlign: 'center', backgroundColor: '#FFF', borderRadius: '12px', marginTop: '16px' }}>
               <p style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-text-main)', marginBottom: '8px' }}>No items found</p>
               <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '16px' }}>Try adjusting your search query or clear your active filters.</p>
-              <button 
+              <button
                 onClick={() => { setSearchQuery(''); setVegFilter('all'); setSelectedFilters(new Set()); setActiveCategory('All'); }}
                 className="btn btn-primary"
                 style={{ padding: '8px 20px', fontSize: '0.85rem' }}
