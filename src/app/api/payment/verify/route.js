@@ -56,7 +56,7 @@ export async function POST(req) {
         },
       });
 
-      if (recentPaidOrders >= 5) {
+      if (recentPaidOrders >= 25) {
         // Auto-refund — customer never loses money
         const razorpay = new Razorpay({
           key_id: process.env.RAZORPAY_KEY_ID,
@@ -83,7 +83,7 @@ export async function POST(req) {
         });
 
         return NextResponse.json(
-          { success: false, error: 'Sorry for the inconvenience, but you have reached the maximum limit of 5 orders in a day. Your payment has been automatically refunded.' },
+          { success: false, error: 'Sorry for the inconvenience, but you have reached the maximum limit of 25 orders in a day. Your payment has been automatically refunded.' },
           { status: 429 }
         );
       }

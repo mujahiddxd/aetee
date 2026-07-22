@@ -158,7 +158,7 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: 'Minimum amount must be at least ₹1' }, { status: 400 });
     }
 
-    // ── 5. Rate limit: max 5 paid orders per 24 hours ───────────────
+    // ── 5. Rate limit: max 25 paid orders per 24 hours ───────────────
     const existingUser = await prisma.user.findUnique({ where: { email } });
 
     if (existingUser) {
@@ -178,9 +178,9 @@ export async function POST(req) {
         },
       });
 
-      if (recentPaidOrders >= 5) {
+      if (recentPaidOrders >= 25) {
         return NextResponse.json(
-          { success: false, error: 'Sorry for the inconvenience, but you have reached the maximum limit of 5 orders in a day. Please try ordering again tomorrow.' },
+          { success: false, error: 'Sorry for the inconvenience, but you have reached the maximum limit of 25 orders in a day. Please try ordering again tomorrow.' },
           { status: 429 }
         );
       }
