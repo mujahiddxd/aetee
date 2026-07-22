@@ -19,7 +19,17 @@ export async function POST(req) {
       .update(rawBody)
       .digest('hex');
 
-    if (generated_signature !== signature) {
+    let isValid = false;
+    try {
+      isValid = crypto.timingSafeEqual(
+        Buffer.from(generated_signature),
+        Buffer.from(signature)
+      );
+    } catch (e) {
+      isValid = false; // Length mismatch
+    }
+
+    if (!isValid) {
       console.error('Webhook signature mismatch');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }

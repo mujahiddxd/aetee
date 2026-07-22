@@ -40,21 +40,21 @@ function clearAttempts(ip) {
   loginAttempts.delete(ip);
 }
 
-// Clean up stale entries every 30 minutes to prevent memory leaks
-setInterval(() => {
+// Lazy cleanup of stale entries to prevent memory leaks
+function cleanupStaleAttempts() {
   const now = Date.now();
   for (const [ip, record] of loginAttempts) {
     if (now - record.firstAttempt > WINDOW_MS) {
       loginAttempts.delete(ip);
     }
   }
-}, 30 * 60 * 1000);
-
+}
 // ────────────────────────────────────────────────────────────────────
 
 export async function POST(request) {
   try {
     const clientIp = getClientIp(request);
+    cleanupStaleAttempts(); // Clean up stale attempts lazily
 
     // Check rate limit before processing
     if (isRateLimited(clientIp)) {
@@ -82,8 +82,15 @@ export async function POST(request) {
     }
     // ────────────────────────────────────────────────────────────────
 
-    const validUsername = process.env.ADMIN_USERNAME || 'admin';
-    const validPassword = process.env.ADMIN_PASSWORD || 'aetee@2026';
+    const validUsername = process.env.ADMIN_USERNAME;
+    const validPassword = process.env.ADMIN_PASSWORD;
+
+    if (!validUsername || !validPassword) {
+      return NextResponse.json(
+        { success: false, error: 'Server configuration error: Admin credentials are not set.' },
+        { status: 500 }
+      );
+    }
 
     if (username === validUsername && password === validPassword) {
       clearAttempts(clientIp);
