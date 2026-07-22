@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
 import Image from 'next/image';
@@ -11,6 +11,13 @@ import './checkout.css';
 export default function Checkout() {
   const { cartItems, isLoaded, clearCart } = useCart();
   const [paymentMethod, setPaymentMethod] = useState('');
+  const turnstileRef = useRef(null);
+
+  const resetTurnstile = useCallback(() => {
+    if (window.turnstile && turnstileRef.current) {
+      window.turnstile.reset(turnstileRef.current);
+    }
+  }, []);
 
   // Compute tomorrow's date in IST for minimum delivery date
   const getTomorrowIST = () => {
@@ -112,6 +119,14 @@ export default function Checkout() {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
+      // Get Turnstile token
+      const turnstileInput = document.querySelector('[name="cf-turnstile-response"]');
+      const turnstileToken = turnstileInput?.value;
+      if (!turnstileToken) {
+        setShowModal({ isOpen: true, type: 'error', message: 'Please complete the bot verification challenge.' });
+        return;
+      }
+
       try {
         // 1. Create order on backend
         const response = await fetch('/api/checkout', {
@@ -130,6 +145,7 @@ export default function Checkout() {
             totalAmount: grandTotal,
             deliveryDate: formData.date,
             additionalInfo: formData.additionalInfo || null,
+            'cf-turnstile-response': turnstileToken,
             items: cartItems.map(item => ({
               productId: item.product.id,
               quantity: item.quantity,
@@ -215,6 +231,7 @@ export default function Checkout() {
       } catch (error) {
         console.error("Payment error:", error);
         setShowModal({ isOpen: true, type: 'error', message: 'An error occurred while processing payment.' });
+        resetTurnstile();
       }
     } else {
       setShowModal({ isOpen: true, type: 'error', message: 'Invalid input! Please check all highlighted fields.' });
@@ -231,6 +248,7 @@ export default function Checkout() {
   return (
     <div className="checkout-container">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" />
+      <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
 
 
       {/* LEFT COLUMN - FORM */}
@@ -426,6 +444,14 @@ export default function Checkout() {
         </div>
 
         {/* Place Order Button - Desktop/Mobile */}
+        <div style={{ marginBottom: '16px' }}>
+          <div
+            ref={turnstileRef}
+            className="cf-turnstile"
+            data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+            data-action="turnstile-spin-v2"
+          ></div>
+        </div>
         <div className="mobile-sticky-bottom">
           <button className="place-order-btn" onClick={handlePlaceOrder}>
             Place Order

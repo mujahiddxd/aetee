@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { generateAdminToken } from '@/lib/auth';
+import { verifyTurnstile } from '@/lib/turnstile';
 
 // ── In-memory brute force rate limiter ──────────────────────────────
 // Tracks failed login attempts per IP. Resets after WINDOW_MS.
@@ -67,7 +68,19 @@ export async function POST(request) {
       );
     }
 
-    const { username, password } = await request.json();
+    const body = await request.json();
+    const { username, password } = body;
+    const turnstileToken = body['cf-turnstile-response'];
+
+    // ── Turnstile verification ──────────────────────────────────────
+    const turnstileResult = await verifyTurnstile(turnstileToken, clientIp);
+    if (!turnstileResult.success) {
+      return NextResponse.json(
+        { success: false, error: 'Bot verification failed' },
+        { status: 403 }
+      );
+    }
+    // ────────────────────────────────────────────────────────────────
 
     const validUsername = process.env.ADMIN_USERNAME || 'admin';
     const validPassword = process.env.ADMIN_PASSWORD || 'aetee@2026';

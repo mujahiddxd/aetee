@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import { prisma } from '@/lib/prisma';
 import { stripHtml } from '@/lib/sanitize';
+import { verifyTurnstile } from '@/lib/turnstile';
 
 export async function POST(req) {
   try {
@@ -57,6 +58,17 @@ export async function POST(req) {
         return NextResponse.json({ success: false, error: 'Delivery date cannot be in the past' }, { status: 400 });
       }
     }
+
+    // ── Turnstile verification ──────────────────────────────────────
+    const turnstileToken = body['cf-turnstile-response'];
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || req.headers.get('x-real-ip')
+      || '';
+    const turnstileResult = await verifyTurnstile(turnstileToken, clientIp);
+    if (!turnstileResult.success) {
+      return NextResponse.json({ success: false, error: 'Bot verification failed' }, { status: 403 });
+    }
+    // ────────────────────────────────────────────────────────────────
 
     // ── 2. Sanitize text inputs ─────────────────────────────────────
     const safeFirstName = stripHtml(firstName);

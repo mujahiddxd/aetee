@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Script from 'next/script';
 import '../admin.css';
 
 export default function AdminLogin() {
@@ -10,18 +11,31 @@ export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const turnstileRef = useRef(null);
+
+  const resetTurnstile = useCallback(() => {
+    if (window.turnstile && turnstileRef.current) {
+      window.turnstile.reset(turnstileRef.current);
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-    
+
+    const formData = new FormData(e.target);
+    const turnstileToken = formData.get('cf-turnstile-response');
+    if (!turnstileToken) {
+      setError('Please complete the bot verification challenge.');
+      return;
+    }
     try {
       const response = await fetch("/api/admin/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, 'cf-turnstile-response': turnstileToken }),
       });
 
       const data = await response.json();
@@ -30,14 +44,17 @@ export default function AdminLogin() {
         window.location.href = "/admin/dashboard";
       } else {
         setError(data.error || "Invalid username or password");
+        resetTurnstile();
       }
     } catch (err) {
       setError("An error occurred during login. Please try again.");
+      resetTurnstile();
     }
   };
 
   return (
     <div className="admin-login-wrapper">
+      <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
       <div className="card login-card">
         <h2>Aetee Admin Portal</h2>
         
@@ -99,6 +116,14 @@ export default function AdminLogin() {
               </button>
             </div>
           </div>
+
+          <div
+            ref={turnstileRef}
+            className="cf-turnstile"
+            data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+            data-action="turnstile-spin-v2"
+            style={{ marginTop: '16px' }}
+          ></div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '16px' }}>
             Sign In

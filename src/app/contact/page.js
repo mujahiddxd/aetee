@@ -1,16 +1,32 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
+import Script from 'next/script';
 
 export default function ContactPage() {
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
+  const turnstileRef = useRef(null);
+
+  const resetTurnstile = useCallback(() => {
+    if (window.turnstile && turnstileRef.current) {
+      window.turnstile.reset(turnstileRef.current);
+    }
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     setStatus('');
     const formData = new FormData(e.target);
+    const turnstileToken = formData.get('cf-turnstile-response');
+
+    if (!turnstileToken) {
+      setStatus('error');
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
@@ -19,16 +35,20 @@ export default function ContactPage() {
           name: formData.get('name'),
           email: formData.get('email'),
           message: formData.get('message'),
+          'cf-turnstile-response': turnstileToken,
         }),
       });
       if (res.ok) {
         setStatus('success');
         e.target.reset();
+        resetTurnstile();
       } else {
         setStatus('error');
+        resetTurnstile();
       }
     } catch {
       setStatus('error');
+      resetTurnstile();
     } finally {
       setLoading(false);
     }
@@ -36,6 +56,7 @@ export default function ContactPage() {
 
   return (
     <div className="container" style={{ paddingTop: '64px', paddingBottom: '64px' }}>
+      <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <h1 style={{ fontSize: '2.5rem', textAlign: 'center', marginBottom: '16px' }}>Contact Us</h1>
         <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '1.1rem', marginBottom: '48px', maxWidth: '600px', margin: '0 auto 48px' }}>
@@ -92,6 +113,13 @@ export default function ContactPage() {
                 <label htmlFor="message">Message</label>
                 <textarea id="message" name="message" className="input" rows="5" placeholder="How can we help you?" required style={{ resize: 'vertical' }}></textarea>
               </div>
+
+              <div
+                ref={turnstileRef}
+                className="cf-turnstile"
+                data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                data-action="turnstile-spin-v2"
+              ></div>
               
               {status === 'success' && <p style={{ color: 'green', margin: 0 }}>✅ Message sent successfully!</p>}
               {status === 'error' && <p style={{ color: 'red', margin: 0 }}>Failed to send. Please try again.</p>}
