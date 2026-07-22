@@ -18,20 +18,20 @@ const oswald = Oswald({
 
 export const metadata = {
   title: "Aetees Bakehouse",
-  description: "#OrderDirect from Aetees Bakehouse. Beautiful mobile menu for dine-in, take-away and online ordering.",
+  description: "Artisan Breads, Pastries & Fresh Daily Bakes. Order online for take-away and delivery.",
   openGraph: {
     title: "Aetees Bakehouse",
     type: "website",
     url: "https://aeteesbakehouse.com/",
     images: [
       {
-        url: "https://aeteesbakehouse.com/aeteesbakehouse.png",
+        url: "https://aeteesbakehouse.com/logo-original.png",
         width: 800,
         height: 600,
         alt: "Aetees Bakehouse",
       },
     ],
-    description: "#OrderDirect from Aetees Bakehouse",
+    description: "Artisan Breads, Pastries & Fresh Daily Bakes. Order online for take-away and delivery.",
     siteName: "Aetees Bakehouse",
     locale: "en_US",
   },
@@ -39,8 +39,8 @@ export const metadata = {
     card: "summary_large_image",
     site: "https://aeteesbakehouse.com/",
     title: "Aetees Bakehouse",
-    description: "#OrderDirect from Aetees Bakehouse",
-    images: ["https://aeteesbakehouse.com/aeteesbakehouse.png"],
+    description: "Artisan Breads, Pastries & Fresh Daily Bakes. Order online for take-away and delivery.",
+    images: ["https://aeteesbakehouse.com/logo-original.png"],
   },
 };
 
