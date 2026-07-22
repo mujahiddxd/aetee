@@ -1,0 +1,16 @@
+# Allow legitimate search engines to index public store pages
+User-agent: *
+Allow: /
+Allow: /menu
+Allow: /cart
+Allow: /checkout
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+Allow: /policy
+
+# Block administrative and API endpoints from crawling
+Disallow: /admin/
+Disallow: /admin
+Disallow: /api/
+Disallow: /uploads/

@@ -24,6 +24,7 @@
     "effect": "^3.22.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "postcss": "^8.5.1",
     "prisma": "^6.19.3"
   }
 }
