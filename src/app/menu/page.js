@@ -195,8 +195,10 @@ export default function Storefront() {
       <div className="desktop-only" style={{ backgroundColor: 'var(--color-bg-grey)', padding: '24px 0 16px 0' }}>
         <div style={{ width: '100%', boxSizing: 'border-box', margin: '0', padding: '0 32px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-            <h1 style={{ margin: 0, fontSize: '2rem', fontFamily: "'Inter', sans-serif", fontWeight: 800, textTransform: 'none', letterSpacing: 'normal', color: 'var(--color-text-main)', flexShrink: 0 }}>Our Menu</h1>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ width: '237px', flexShrink: 0 }}>
+              <h1 style={{ margin: 0, fontSize: '2rem', fontFamily: "'Inter', sans-serif", fontWeight: 800, textTransform: 'none', letterSpacing: 'normal', color: 'var(--color-text-main)' }}>Our Menu</h1>
+            </div>
             
             <div style={{ 
               backgroundColor: 'var(--color-primary)', 
