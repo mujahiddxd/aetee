@@ -168,31 +168,45 @@ ${fullOrder.notes ? `\n📝 <b>Special Instructions:</b>\n${fullOrder.notes}\n` 
 ${itemsText}
         `.trim();
 
-        fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML' }),
-        }).catch(e => console.error('Telegram error:', e));
+        // Collect notification promises and await them with a timeout
+        // so they complete before the process exits
+        const notificationPromises = [];
+
+        notificationPromises.push(
+          fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML' }),
+          }).catch(e => console.error('Telegram error:', e))
+        );
 
         // --- Send Email Receipt via Google Apps Script ---
         if (fullOrder.user.email && process.env.GOOGLE_SCRIPT_URL) {
           const emailPayload = {
             customerEmail: fullOrder.user.email,
             customerName: fullOrder.user.firstName || 'Customer',
-            orderId: `${serialNumber}`, // Or use fullOrder.id if you prefer the long ID
+            orderId: `${serialNumber}`,
             totalAmount: `${fullOrder.totalAmount}`,
             deliveryDate: finalDeliveryText,
             itemsText: itemsText
           };
 
-          fetch(process.env.GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify(emailPayload) // Google Apps Script handles raw strings better sometimes, but this works with our JSON.parse
-          })
-          .then(res => res.json())
-          .then(data => console.log('Email Script Response:', data))
-          .catch(e => console.error('Email Script Error:', e));
+          notificationPromises.push(
+            fetch(process.env.GOOGLE_SCRIPT_URL, {
+              method: 'POST',
+              body: JSON.stringify(emailPayload)
+            })
+            .then(res => res.json())
+            .then(data => console.log('Email Script Response:', data))
+            .catch(e => console.error('Email Script Error:', e))
+          );
         }
+
+        // Wait for all notifications with a 8-second timeout to prevent process hang
+        await Promise.race([
+          Promise.allSettled(notificationPromises),
+          new Promise(resolve => setTimeout(resolve, 8000))
+        ]);
       }
     } catch (err) {
       console.error('Error sending fallback telegram message:', err);
