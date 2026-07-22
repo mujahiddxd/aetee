@@ -25,7 +25,7 @@ export const metadata = {
     url: "https://aeteesbakehouse.com/",
     images: [
       {
-        url: "https://aeteesbakehouse.com/logo-original.png",
+        url: "https://aeteesbakehouse.com/logo.png",
         width: 800,
         height: 600,
         alt: "Aetees Bakehouse",
@@ -40,7 +40,7 @@ export const metadata = {
     site: "https://aeteesbakehouse.com/",
     title: "Aetees Bakehouse",
     description: "Artisan Breads, Pastries & Fresh Daily Bakes. Order online for take-away and delivery.",
-    images: ["https://aeteesbakehouse.com/logo-original.png"],
+    images: ["https://aeteesbakehouse.com/logo.png"],
   },
 };
 
