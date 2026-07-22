@@ -25,45 +25,67 @@ export default function Storefront() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
+  const matchesCatName = (p, catName) => {
+    if (!p || !catName) return false;
+    if (p.category && p.category.trim().toLowerCase() === catName.trim().toLowerCase()) return true;
+    const foundCat = categories.find(c => c.name && c.name.trim().toLowerCase() === catName.trim().toLowerCase());
+    return foundCat && p.categoryId === foundCat.id;
+  };
+
   useEffect(() => {
     let isMounted = true;
     async function fetchData() {
       try {
-        const [catsRes, prodsRes, filtersRes] = await Promise.all([
+        const [catsResult, prodsResult, filtersResult] = await Promise.allSettled([
           fetch('/api/categories', { cache: 'no-store' }),
           fetch('/api/products', { cache: 'no-store' }),
           fetch('/api/filters', { cache: 'no-store' })
         ]);
-        if (catsRes.ok && prodsRes.ok && filtersRes.ok) {
-          const catsData = await catsRes.json();
-          const prodsData = await prodsRes.json();
-          const filtersData = await filtersRes.json();
-          
-          if (!isMounted) return;
 
-          const formattedCats = catsData.map(c => ({
-            ...c,
-            icon: "https://placehold.co/100x100/FDF8F5/F5B041?text=" + c.name.substring(0, 2).toUpperCase()
-          }));
-          
-          formattedCats.unshift({ name: "All", icon: "https://placehold.co/100x100/FDF8F5/F5B041?text=ALL" });
-          
-          const formattedProds = prodsData.map(p => ({
-            ...p,
-            customisable: p.addons && p.addons.length > 0
-          }));
+        let catsData = [];
+        let prodsData = [];
+        let filtersData = [];
 
-          setCategories(formattedCats);
-          setProducts(formattedProds);
-          setFilters(filtersData);
-          
-          setExpandedCategories(prev => {
-            if (Object.keys(prev).length === 0) {
-              return formattedCats.reduce((acc, cat) => ({ ...acc, [cat.name]: true }), {});
-            }
-            return prev;
-          });
+        if (catsResult.status === 'fulfilled' && catsResult.value.ok) {
+          const res = await catsResult.value.json();
+          if (Array.isArray(res)) catsData = res;
         }
+
+        if (prodsResult.status === 'fulfilled' && prodsResult.value.ok) {
+          const res = await prodsResult.value.json();
+          if (Array.isArray(res)) prodsData = res;
+        }
+
+        if (filtersResult.status === 'fulfilled' && filtersResult.value.ok) {
+          const res = await filtersResult.value.json();
+          if (Array.isArray(res)) filtersData = res;
+        }
+
+        if (!isMounted) return;
+
+        const formattedCats = catsData.map(c => ({
+          ...c,
+          icon: "https://placehold.co/100x100/FDF8F5/F5B041?text=" + (c.name ? c.name.substring(0, 2).toUpperCase() : 'CA')
+        }));
+        
+        formattedCats.unshift({ name: "All", icon: "https://placehold.co/100x100/FDF8F5/F5B041?text=ALL" });
+        
+        const formattedProds = prodsData.map(p => ({
+          ...p,
+          category: p.category || 'Uncategorized',
+          customisable: p.addons && p.addons.length > 0
+        }));
+
+        setCategories(formattedCats);
+        setProducts(formattedProds);
+        setFilters(filtersData);
+        
+        setExpandedCategories(prev => {
+          if (Object.keys(prev).length === 0) {
+            return formattedCats.reduce((acc, cat) => ({ ...acc, [cat.name]: true }), {});
+          }
+          return prev;
+        });
       } catch (error) {
         console.error("Failed to fetch menu data", error);
       } finally {
@@ -98,7 +120,7 @@ export default function Storefront() {
   };
 
   const filteredProducts = useMemo(() => products.filter(p => {
-    const matchesCategory = activeCategory === "All" || p.category === activeCategory;
+    const matchesCategory = activeCategory === "All" || matchesCatName(p, activeCategory);
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
     
     let matchesVeg = true;
@@ -124,7 +146,7 @@ export default function Storefront() {
     }
     
     return matchesCategory && matchesSearch && matchesVeg && matchesFilters;
-  }), [activeCategory, searchQuery, products, selectedFilters, vegFilter]);
+  }), [activeCategory, searchQuery, products, selectedFilters, vegFilter, categories]);
 
   // Dynamically filter categories to only show those that have matching products
   const filteredCategories = useMemo(() => {
@@ -135,7 +157,7 @@ export default function Storefront() {
       
       // Does this category have at least one product that matches the search AND the selected filters?
       const hasMatchingProduct = products.some(p => {
-        if (p.category !== cat.name) return false;
+        if (!matchesCatName(p, cat.name)) return false;
         
         if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
 
@@ -272,16 +294,33 @@ export default function Storefront() {
               </h2>
             </div>
 
-            <div className="product-grid">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onSelect={setSelectedProduct}
-                  onRepeatSelect={setSelectedRepeatProduct}
-                />
-              ))}
-            </div>
+            {isLoading ? (
+              <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                Loading menu...
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div style={{ padding: '48px 24px', textAlign: 'center', backgroundColor: '#FFF', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
+                <p style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '8px' }}>No menu items found</p>
+                <p style={{ fontSize: '0.95rem', color: 'var(--color-text-muted)', marginBottom: '20px' }}>Try clearing your active category filter or search query.</p>
+                <button 
+                  onClick={() => { setSearchQuery(''); setVegFilter('all'); setSelectedFilters(new Set()); setActiveCategory('All'); }}
+                  className="btn btn-primary"
+                >
+                  Show All Items
+                </button>
+              </div>
+            ) : (
+              <div className="product-grid">
+                {filteredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onSelect={setSelectedProduct}
+                    onRepeatSelect={setSelectedRepeatProduct}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Cart Sidebar for Desktop */}
@@ -409,7 +448,10 @@ export default function Storefront() {
           )}
 
 
-          {filteredCategories.map(cat => (
+          {filteredCategories
+            .filter(cat => cat.name !== "All")
+            .filter(cat => activeCategory === "All" || cat.name === activeCategory)
+            .map(cat => (
             <div key={cat.name} className="mobile-category-section">
               <div
                 className="mobile-category-header"
@@ -425,7 +467,7 @@ export default function Storefront() {
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <div className="product-grid mobile-product-grid">
                     {filteredProducts
-                      .filter(p => p.category === cat.name)
+                      .filter(p => matchesCatName(p, cat.name))
                       .map((product) => (
                         <ProductCard
                           key={product.id}
@@ -439,6 +481,20 @@ export default function Storefront() {
               )}
             </div>
           ))}
+
+          {!isLoading && filteredProducts.length === 0 && (
+            <div style={{ padding: '48px 16px', textAlign: 'center', backgroundColor: '#FFF', borderRadius: '12px', marginTop: '16px' }}>
+              <p style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-text-main)', marginBottom: '8px' }}>No items found</p>
+              <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '16px' }}>Try adjusting your search query or clear your active filters.</p>
+              <button 
+                onClick={() => { setSearchQuery(''); setVegFilter('all'); setSelectedFilters(new Set()); setActiveCategory('All'); }}
+                className="btn btn-primary"
+                style={{ padding: '8px 20px', fontSize: '0.85rem' }}
+              >
+                Reset Filters
+              </button>
+            </div>
+          )}
         </div>
 
         {cartItems.length > 0 && (

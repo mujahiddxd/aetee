@@ -27,9 +27,9 @@ export default function Home() {
         {/* Left Side (Yellow) */}
         <div className="home-split-left" style={{ backgroundColor: 'var(--color-highlight)' }}>
           <div style={{ maxWidth: '480px', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '3.5rem', lineHeight: '1.1', marginBottom: '24px' }}>I DESERVE A
+            <h2 style={{ fontSize: '3.5rem', lineHeight: '1.1', marginBottom: '24px' }}>YOUR "I DESERVE A
               TREAT
-              MOMENT</h2>
+              MOMENT"</h2>
             <p style={{ color: 'var(--color-text-main)', fontSize: '1rem', lineHeight: '1.6', marginBottom: '32px' }}>
               Freshly baked. Freshly layered.
 
