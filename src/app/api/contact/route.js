@@ -1,6 +1,21 @@
 import { NextResponse } from 'next/server';
 import { verifyTurnstile } from '@/lib/turnstile';
 
+// In-memory rate limiting for contact form
+const contactAttempts = new Map();
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const MAX_ATTEMPTS_PER_WINDOW = 3;
+
+// Lazy cleanup
+function cleanupStaleContactAttempts() {
+  const now = Date.now();
+  for (const [ip, record] of contactAttempts) {
+    if (now - record.firstAttempt > RATE_LIMIT_WINDOW_MS) {
+      contactAttempts.delete(ip);
+    }
+  }
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -14,7 +29,27 @@ export async function POST(request) {
     const turnstileToken = body['cf-turnstile-response'];
     const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       || request.headers.get('x-real-ip')
-      || '';
+      || 'unknown';
+
+    cleanupStaleContactAttempts();
+    
+    // Rate limit check
+    if (clientIp !== 'unknown') {
+      const record = contactAttempts.get(clientIp);
+      if (record && Date.now() - record.firstAttempt <= RATE_LIMIT_WINDOW_MS) {
+        if (record.count >= MAX_ATTEMPTS_PER_WINDOW) {
+          const remainingMins = Math.ceil((RATE_LIMIT_WINDOW_MS - (Date.now() - record.firstAttempt)) / 60000);
+          return NextResponse.json(
+            { error: `You have sent too many messages. Please try again in ${remainingMins} minute(s).` },
+            { status: 429 }
+          );
+        }
+        record.count += 1;
+      } else {
+        contactAttempts.set(clientIp, { count: 1, firstAttempt: Date.now() });
+      }
+    }
+
     const turnstileResult = await verifyTurnstile(turnstileToken, clientIp);
     if (!turnstileResult.success) {
       return NextResponse.json({ error: 'Bot verification failed' }, { status: 403 });

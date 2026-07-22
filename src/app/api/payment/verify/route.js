@@ -25,8 +25,18 @@ export async function POST(req) {
       .update(razorpay_order_id + '|' + razorpay_payment_id)
       .digest('hex');
 
-    // 2. Validate the signature
-    if (generated_signature !== razorpay_signature) {
+    // 2. Validate the signature (timing attack safe)
+    let isValid = false;
+    try {
+      isValid = crypto.timingSafeEqual(
+        Buffer.from(generated_signature),
+        Buffer.from(razorpay_signature)
+      );
+    } catch (e) {
+      isValid = false; // Length mismatch
+    }
+
+    if (!isValid) {
       return NextResponse.json(
         { success: false, error: 'Invalid signature' },
         { status: 400 }
@@ -107,6 +117,11 @@ export async function POST(req) {
     const updatedOrder = await prisma.order.findUnique({
       where: { razorpayOrderId: razorpay_order_id }
     });
+
+    if (!updatedOrder) {
+      console.error('Order not found after payment update for razorpay_order_id:', razorpay_order_id);
+      return NextResponse.json({ success: true, message: 'Payment verified but order missing' });
+    }
 
     // 5. Send Telegram Message Instantly
     try {

@@ -4,7 +4,6 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { CartProvider } from "./context/CartContext";
 import Script from "next/script";
-import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({
   variable: "--font-inter",
@@ -68,7 +67,6 @@ export default function RootLayout({ children }) {
             <Footer />
           </div>
         </CartProvider>
-        <Analytics />
       </body>
     </html>
   );

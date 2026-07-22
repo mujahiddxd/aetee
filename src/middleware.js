@@ -11,7 +11,8 @@ import { NextResponse } from 'next/server';
 async function verifyAdminToken(tokenValue) {
   if (!tokenValue) return false;
   
-  const secret = process.env.ADMIN_SECRET || 'aetee-default-secret-key-2026';
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret) return false;
   const encoder = new TextEncoder();
   
   const key = await crypto.subtle.importKey(
