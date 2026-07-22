@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function AddressModal({ isOpen, onClose, onSuccess }) {
   const [address, setAddress] = useState('');
@@ -11,51 +11,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
 
   const SHOP_ADDRESS = "NDR 9, B-703 Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089";
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const initAutocomplete = () => {
-      if (window.google && window.google.maps && window.google.maps.places && inputRef.current && !autocompleteRef.current) {
-        autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
-          componentRestrictions: { country: "IN" },
-          fields: ["formatted_address", "geometry", "name"],
-        });
-
-        autocompleteRef.current.addListener("place_changed", () => {
-          const place = autocompleteRef.current.getPlace();
-          if (place && place.formatted_address) {
-            setAddress(place.formatted_address);
-            if (place.geometry) {
-              checkDistance(place.formatted_address, place.geometry.location);
-            } else {
-              checkDistance(place.formatted_address);
-            }
-          }
-        });
-      }
-    };
-
-    if (!window.google || !window.google.maps || !window.google.maps.places) {
-      const scriptId = "google-maps-script";
-      const script = document.getElementById(scriptId);
-      if (script) {
-        script.addEventListener("load", initAutocomplete);
-        script.addEventListener("error", () => {
-          setError("Network Error: Failed to load Google Maps. Please disable ad-blockers and try again.");
-        });
-        return () => {
-          script.removeEventListener("load", initAutocomplete);
-        };
-      } else {
-        // Fallback if script tag is not found
-        setTimeout(initAutocomplete, 1000);
-      }
-    } else {
-      initAutocomplete();
-    }
-  }, [isOpen]);
-
-  const checkDistance = (destinationAddress, locationGeometry = null) => {
+  const checkDistance = useCallback((destinationAddress, locationGeometry = null) => {
     console.log("Checking distance for:", destinationAddress);
     setLoading(true);
     setError('');
@@ -112,7 +68,53 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
       setLoading(false);
       setError("An unexpected error occurred while checking distance.");
     }
-  };
+  }, [onSuccess]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const initAutocomplete = () => {
+      if (window.google && window.google.maps && window.google.maps.places && inputRef.current && !autocompleteRef.current) {
+        autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+          componentRestrictions: { country: "IN" },
+          fields: ["formatted_address", "geometry", "name"],
+        });
+
+        autocompleteRef.current.addListener("place_changed", () => {
+          const place = autocompleteRef.current.getPlace();
+          if (place && place.formatted_address) {
+            setAddress(place.formatted_address);
+            if (place.geometry) {
+              checkDistance(place.formatted_address, place.geometry.location);
+            } else {
+              checkDistance(place.formatted_address);
+            }
+          }
+        });
+      }
+    };
+
+    if (!window.google || !window.google.maps || !window.google.maps.places) {
+      const scriptId = "google-maps-script";
+      const script = document.getElementById(scriptId);
+      if (script) {
+        script.addEventListener("load", initAutocomplete);
+        script.addEventListener("error", () => {
+          setError("Network Error: Failed to load Google Maps. Please disable ad-blockers and try again.");
+        });
+        return () => {
+          script.removeEventListener("load", initAutocomplete);
+        };
+      } else {
+        // Fallback if script tag is not found
+        setTimeout(initAutocomplete, 1000);
+      }
+    } else {
+      initAutocomplete();
+    }
+  }, [isOpen, checkDistance]);
+
+
 
   const handleUseLocation = () => {
     if (!navigator.geolocation) {

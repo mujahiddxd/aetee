@@ -12,9 +12,6 @@ export default function AdminCategories() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState(new Set());
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
 
   const fetchCategories = async () => {
     try {
@@ -31,6 +28,11 @@ export default function AdminCategories() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchCategories();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -60,7 +60,7 @@ export default function ContactPage() {
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <h1 style={{ fontSize: '2.5rem', textAlign: 'center', marginBottom: '16px' }}>Contact Us</h1>
         <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '1.1rem', marginBottom: '48px', maxWidth: '600px', margin: '0 auto 48px' }}>
-          We'd love to hear from you! Whether you have a question about our menu, an order inquiry, or just want to say hello.
+          We&apos;d love to hear from you! Whether you have a question about our menu, an order inquiry, or just want to say hello.
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>

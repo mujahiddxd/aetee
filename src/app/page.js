@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -12,20 +12,20 @@ export default function Home() {
     "/slide3.jpg"
   ];
 
-  const nextSlide = () => {
+  const nextSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev + 1) % slides.length);
-  };
+  }, [slides.length]);
 
-  const prevSlide = () => {
+  const prevSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-  };
+  }, [slides.length]);
 
   useEffect(() => {
     const timer = setInterval(() => {
       nextSlide();
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [nextSlide]);
 
   return (
     <>
@@ -34,9 +34,9 @@ export default function Home() {
         {/* Left Side (Yellow) */}
         <div className="home-split-left" style={{ backgroundColor: 'var(--color-highlight)' }}>
           <div style={{ maxWidth: '480px', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '3.5rem', lineHeight: '1.1', marginBottom: '24px' }}>YOUR "I DESERVE A
+            <h2 style={{ fontSize: '3.5rem', lineHeight: '1.1', marginBottom: '24px' }}>YOUR &quot;I DESERVE A
               TREAT
-              MOMENT"</h2>
+              MOMENT&quot;</h2>
             <p style={{ color: 'var(--color-text-main)', fontSize: '1rem', lineHeight: '1.6', marginBottom: '32px' }}>
               Freshly baked. Freshly layered.
 

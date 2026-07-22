@@ -12,9 +12,6 @@ export default function AdminFilters() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedFilterIds, setSelectedFilterIds] = useState(new Set());
 
-  useEffect(() => {
-    fetchFilters();
-  }, []);
 
   const fetchFilters = async () => {
     try {
@@ -31,6 +28,11 @@ export default function AdminFilters() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchFilters();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

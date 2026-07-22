@@ -1,7 +1,7 @@
 "use client";
 
 import '../globals.css';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useCart } from '../context/CartContext';
 import { ChevronDown, ChevronUp } from '../components/Icons';
 import { ProductModal } from '../components/ProductModal';
@@ -25,12 +25,12 @@ export default function Storefront() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
-  const matchesCatName = (p, catName) => {
+  const matchesCatName = useCallback((p, catName) => {
     if (!p || !catName) return false;
     if (p.category && p.category.trim().toLowerCase() === catName.trim().toLowerCase()) return true;
     const foundCat = categories.find(c => c.name && c.name.trim().toLowerCase() === catName.trim().toLowerCase());
     return foundCat && p.categoryId === foundCat.id;
-  };
+  }, [categories]);
 
   useEffect(() => {
     let isMounted = true;
@@ -146,7 +146,7 @@ export default function Storefront() {
     }
     
     return matchesCategory && matchesSearch && matchesVeg && matchesFilters;
-  }), [activeCategory, searchQuery, products, selectedFilters, vegFilter, categories]);
+  }), [activeCategory, searchQuery, products, selectedFilters, vegFilter, matchesCatName]);
 
   // Dynamically filter categories to only show those that have matching products
   const filteredCategories = useMemo(() => {
@@ -176,11 +176,12 @@ export default function Storefront() {
       
       return hasMatchingProduct;
     });
-  }, [categories, products, selectedFilters, searchQuery, vegFilter]);
+  }, [categories, products, selectedFilters, searchQuery, vegFilter, matchesCatName]);
 
   // If the active category gets hidden by a filter, switch back to 'All'
   useEffect(() => {
     if (activeCategory !== "All" && !filteredCategories.some(c => c.name === activeCategory)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveCategory("All");
     }
   }, [filteredCategories, activeCategory]);

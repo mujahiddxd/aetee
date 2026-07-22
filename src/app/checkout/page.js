@@ -55,6 +55,7 @@ export default function Checkout() {
         if (pinMatch) {
           extractedPincode = pinMatch[1];
         }
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setFormData(prev => ({
           ...prev,
           address: info.address || '',
