@@ -214,7 +214,8 @@ export async function POST(req) {
         address: fullAddress.substring(0, 255),
         phone: phone,
         customer_name: `${safeFirstName} ${safeLastName}`.substring(0, 255),
-        delivery_date: deliveryDate || 'N/A'
+        delivery_date: deliveryDate || 'N/A',
+        ...(safeAdditionalInfo && { special_instructions: safeAdditionalInfo.substring(0, 255) })
       }
     });
 

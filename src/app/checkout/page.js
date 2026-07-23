@@ -179,7 +179,8 @@ export default function Checkout() {
             description: orderDescription.length > 255 ? orderDescription.substring(0, 252) + '...' : orderDescription,
             order_id: data.orderId,
             notes: {
-              delivery_date: formData.date
+              delivery_date: formData.date,
+              ...(formData.additionalInfo && { special_instructions: formData.additionalInfo.substring(0, 255) })
             },
             handler: async function (response) {
               // 3. Verify Payment
