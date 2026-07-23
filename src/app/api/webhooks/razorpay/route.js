@@ -85,7 +85,7 @@ export async function POST(req) {
 
       // Atomically check-and-set status to prevent duplicate messages from concurrent webhooks
       const updateResult = await prisma.order.updateMany({
-        where: { id: order.id, status: 'PENDING' },
+        where: { id: order.id, status: { in: ['PENDING', 'FAILED'] } },
         data: { status: 'PAID' }
       });
 

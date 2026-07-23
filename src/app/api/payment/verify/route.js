@@ -103,7 +103,7 @@ export async function POST(req) {
     const updateResult = await prisma.order.updateMany({
       where: {
         razorpayOrderId: razorpay_order_id,
-        status: 'PENDING'
+        status: { in: ['PENDING', 'FAILED'] }
       },
       data: {
         status: 'PAID',
