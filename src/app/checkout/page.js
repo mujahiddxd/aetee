@@ -429,6 +429,8 @@ export default function Checkout() {
                 maxLength="6"
                 required
                 pattern="^400[0-9]{3}$"
+                readOnly
+                style={{ backgroundColor: '#F0F0F0', cursor: 'not-allowed', color: '#555' }}
               />
               {errors.pincode && <div className="error-message">{errors.pincode}</div>}
             </div>
