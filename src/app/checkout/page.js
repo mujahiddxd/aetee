@@ -5,10 +5,12 @@ import Link from 'next/link';
 import Script from 'next/script';
 import Image from 'next/image';
 
+import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
 import './checkout.css';
 
 export default function Checkout() {
+  const router = useRouter();
   const { cartItems, isLoaded, clearCart } = useCart();
   const [paymentMethod, setPaymentMethod] = useState('');
   const turnstileRef = useRef(null);
@@ -195,7 +197,7 @@ export default function Checkout() {
               const verifyData = await verifyRes.json();
               if (verifyData.success) {
                 clearCart();
-                setShowModal({ isOpen: true, type: 'success', message: 'Payment successful and order placed!' });
+                router.push('/success');
               } else {
                 setShowModal({ isOpen: true, type: 'error', message: 'Payment verification failed!' });
               }
