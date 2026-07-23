@@ -171,6 +171,13 @@ export default function Checkout() {
           }).join(' | ');
 
           // 2. Initialize Razorpay popup
+          let notesObj = {
+            delivery_date: formData.date
+          };
+          if (formData.additionalInfo && typeof formData.additionalInfo === 'string' && formData.additionalInfo.trim() !== '') {
+            notesObj.special_instructions = formData.additionalInfo.substring(0, 255);
+          }
+
           const options = {
             key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Ensure you add NEXT_PUBLIC_RAZORPAY_KEY_ID to .env
             amount: data.amount,
@@ -178,10 +185,7 @@ export default function Checkout() {
             name: "Aetee's Bakehouse",
             description: orderDescription.length > 255 ? orderDescription.substring(0, 252) + '...' : orderDescription,
             order_id: data.orderId,
-            notes: {
-              delivery_date: formData.date,
-              ...(formData.additionalInfo && { special_instructions: formData.additionalInfo.substring(0, 255) })
-            },
+            notes: notesObj,
             handler: async function (response) {
               // 3. Verify Payment
               const verifyRes = await fetch('/api/payment/verify', {

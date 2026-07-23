@@ -37,9 +37,9 @@ export default function Storefront() {
     async function fetchData() {
       try {
         const [catsResult, prodsResult, filtersResult] = await Promise.allSettled([
-          fetch('/api/categories', { cache: 'no-store' }),
-          fetch('/api/products', { cache: 'no-store' }),
-          fetch('/api/filters', { cache: 'no-store' })
+          fetch('/api/categories', { next: { revalidate: 60 } }),
+          fetch('/api/products', { next: { revalidate: 60 } }),
+          fetch('/api/filters', { next: { revalidate: 60 } })
         ]);
 
         let catsData = [];

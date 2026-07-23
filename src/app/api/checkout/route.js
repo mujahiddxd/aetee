@@ -206,17 +206,21 @@ export async function POST(req) {
 
     const fullAddress = `${safeAddressLine1}${safeAddressLine2 ? ', ' + safeAddressLine2 : ''}, ${safeCity} - ${postalCode}`;
 
+    let notesObj = {
+      address: fullAddress.substring(0, 255),
+      phone: phone,
+      customer_name: `${safeFirstName} ${safeLastName}`.substring(0, 255),
+      delivery_date: deliveryDate || 'N/A'
+    };
+    if (safeAdditionalInfo && typeof safeAdditionalInfo === 'string' && safeAdditionalInfo.trim() !== '') {
+      notesObj.special_instructions = safeAdditionalInfo.substring(0, 255);
+    }
+
     const razorpayOrder = await razorpay.orders.create({
       amount: amountInPaise,
       currency: 'INR',
       receipt: `receipt_${Date.now()}`,
-      notes: {
-        address: fullAddress.substring(0, 255),
-        phone: phone,
-        customer_name: `${safeFirstName} ${safeLastName}`.substring(0, 255),
-        delivery_date: deliveryDate || 'N/A',
-        ...(safeAdditionalInfo && { special_instructions: safeAdditionalInfo.substring(0, 255) })
-      }
+      notes: notesObj
     });
 
     // ── 7. Wrap all DB writes in a transaction ──────────────────────
