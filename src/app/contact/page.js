@@ -121,7 +121,7 @@ export default function ContactPage() {
                 data-action="turnstile-spin-v2"
               ></div>
               
-              {status === 'success' && <p style={{ color: 'green', margin: 0 }}>✅ Message sent successfully!</p>}
+              {status === 'success' && <p style={{ color: 'green', margin: 0 }}>Message sent successfully!</p>}
               {status === 'error' && <p style={{ color: 'red', margin: 0 }}>Failed to send. Please try again.</p>}
               
               <button type="submit" className="btn btn-primary" style={{ marginTop: '8px', padding: '14px', opacity: loading ? 0.6 : 1 }} disabled={loading}>

@@ -152,7 +152,7 @@ export async function POST(req) {
         const dateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
         const todayStr = dateFormatter.format(fullOrder.createdAt);
         const tomorrowStr = dateFormatter.format(new Date(fullOrder.createdAt.getTime() + 24 * 60 * 60 * 1000));
-        const deliveryNote = orderHourIST < 12 ? `🚚 <b>Delivery:</b> SAME DAY (${todayStr})` : `📅 <b>Delivery:</b> NEXT DAY (${tomorrowStr})`;
+        const deliveryNote = orderHourIST < 12 ? ` <b>Delivery:</b> SAME DAY (${todayStr})` : ` <b>Delivery:</b> NEXT DAY (${tomorrowStr})`;
 
         const startOfDay = new Date(`${todayStr}T00:00:00+05:30`);
         const serialNumber = await prisma.order.count({
@@ -167,7 +167,7 @@ export async function POST(req) {
           : (orderHourIST < 12 ? `SAME DAY (${todayStr})` : `NEXT DAY (${tomorrowStr})`);
 
         const message = `
-🎉 <b>NEW ORDER RECEIVED! (Daily #${serialNumber})</b> 🎉
+<b>NEW ORDER RECEIVED! (Daily #${serialNumber})</b>
 
 <b>Daily Order No:</b> #${serialNumber}
 <b>System ID:</b> ${fullOrder.id}
@@ -176,8 +176,8 @@ export async function POST(req) {
 <b>Phone:</b> ${fullOrder.user.phone || 'N/A'}
 <b>Address:</b> ${addressText}
 <b>Amount Paid:</b> ₹${fullOrder.totalAmount}
-🚚 <b>Delivery:</b> ${finalDeliveryText}
-${fullOrder.notes ? `\n📝 <b>Special Instructions:</b>\n${fullOrder.notes}\n` : ''}
+<b>Delivery:</b> ${finalDeliveryText}
+${fullOrder.notes ? `\n<b>Special Instructions:</b>\n${fullOrder.notes}\n` : ''}
 
 <b>Items Ordered:</b>
 ${itemsText}

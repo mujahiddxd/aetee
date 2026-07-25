@@ -120,7 +120,7 @@ export async function POST(req) {
       const todayStr = dateFormatter.format(order.createdAt);
       const tomorrowStr = dateFormatter.format(new Date(order.createdAt.getTime() + 24 * 60 * 60 * 1000));
 
-      const deliveryNote = orderHourIST < 12 ? `🚚 <b>Delivery:</b> SAME DAY (${todayStr})` : `📅 <b>Delivery:</b> NEXT DAY (${tomorrowStr})`;
+      const deliveryNote = orderHourIST < 12 ? `<b>Delivery:</b> SAME DAY (${todayStr})` : `<b>Delivery:</b> NEXT DAY (${tomorrowStr})`;
 
       // Calculate Daily Serial Number
       const startOfDay = new Date(`${todayStr}T00:00:00+05:30`);
@@ -138,7 +138,7 @@ export async function POST(req) {
         : null;
 
       const message = `
-🎉 <b>NEW ORDER RECEIVED! (Daily #${serialNumber})</b> 🎉
+<b>NEW ORDER RECEIVED! (Daily #${serialNumber})</b>
 
 <b>Daily Order No:</b> #${serialNumber}
 <b>System ID:</b> ${order.id}
@@ -147,9 +147,9 @@ export async function POST(req) {
 <b>Phone:</b> ${order.user.phone || 'N/A'}
 <b>Address:</b> ${addressText}
 <b>Amount Paid:</b> ₹${order.totalAmount}
-📅 <b>Delivery Date:</b> ${deliveryDateStr || 'Not specified'}
+<b>Delivery Date:</b> ${deliveryDateStr || 'Not specified'}
 ${deliveryNote}
-${order.notes ? `\n📝 <b>Special Instructions:</b>\n${order.notes}\n` : ''}
+${order.notes ? `\n<b>Special Instructions:</b>\n${order.notes}\n` : ''}
 
 <b>Items Ordered:</b>
 ${itemsText}
@@ -180,7 +180,7 @@ ${itemsText}
       if (order.user.phone && process.env.WHATSAPP_API_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {
         const cleanPhone = order.user.phone.replace(/\D/g, '');
         const waDeliveryNote = deliveryNote.replace(/<\/?b>/g, '*');
-        const waMessage = `🎉 *Payment Successful!* 🎉\n\nHi ${order.user.firstName},\nThank you for your order! Your payment of ₹${order.totalAmount} has been received.\n\n${waDeliveryNote}\n\nWe will notify you once it's out for delivery.`;
+        const waMessage = `*Payment Successful!*\n\nHi ${order.user.firstName},\nThank you for your order! Your payment of ₹${order.totalAmount} has been received.\n\n${waDeliveryNote}\n\nWe will notify you once it's out for delivery.`;
         
         const waUrl = `https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
         await fetch(waUrl, {
@@ -216,7 +216,7 @@ ${itemsText}
 
           if (updateResult.count > 0) {
             const failMessage = `
-❌ <b>PAYMENT FAILED!</b> ❌
+<b>PAYMENT FAILED!!</b>
 
 <b>System ID:</b> ${order.id}
 <b>Razorpay ID:</b> ${order.razorpayOrderId}
@@ -235,7 +235,7 @@ ${itemsText}
             // Send WhatsApp Failure Alert
             if (order.user.phone && process.env.WHATSAPP_API_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {
               const cleanPhone = order.user.phone.replace(/\D/g, '');
-              const waFailMessage = `❌ *Payment Failed* ❌\n\nHi ${order.user.firstName},\nWe noticed your recent payment attempt of ₹${order.totalAmount} failed.\n\nPlease try again on our website or contact support if you need help.`;
+              const waFailMessage = `*Payment Failed*\n\nHi ${order.user.firstName},\nWe noticed your recent payment attempt of ₹${order.totalAmount} failed.\n\nPlease try again on our website or contact support if you need help.`;
               
               const waUrl = `https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
               await fetch(waUrl, {
