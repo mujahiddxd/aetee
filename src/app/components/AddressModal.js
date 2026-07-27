@@ -148,13 +148,13 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
             checkDistance(currentAddress, latlng);
           } else {
             setLoading(false);
-            setError("Could not determine your address from location.");
+            setError("Unable to fetch your current location. Please enter your location manually.");
           }
         });
       },
       (error) => {
         setLoading(false);
-        setError("Location access denied or unavailable.");
+        setError("Unable to fetch your current location. Please enter your location manually.");
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );

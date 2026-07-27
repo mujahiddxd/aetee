@@ -128,7 +128,7 @@ export default function Checkout() {
       const turnstileInput = document.querySelector('[name="cf-turnstile-response"]');
       const turnstileToken = turnstileInput?.value;
       if (!turnstileToken) {
-        setShowModal({ isOpen: true, type: 'error', message: 'Please complete the bot verification challenge.' });
+        setShowModal({ isOpen: true, type: 'error', message: 'Security verification failed. Please refresh the page and try again.' });
         return;
       }
 
@@ -162,7 +162,7 @@ export default function Checkout() {
         });
 
         const data = await response.json();
-        
+
         // This is the magic line that fixes your bug:
         resetTurnstile();
         if (data.success) {
@@ -278,350 +278,350 @@ export default function Checkout() {
           <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
         </div>
       ) : (
-      <>
+        <>
 
-      {/* LEFT COLUMN - FORM */}
-      <div className="checkout-left">
-        {/* 1. Checkout Header */}
-        <div style={{ padding: '0 0 32px 0', textAlign: 'left' }}>
-          <h1 style={{ color: '#5A3424', fontSize: '2rem', fontWeight: '800', marginBottom: '8px' }}>Checkout</h1>
-          <p style={{ color: '#888', fontSize: '1rem' }}>Complete your order details</p>
-        </div>
+          {/* LEFT COLUMN - FORM */}
+          <div className="checkout-left">
+            {/* 1. Checkout Header */}
+            <div style={{ padding: '0 0 32px 0', textAlign: 'left' }}>
+              <h1 style={{ color: '#5A3424', fontSize: '2rem', fontWeight: '800', marginBottom: '8px' }}>Checkout</h1>
+              <p style={{ color: '#888', fontSize: '1rem' }}>Complete your order details</p>
+            </div>
 
-        {/* 2. Delivery Date Section */}
-        <div className="section-card">
-          <h2 className="section-title">Delivery Date</h2>
-          <div className="row-flex">
-            <div style={{ flex: 1 }} className="input-group">
-              <input
-                type="date"
-                name="date"
-                value={formData.date}
-                min={minDeliveryDate}
-                onChange={handleInputChange}
-                className={`form-input ${errors.date ? 'error' : ''}`}
-                required
-              />
-              {errors.date && <div className="error-message">{errors.date}</div>}
+            {/* 2. Delivery Date Section */}
+            <div className="section-card">
+              <h2 className="section-title">Delivery Date</h2>
+              <div className="row-flex">
+                <div style={{ flex: 1 }} className="input-group">
+                  <input
+                    type="date"
+                    name="date"
+                    value={formData.date}
+                    min={minDeliveryDate}
+                    onChange={handleInputChange}
+                    className={`form-input ${errors.date ? 'error' : ''}`}
+                    required
+                  />
+                  {errors.date && <div className="error-message">{errors.date}</div>}
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Customer Information */}
+            <div className="section-card">
+              <h2 className="section-title">Customer Information</h2>
+
+              <div className="row-flex">
+                <div style={{ flex: 1 }} className="input-group">
+                  <input
+                    type="text"
+                    name="firstName"
+                    autoComplete="given-name"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    className={`form-input ${errors.firstName ? 'error' : ''}`}
+                    placeholder="First Name"
+                    required
+                    minLength={2}
+                  />
+                  {errors.firstName && <div className="error-message">{errors.firstName}</div>}
+                </div>
+                <div style={{ flex: 1 }} className="input-group">
+                  <input
+                    type="text"
+                    name="lastName"
+                    autoComplete="family-name"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    className={`form-input ${errors.lastName ? 'error' : ''}`}
+                    placeholder="Last Name"
+                    required
+                    minLength={2}
+                  />
+                  {errors.lastName && <div className="error-message">{errors.lastName}</div>}
+                </div>
+              </div>
+
+              <div className="input-group">
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className={`form-input ${errors.email ? 'error' : ''}`}
+                  placeholder="Email Address"
+                  required
+                />
+                {errors.email && <div className="error-message">{errors.email}</div>}
+              </div>
+
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label className="input-label">Mobile Number for Order Notifications</label>
+                <div style={{ display: 'flex' }}>
+                  <div style={{
+                    padding: '16px',
+                    backgroundColor: errors.phone ? '#FEF6F6' : '#F0F0F0',
+                    borderWidth: '1px 0px 1px 1px',
+                    borderStyle: 'solid',
+                    borderColor: errors.phone ? '#D32F2F' : '#E5E5E5',
+                    borderRadius: '12px 0 0 12px',
+                    fontWeight: '600',
+                    color: '#555',
+                    display: 'flex',
+                    alignItems: 'center',
+                    transition: 'all 0.2s ease'
+                  }}>
+                    +91
+                  </div>
+                  <input
+                    type="tel"
+                    name="phone"
+                    autoComplete="tel-national"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className={`form-input ${errors.phone ? 'error' : ''}`}
+                    placeholder="Phone Number"
+                    style={{ borderRadius: '0 12px 12px 0' }}
+                    required
+                    pattern="[0-9]{10}"
+                    maxLength={10}
+                    minLength={10}
+                  />
+                </div>
+                {errors.phone && <div className="error-message">{errors.phone}</div>}
+              </div>
+            </div>
+
+            {/* 4. Delivery Address */}
+            <div className="section-card">
+              <h2 className="section-title">Delivering To</h2>
+
+              <div className="input-group">
+                <textarea
+                  name="address"
+                  autoComplete="street-address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  className={`form-input ${errors.address ? 'error' : ''}`}
+                  placeholder="Delivery Address"
+                  rows="3"
+                  style={{ resize: 'vertical' }}
+                  required
+                ></textarea>
+                {errors.address && <div className="error-message">{errors.address}</div>}
+              </div>
+
+              <div className="input-group">
+                <input
+                  type="text"
+                  name="houseNo"
+                  autoComplete="address-line2"
+                  value={formData.houseNo}
+                  onChange={handleInputChange}
+                  className={`form-input ${errors.houseNo ? 'error' : ''}`}
+                  placeholder="House No / Apartment"
+                  required
+                />
+                {errors.houseNo && <div className="error-message">{errors.houseNo}</div>}
+              </div>
+
+              <div className="row-flex" style={{ marginBottom: 0 }}>
+                <div style={{ flex: 1 }} className="input-group">
+                  <input
+                    type="text"
+                    name="landmark"
+                    autoComplete="address-level3"
+                    value={formData.landmark}
+                    onChange={handleInputChange}
+                    className="form-input"
+                    placeholder="Nearest Landmark (Optional)"
+                  />
+                </div>
+                <div style={{ flex: 1 }} className="input-group">
+                  <input
+                    type="text"
+                    name="pincode"
+                    autoComplete="postal-code"
+                    value={formData.pincode}
+                    onChange={handleInputChange}
+                    className={`form-input ${errors.pincode ? 'error' : ''}`}
+                    placeholder="Pincode (Mumbai Only)"
+                    maxLength="6"
+                    required
+                    pattern="^400[0-9]{3}$"
+                    readOnly
+                    style={{ backgroundColor: '#F0F0F0', cursor: 'not-allowed', color: '#555' }}
+                  />
+                  {errors.pincode && <div className="error-message">{errors.pincode}</div>}
+                </div>
+              </div>
+            </div>
+
+            {/* 5. Additional Information */}
+            <div className="section-card">
+              <h2 className="section-title">Additional Information</h2>
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <textarea
+                  name="additionalInfo"
+                  value={formData.additionalInfo}
+                  onChange={handleInputChange}
+                  className="form-input"
+                  placeholder="Any special instructions for your order? (Optional)"
+                  rows="3"
+                  style={{ resize: 'vertical' }}
+                ></textarea>
+              </div>
+            </div>
+
+            {/* Place Order Button - Desktop/Mobile */}
+            <div style={{ marginBottom: '16px' }}>
+              <div
+                className="cf-turnstile"
+                data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                data-action="turnstile-spin-v2"
+              ></div>
+            </div>
+            <div className="mobile-sticky-bottom">
+              <button className="place-order-btn" onClick={handlePlaceOrder}>
+                Place Order
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* 3. Customer Information */}
-        <div className="section-card">
-          <h2 className="section-title">Customer Information</h2>
-
-          <div className="row-flex">
-            <div style={{ flex: 1 }} className="input-group">
-              <input
-                type="text"
-                name="firstName"
-                autoComplete="given-name"
-                value={formData.firstName}
-                onChange={handleInputChange}
-                className={`form-input ${errors.firstName ? 'error' : ''}`}
-                placeholder="First Name"
-                required
-                minLength={2}
-              />
-              {errors.firstName && <div className="error-message">{errors.firstName}</div>}
+          {/* RIGHT COLUMN - ORDER SUMMARY */}
+          <div className="checkout-right">
+            {/* Order Items */}
+            <div style={{ marginBottom: '32px' }}>
+              {cartItems.map(item => (
+                <div key={item.cartItemId} style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', gap: '16px' }}>
+                  <div style={{ position: 'relative' }}>
+                    <div style={{ width: 64, height: 64, position: 'relative' }}>
+                      <Image src={item.product.image} alt={item.product.name} fill sizes="64px" style={{ objectFit: 'cover', borderRadius: '8px', border: '1px solid #E5E5E5' }} />
+                    </div>
+                    <div style={{
+                      position: 'absolute',
+                      top: '-8px',
+                      right: '-8px',
+                      backgroundColor: '#777',
+                      color: '#FFF',
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold'
+                    }}>
+                      {item.quantity}
+                    </div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#333', margin: '0 0 4px 0' }}>{item.product.name}</h3>
+                    {item.selectedSize && <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>Size: {item.selectedSize}</p>}
+                    {item.selectedAddons && item.selectedAddons.length > 0 && <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>Addons: {item.selectedAddons.join(', ')}</p>}
+                  </div>
+                  <div style={{ fontWeight: '600', color: '#333' }}>
+                    ₹{(item.price * item.quantity).toFixed(2)}
+                  </div>
+                </div>
+              ))}
             </div>
-            <div style={{ flex: 1 }} className="input-group">
-              <input
-                type="text"
-                name="lastName"
-                autoComplete="family-name"
-                value={formData.lastName}
-                onChange={handleInputChange}
-                className={`form-input ${errors.lastName ? 'error' : ''}`}
-                placeholder="Last Name"
-                required
-                minLength={2}
-              />
-              {errors.lastName && <div className="error-message">{errors.lastName}</div>}
+
+            <div style={{ borderTop: '1px solid #E5E5E5', marginBottom: '16px' }}></div>
+
+            {/* Totals */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', color: '#555' }}>
+              <span>Subtotal</span>
+              <span style={{ fontWeight: '500' }}>₹{itemTotal.toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', color: '#555' }}>
+              <span>Shipping</span>
+              <span style={{ fontWeight: '500' }}>₹{deliveryCharges.toFixed(2)}</span>
+            </div>
+            <div style={{ borderTop: '1px solid #E5E5E5', margin: '16px 0' }}></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#333' }}>Total</span>
+              <span style={{ fontWeight: '800', fontSize: '1.4rem', color: '#000' }}>
+                <span style={{ fontSize: '0.85rem', color: '#888', fontWeight: 'normal', marginRight: '8px' }}>INR</span>
+                ₹{grandTotal.toFixed(2)}
+              </span>
             </div>
           </div>
 
-          <div className="input-group">
-            <input
-              type="email"
-              name="email"
-              autoComplete="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              className={`form-input ${errors.email ? 'error' : ''}`}
-              placeholder="Email Address"
-              required
-            />
-            {errors.email && <div className="error-message">{errors.email}</div>}
-          </div>
-
-          <div className="input-group" style={{ marginBottom: 0 }}>
-            <label className="input-label">Mobile Number for Order Notifications</label>
-            <div style={{ display: 'flex' }}>
+          {/* Custom Alert Modal */}
+          {showModal.isOpen && (
+            <div style={{
+              position: 'fixed',
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.6)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              backdropFilter: 'blur(4px)',
+              animation: 'fadeIn 0.2s ease'
+            }}>
               <div style={{
-                padding: '16px',
-                backgroundColor: errors.phone ? '#FEF6F6' : '#F0F0F0',
-                borderWidth: '1px 0px 1px 1px',
-                borderStyle: 'solid',
-                borderColor: errors.phone ? '#D32F2F' : '#E5E5E5',
-                borderRadius: '12px 0 0 12px',
-                fontWeight: '600',
-                color: '#555',
-                display: 'flex',
-                alignItems: 'center',
-                transition: 'all 0.2s ease'
+                backgroundColor: '#FFF',
+                padding: '40px 32px',
+                borderRadius: '24px',
+                maxWidth: '420px',
+                width: '90%',
+                textAlign: 'center',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
+                transform: 'translateY(-20px)',
+                animation: 'slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards'
               }}>
-                +91
-              </div>
-              <input
-                type="tel"
-                name="phone"
-                autoComplete="tel-national"
-                value={formData.phone}
-                onChange={handleInputChange}
-                className={`form-input ${errors.phone ? 'error' : ''}`}
-                placeholder="Phone Number"
-                style={{ borderRadius: '0 12px 12px 0' }}
-                required
-                pattern="[0-9]{10}"
-                maxLength={10}
-                minLength={10}
-              />
-            </div>
-            {errors.phone && <div className="error-message">{errors.phone}</div>}
-          </div>
-        </div>
-
-        {/* 4. Delivery Address */}
-        <div className="section-card">
-          <h2 className="section-title">Delivering To</h2>
-
-          <div className="input-group">
-            <textarea
-              name="address"
-              autoComplete="street-address"
-              value={formData.address}
-              onChange={handleInputChange}
-              className={`form-input ${errors.address ? 'error' : ''}`}
-              placeholder="Delivery Address"
-              rows="3"
-              style={{ resize: 'vertical' }}
-              required
-            ></textarea>
-            {errors.address && <div className="error-message">{errors.address}</div>}
-          </div>
-
-          <div className="input-group">
-            <input
-              type="text"
-              name="houseNo"
-              autoComplete="address-line2"
-              value={formData.houseNo}
-              onChange={handleInputChange}
-              className={`form-input ${errors.houseNo ? 'error' : ''}`}
-              placeholder="House No / Apartment"
-              required
-            />
-            {errors.houseNo && <div className="error-message">{errors.houseNo}</div>}
-          </div>
-
-          <div className="row-flex" style={{ marginBottom: 0 }}>
-            <div style={{ flex: 1 }} className="input-group">
-              <input
-                type="text"
-                name="landmark"
-                autoComplete="address-level3"
-                value={formData.landmark}
-                onChange={handleInputChange}
-                className="form-input"
-                placeholder="Nearest Landmark (Optional)"
-              />
-            </div>
-            <div style={{ flex: 1 }} className="input-group">
-              <input
-                type="text"
-                name="pincode"
-                autoComplete="postal-code"
-                value={formData.pincode}
-                onChange={handleInputChange}
-                className={`form-input ${errors.pincode ? 'error' : ''}`}
-                placeholder="Pincode (Mumbai Only)"
-                maxLength="6"
-                required
-                pattern="^400[0-9]{3}$"
-                readOnly
-                style={{ backgroundColor: '#F0F0F0', cursor: 'not-allowed', color: '#555' }}
-              />
-              {errors.pincode && <div className="error-message">{errors.pincode}</div>}
-            </div>
-          </div>
-        </div>
-
-        {/* 5. Additional Information */}
-        <div className="section-card">
-          <h2 className="section-title">Additional Information</h2>
-          <div className="input-group" style={{ marginBottom: 0 }}>
-            <textarea
-              name="additionalInfo"
-              value={formData.additionalInfo}
-              onChange={handleInputChange}
-              className="form-input"
-              placeholder="Any special instructions for your order? (Optional)"
-              rows="3"
-              style={{ resize: 'vertical' }}
-            ></textarea>
-          </div>
-        </div>
-
-        {/* Place Order Button - Desktop/Mobile */}
-        <div style={{ marginBottom: '16px' }}>
-          <div
-            className="cf-turnstile"
-            data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
-            data-action="turnstile-spin-v2"
-          ></div>
-        </div>
-        <div className="mobile-sticky-bottom">
-          <button className="place-order-btn" onClick={handlePlaceOrder}>
-            Place Order
-          </button>
-        </div>
-      </div>
-
-      {/* RIGHT COLUMN - ORDER SUMMARY */}
-      <div className="checkout-right">
-        {/* Order Items */}
-        <div style={{ marginBottom: '32px' }}>
-          {cartItems.map(item => (
-            <div key={item.cartItemId} style={{ display: 'flex', alignItems: 'center', marginBottom: '16px', gap: '16px' }}>
-              <div style={{ position: 'relative' }}>
-                <div style={{ width: 64, height: 64, position: 'relative' }}>
-                  <Image src={item.product.image} alt={item.product.name} fill sizes="64px" style={{ objectFit: 'cover', borderRadius: '8px', border: '1px solid #E5E5E5' }} />
+                <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+                  {showModal.type === 'error' ? (
+                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#FFF0F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D32F2F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    </div>
+                  ) : (
+                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#F0F8F1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    </div>
+                  )}
                 </div>
-                <div style={{
-                  position: 'absolute',
-                  top: '-8px',
-                  right: '-8px',
-                  backgroundColor: '#777',
-                  color: '#FFF',
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.75rem',
-                  fontWeight: 'bold'
-                }}>
-                  {item.quantity}
-                </div>
+
+                <h3 style={{ margin: '0 0 12px 0', color: '#333', fontSize: '1.5rem', fontWeight: '800' }}>
+                  {showModal.type === 'error' ? 'Notice' : 'Success!'}
+                </h3>
+                <p style={{ color: '#666', marginBottom: '32px', fontSize: '1.05rem', lineHeight: '1.6' }}>
+                  {showModal.message}
+                </p>
+                <button
+                  onClick={() => setShowModal({ isOpen: false, type: '', message: '' })}
+                  style={{
+                    backgroundColor: 'var(--color-primary, #5A3424)',
+                    color: '#FFF',
+                    border: 'none',
+                    padding: '16px 32px',
+                    borderRadius: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    width: '100%',
+                    fontSize: '1.1rem',
+                    letterSpacing: '0.5px',
+                    boxShadow: '0 4px 12px rgba(90, 52, 36, 0.2)',
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                  }}
+                  onMouseOver={(e) => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 6px 16px rgba(90, 52, 36, 0.3)'; }}
+                  onMouseOut={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 4px 12px rgba(90, 52, 36, 0.2)'; }}
+                >
+                  {showModal.type === 'error' ? 'Got it' : 'Continue'}
+                </button>
               </div>
-              <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#333', margin: '0 0 4px 0' }}>{item.product.name}</h3>
-                {item.selectedSize && <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>Size: {item.selectedSize}</p>}
-                {item.selectedAddons && item.selectedAddons.length > 0 && <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>Addons: {item.selectedAddons.join(', ')}</p>}
-              </div>
-              <div style={{ fontWeight: '600', color: '#333' }}>
-                ₹{(item.price * item.quantity).toFixed(2)}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ borderTop: '1px solid #E5E5E5', marginBottom: '16px' }}></div>
-
-        {/* Totals */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', color: '#555' }}>
-          <span>Subtotal</span>
-          <span style={{ fontWeight: '500' }}>₹{itemTotal.toFixed(2)}</span>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', color: '#555' }}>
-          <span>Shipping</span>
-          <span style={{ fontWeight: '500' }}>₹{deliveryCharges.toFixed(2)}</span>
-        </div>
-        <div style={{ borderTop: '1px solid #E5E5E5', margin: '16px 0' }}></div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#333' }}>Total</span>
-          <span style={{ fontWeight: '800', fontSize: '1.4rem', color: '#000' }}>
-            <span style={{ fontSize: '0.85rem', color: '#888', fontWeight: 'normal', marginRight: '8px' }}>INR</span>
-            ₹{grandTotal.toFixed(2)}
-          </span>
-        </div>
-      </div>
-
-      {/* Custom Alert Modal */}
-      {showModal.isOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.6)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          backdropFilter: 'blur(4px)',
-          animation: 'fadeIn 0.2s ease'
-        }}>
-          <div style={{
-            backgroundColor: '#FFF',
-            padding: '40px 32px',
-            borderRadius: '24px',
-            maxWidth: '420px',
-            width: '90%',
-            textAlign: 'center',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
-            transform: 'translateY(-20px)',
-            animation: 'slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards'
-          }}>
-            <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
-              {showModal.type === 'error' ? (
-                <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#FFF0F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D32F2F" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                </div>
-              ) : (
-                <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#F0F8F1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                </div>
-              )}
-            </div>
-
-            <h3 style={{ margin: '0 0 12px 0', color: '#333', fontSize: '1.5rem', fontWeight: '800' }}>
-              {showModal.type === 'error' ? 'Notice' : 'Success!'}
-            </h3>
-            <p style={{ color: '#666', marginBottom: '32px', fontSize: '1.05rem', lineHeight: '1.6' }}>
-              {showModal.message}
-            </p>
-            <button
-              onClick={() => setShowModal({ isOpen: false, type: '', message: '' })}
-              style={{
-                backgroundColor: 'var(--color-primary, #5A3424)',
-                color: '#FFF',
-                border: 'none',
-                padding: '16px 32px',
-                borderRadius: '12px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                width: '100%',
-                fontSize: '1.1rem',
-                letterSpacing: '0.5px',
-                boxShadow: '0 4px 12px rgba(90, 52, 36, 0.2)',
-                transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-              }}
-              onMouseOver={(e) => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 6px 16px rgba(90, 52, 36, 0.3)'; }}
-              onMouseOut={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 4px 12px rgba(90, 52, 36, 0.2)'; }}
-            >
-              {showModal.type === 'error' ? 'Got it' : 'Continue'}
-            </button>
-          </div>
-          <style>{`
+              <style>{`
             @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
             @keyframes slideDown { from { transform: translateY(-40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
           `}</style>
-        </div>
-      )}
+            </div>
+          )}
 
-      </>
+        </>
       )}
 
     </div>
