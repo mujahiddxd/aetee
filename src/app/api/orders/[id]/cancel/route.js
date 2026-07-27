@@ -31,7 +31,7 @@ export async function POST(req, { params }) {
     // just guessing a database ID.
     const order = await prisma.order.findFirst({
       where: {
-        id: parseInt(id),
+        id: id,
         razorpayOrderId: razorpayOrderId,
       },
     });
