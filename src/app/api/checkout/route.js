@@ -199,33 +199,11 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: 'Minimum amount must be at least ₹1' }, { status: 400 });
     }
 
-    // ── 5. Rate limit: max 25 paid orders per 24 hours ───────────────
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    // ── 5. Rate limit check moved inside the transaction (see step 7) ──
+    // NOTE: Moving this check here (outside the transaction) would create a race
+    // condition — concurrent requests could all pass at the same time. The check
+    // is enforced atomically inside prisma.$transaction below.
 
-    if (existingUser) {
-      const recentPaidOrders = await prisma.order.count({
-        where: {
-          userId: existingUser.id,
-          status: 'PAID',
-          createdAt: { 
-            gte: (() => {
-              const now = new Date();
-              const year = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', year: 'numeric' }).format(now);
-              const month = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', month: '2-digit' }).format(now);
-              const day = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', day: '2-digit' }).format(now);
-              return new Date(`${year}-${month}-${day}T00:00:00+05:30`);
-            })() 
-          },
-        },
-      });
-
-      if (recentPaidOrders >= 25) {
-        return NextResponse.json(
-          { success: false, error: 'Sorry for the inconvenience, but you have reached the maximum limit of 25 orders in a day. Please try ordering again tomorrow.' },
-          { status: 429 }
-        );
-      }
-    }
 
     // ── 6. Create Razorpay Order ────────────────────────────────────
     const razorpay = new Razorpay({
@@ -261,10 +239,37 @@ export async function POST(req) {
           data: { firstName: safeFirstName, lastName: safeLastName, email, phone },
         });
       } else {
+        // ⚠️ CRITICAL — ROW LOCK: This update acquires an EXCLUSIVE ROW LOCK (X lock)
+        // on this user record in MySQL/InnoDB. Any concurrent transaction for the same
+        // user will be blocked at this line until this transaction commits or rolls back.
+        // This serializes concurrent checkouts and makes the rate limit check below
+        // race-condition-proof. DO NOT REMOVE this update without adding an alternative
+        // locking mechanism (e.g., SELECT ... FOR UPDATE).
         txUser = await tx.user.update({
           where: { id: txUser.id },
           data: { firstName: safeFirstName, lastName: safeLastName, phone },
         });
+      }
+
+      // ── 5 (moved here). Rate limit: max 25 paid orders per 24 hours ─
+      // Safe from race conditions because the tx.user.update above holds an
+      // exclusive row lock, serializing all concurrent requests for this user.
+      const now = new Date();
+      const year = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', year: 'numeric' }).format(now);
+      const month = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', month: '2-digit' }).format(now);
+      const day = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', day: '2-digit' }).format(now);
+      const startOfDay = new Date(`${year}-${month}-${day}T00:00:00+05:30`);
+
+      const recentPaidOrders = await tx.order.count({
+        where: {
+          userId: txUser.id,
+          status: 'PAID',
+          createdAt: { gte: startOfDay },
+        },
+      });
+
+      if (recentPaidOrders >= 25) {
+        throw new Error('RATE_LIMITED');
       }
 
       await tx.address.create({
@@ -304,6 +309,13 @@ export async function POST(req) {
     });
   } catch (error) {
     console.error('Error in checkout:', error);
+
+    if (error.message === 'RATE_LIMITED') {
+      return NextResponse.json(
+        { success: false, error: 'Sorry for the inconvenience, but you have reached the maximum limit of 25 orders in a day. Please try ordering again tomorrow.' },
+        { status: 429 }
+      );
+    }
 
     if (error.statusCode === 401) {
       return NextResponse.json({ success: false, error: 'Payment gateway authentication failed' }, { status: 401 });

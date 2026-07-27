@@ -1,20 +1,12 @@
 import { NextResponse } from 'next/server';
 import { verifyTurnstile } from '@/lib/turnstile';
+import { prisma } from '@/lib/prisma';
 
-// In-memory rate limiting for contact form
-const contactAttempts = new Map();
+
+
+// DB-backed rate limiting for contact form (persistent across restarts and PM2 workers)
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 const MAX_ATTEMPTS_PER_WINDOW = 3;
-
-// Lazy cleanup
-function cleanupStaleContactAttempts() {
-  const now = Date.now();
-  for (const [ip, record] of contactAttempts) {
-    if (now - record.firstAttempt > RATE_LIMIT_WINDOW_MS) {
-      contactAttempts.delete(ip);
-    }
-  }
-}
 
 export async function POST(request) {
   try {
@@ -31,22 +23,40 @@ export async function POST(request) {
       || request.headers.get('x-real-ip')
       || 'unknown';
 
-    cleanupStaleContactAttempts();
-    
-    // Rate limit check
+    // ── DB-backed rate limit check ─────────────────────────────────
     if (clientIp !== 'unknown') {
-      const record = contactAttempts.get(clientIp);
-      if (record && Date.now() - record.firstAttempt <= RATE_LIMIT_WINDOW_MS) {
-        if (record.count >= MAX_ATTEMPTS_PER_WINDOW) {
-          const remainingMins = Math.ceil((RATE_LIMIT_WINDOW_MS - (Date.now() - record.firstAttempt)) / 60000);
-          return NextResponse.json(
-            { error: `You have sent too many messages. Please try again in ${remainingMins} minute(s).` },
-            { status: 429 }
-          );
-        }
-        record.count += 1;
+      // Atomically create-or-fetch the record using upsert.
+      // This avoids the TOCTOU race condition where concurrent requests
+      // would all see "no record" and crash with a P2002 unique constraint error.
+      const record = await prisma.rateLimit.upsert({
+        where: { ip_action: { ip: clientIp, action: 'contact' } },
+        update: {}, // No-op: just fetch the existing record
+        create: { ip: clientIp, action: 'contact', count: 0 },
+      });
+
+      const windowExpired = Date.now() - record.firstAttempt.getTime() > RATE_LIMIT_WINDOW_MS;
+
+      if (windowExpired) {
+        // Window has passed — reset the counter for a fresh window
+        await prisma.rateLimit.update({
+          where: { ip_action: { ip: clientIp, action: 'contact' } },
+          data: { count: 1, firstAttempt: new Date() },
+        });
+      } else if (record.count >= MAX_ATTEMPTS_PER_WINDOW) {
+        // Within the window and limit reached — reject
+        const remainingMins = Math.ceil(
+          (RATE_LIMIT_WINDOW_MS - (Date.now() - record.firstAttempt.getTime())) / 60000
+        );
+        return NextResponse.json(
+          { error: `You have sent too many messages. Please try again in ${remainingMins} minute(s).` },
+          { status: 429 }
+        );
       } else {
-        contactAttempts.set(clientIp, { count: 1, firstAttempt: Date.now() });
+        // Within window and under the limit — increment atomically
+        await prisma.rateLimit.update({
+          where: { ip_action: { ip: clientIp, action: 'contact' } },
+          data: { count: { increment: 1 } },
+        });
       }
     }
 

@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { generateAdminToken } from '@/lib/auth';
 import { verifyTurnstile } from '@/lib/turnstile';
+import { prisma } from '@/lib/prisma';
 
-// ── In-memory brute force rate limiter ──────────────────────────────
-// Tracks failed login attempts per IP. Resets after WINDOW_MS.
-const loginAttempts = new Map();
+// DB-backed brute-force rate limiter (persistent across restarts and PM2 workers)
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
@@ -14,59 +13,41 @@ function getClientIp(request) {
     || 'unknown';
 }
 
-function isRateLimited(ip) {
-  const record = loginAttempts.get(ip);
-  if (!record) return false;
-
-  // Reset if the window has passed
-  if (Date.now() - record.firstAttempt > WINDOW_MS) {
-    loginAttempts.delete(ip);
-    return false;
-  }
-
-  return record.count >= MAX_ATTEMPTS;
-}
-
-function recordFailedAttempt(ip) {
-  const record = loginAttempts.get(ip);
-  if (!record || Date.now() - record.firstAttempt > WINDOW_MS) {
-    loginAttempts.set(ip, { count: 1, firstAttempt: Date.now() });
-  } else {
-    record.count += 1;
-  }
-}
-
-function clearAttempts(ip) {
-  loginAttempts.delete(ip);
-}
-
-// Lazy cleanup of stale entries to prevent memory leaks
-function cleanupStaleAttempts() {
-  const now = Date.now();
-  for (const [ip, record] of loginAttempts) {
-    if (now - record.firstAttempt > WINDOW_MS) {
-      loginAttempts.delete(ip);
-    }
-  }
-}
-// ────────────────────────────────────────────────────────────────────
-
 export async function POST(request) {
   try {
     const clientIp = getClientIp(request);
-    cleanupStaleAttempts(); // Clean up stale attempts lazily
 
-    // Check rate limit before processing
-    if (isRateLimited(clientIp)) {
-      const record = loginAttempts.get(clientIp);
-      const remainingMs = WINDOW_MS - (Date.now() - record.firstAttempt);
-      const remainingMins = Math.ceil(remainingMs / 60000);
+    // ── DB-backed rate limit check ──────────────────────────────────
+    if (clientIp !== 'unknown') {
+      // Atomically create-or-fetch the record using upsert.
+      // This avoids the TOCTOU race condition where concurrent requests
+      // would all see "no record" and crash with a P2002 unique constraint error.
+      const record = await prisma.rateLimit.upsert({
+        where: { ip_action: { ip: clientIp, action: 'admin_login' } },
+        update: {}, // No-op: just fetch the existing record
+        create: { ip: clientIp, action: 'admin_login', count: 0 },
+      });
 
-      return NextResponse.json(
-        { success: false, error: `Too many login attempts. Please try again in ${remainingMins} minute(s).` },
-        { status: 429 }
-      );
+      const windowExpired = Date.now() - record.firstAttempt.getTime() > WINDOW_MS;
+
+      if (!windowExpired && record.count >= MAX_ATTEMPTS) {
+        const remainingMs = WINDOW_MS - (Date.now() - record.firstAttempt.getTime());
+        const remainingMins = Math.ceil(remainingMs / 60000);
+        return NextResponse.json(
+          { success: false, error: `Too many login attempts. Please try again in ${remainingMins} minute(s).` },
+          { status: 429 }
+        );
+      }
+
+      // If window expired, reset the counter (will be incremented on failure below)
+      if (windowExpired) {
+        await prisma.rateLimit.update({
+          where: { ip_action: { ip: clientIp, action: 'admin_login' } },
+          data: { count: 0, firstAttempt: new Date() },
+        });
+      }
     }
+    // ────────────────────────────────────────────────────────────────
 
     const body = await request.json();
     const { username, password } = body;
@@ -93,7 +74,14 @@ export async function POST(request) {
     }
 
     if (username === validUsername && password === validPassword) {
-      clearAttempts(clientIp);
+      // Successful login — reset the rate limit counter for this IP
+      if (clientIp !== 'unknown') {
+        await prisma.rateLimit.update({
+          where: { ip_action: { ip: clientIp, action: 'admin_login' } },
+          data: { count: 0, firstAttempt: new Date() },
+        }).catch(() => {}); // Silently ignore if record doesn't exist yet
+      }
+
       const token = generateAdminToken();
 
       const response = NextResponse.json({ success: true, message: 'Logged in successfully' }, { status: 200 });
@@ -111,10 +99,19 @@ export async function POST(request) {
       return response;
     }
 
-    // Record failed attempt
-    recordFailedAttempt(clientIp);
-    const record = loginAttempts.get(clientIp);
-    const attemptsRemaining = MAX_ATTEMPTS - record.count;
+    // Failed login — increment the counter atomically
+    if (clientIp !== 'unknown') {
+      await prisma.rateLimit.update({
+        where: { ip_action: { ip: clientIp, action: 'admin_login' } },
+        data: { count: { increment: 1 } },
+      }).catch(() => {}); // Silently ignore if record doesn't exist yet
+    }
+
+    // Re-fetch to show accurate remaining attempts
+    const updatedRecord = clientIp !== 'unknown'
+      ? await prisma.rateLimit.findUnique({ where: { ip_action: { ip: clientIp, action: 'admin_login' } } })
+      : null;
+    const attemptsRemaining = updatedRecord ? Math.max(0, MAX_ATTEMPTS - updatedRecord.count) : MAX_ATTEMPTS - 1;
 
     return NextResponse.json(
       { success: false, error: attemptsRemaining > 0 ? `Invalid credentials. ${attemptsRemaining} attempt(s) remaining.` : 'Too many failed attempts. Account temporarily locked.' },
