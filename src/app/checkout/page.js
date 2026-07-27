@@ -16,8 +16,8 @@ export default function Checkout() {
   const turnstileRef = useRef(null);
 
   const resetTurnstile = useCallback(() => {
-    if (window.turnstile && turnstileRef.current) {
-      window.turnstile.reset(turnstileRef.current);
+    if (window.turnstile) {
+      window.turnstile.reset();
     }
   }, []);
 
@@ -160,7 +160,9 @@ export default function Checkout() {
         });
 
         const data = await response.json();
-
+        
+        // This is the magic line that fixes your bug:
+        resetTurnstile();
         if (data.success) {
           // Create a specific description of the items being purchased
           const orderDescription = cartItems.map(item => {
