@@ -139,22 +139,51 @@ export async function POST(req) {
       });
     }
 
-    // ── 3.5 Calculate Delivery Charges from pre-validated distance ──
-    // Distance is validated client-side via AddressModal (cart → checkout)
+    // ── 3.5 Calculate Delivery Charges Securely on the Server ──
+    // We IGNORE the client-provided distance completely and recalculate it here
     let deliveryCharges = 0;
     
     if (serverCalculatedTotal > 0) {
-      const parsedDistance = parseFloat(distance) || 0;
-      
-      if (parsedDistance > 0) {
-        if (parsedDistance > 40) {
-           return NextResponse.json({ success: false, error: `Sorry, your location is ${parsedDistance.toFixed(1)}km away. We do not deliver beyond 40km.` }, { status: 400 });
-        }
+      try {
+        const SHOP_ADDRESS = "NDR 9, B-703 Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089";
+        // Create full destination string exactly as the frontend would
+        const destinationAddress = `${safeAddressLine1}, ${safeCity} - ${postalCode}`;
         
-        // Base fee of ₹50 plus ₹10 per km
-        const BASE_DELIVERY_FEE = 50;
-        const COST_PER_KM = 10;
-        deliveryCharges = BASE_DELIVERY_FEE + Math.ceil(parsedDistance * COST_PER_KM);
+        const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+        
+        if (!googleApiKey) {
+           throw new Error("Missing Google Maps API Key in environment");
+        }
+
+        const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(SHOP_ADDRESS)}&destinations=${encodeURIComponent(destinationAddress)}&key=${googleApiKey}`;
+        
+        // We spoof the Referer just in case the API key has HTTP referer restrictions
+        const mapsRes = await fetch(url, {
+          headers: { 'Referer': 'https://aeteesbakehouse.com/' }
+        });
+        
+        const mapsData = await mapsRes.json();
+
+        if (mapsData.status === 'OK' && mapsData.rows[0] && mapsData.rows[0].elements[0].status === 'OK') {
+          const distanceInMeters = mapsData.rows[0].elements[0].distance.value;
+          const verifiedDistanceKm = distanceInMeters / 1000;
+          
+          if (verifiedDistanceKm > 40) {
+             return NextResponse.json({ success: false, error: `Sorry, your location is ${verifiedDistanceKm.toFixed(1)}km away. We do not deliver beyond 40km.` }, { status: 400 });
+          }
+          
+          // Base fee of ₹50 plus ₹10 per km
+          const BASE_DELIVERY_FEE = 50;
+          const COST_PER_KM = 10;
+          deliveryCharges = BASE_DELIVERY_FEE + Math.ceil(verifiedDistanceKm * COST_PER_KM);
+        } else {
+          // If Google Maps fails (e.g. unrecognizable address), reject the order to prevent free delivery abuse
+          console.error("Google Maps Distance API Error:", mapsData);
+          return NextResponse.json({ success: false, error: 'Could not verify delivery distance for this address. Please ensure the address is correct.' }, { status: 400 });
+        }
+      } catch (err) {
+        console.error("Server distance calculation error:", err);
+        return NextResponse.json({ success: false, error: 'Internal server error calculating delivery charges.' }, { status: 500 });
       }
     }
 

@@ -75,7 +75,10 @@ export async function middleware(request) {
     if (pathname.startsWith('/api/products') || pathname.startsWith('/api/categories') || pathname.startsWith('/api/filters')) {
       if (isModifying) requiresAuth = true;
     } else if (pathname.startsWith('/api/orders')) {
-      requiresAuth = true;
+      // Allow the public cancel sub-route (used when user closes Razorpay popup)
+      if (!pathname.endsWith('/cancel')) {
+        requiresAuth = true;
+      }
     }
 
     if (requiresAuth) {

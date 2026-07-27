@@ -220,11 +220,13 @@ export default function Checkout() {
             modal: {
               ondismiss: function () {
                 setShowModal({ isOpen: true, type: 'error', message: 'Payment was cancelled by the user.' });
-                // Mark the abandoned order as CANCELLED in the database
-                fetch(`/api/orders/${data.dbOrderId}`, {
-                  method: 'PUT',
+                // Mark the abandoned order as CANCELLED in the database.
+                // Uses the dedicated /cancel endpoint (no admin auth required).
+                // The razorpayOrderId proves this user owns the order.
+                fetch(`/api/orders/${data.dbOrderId}/cancel`, {
+                  method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ status: 'CANCELLED' })
+                  body: JSON.stringify({ razorpayOrderId: data.orderId })
                 }).catch(e => console.error('Failed to cancel order in DB', e));
               }
             }
