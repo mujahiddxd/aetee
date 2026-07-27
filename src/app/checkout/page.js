@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
 import Image from 'next/image';
@@ -13,7 +13,9 @@ export default function Checkout() {
   const router = useRouter();
   const { cartItems, isLoaded, clearCart } = useCart();
   const [paymentMethod, setPaymentMethod] = useState('');
-  const turnstileRef = useRef(null);
+  const [turnstileReady, setTurnstileReady] = useState(
+    typeof window !== 'undefined' && !!window.turnstile
+  );
 
   const resetTurnstile = useCallback(() => {
     if (window.turnstile) {
@@ -220,6 +222,7 @@ export default function Checkout() {
             modal: {
               ondismiss: function () {
                 setShowModal({ isOpen: true, type: 'error', message: 'Payment was cancelled by the user.' });
+                resetTurnstile();
                 // Mark the abandoned order as CANCELLED in the database.
                 // Uses the dedicated /cancel endpoint (no admin auth required).
                 // The razorpayOrderId proves this user owns the order.
@@ -235,6 +238,7 @@ export default function Checkout() {
           const paymentObject = new window.Razorpay(options);
           paymentObject.on('payment.failed', function (response) {
             setShowModal({ isOpen: true, type: 'error', message: 'Payment failed: ' + response.error.description });
+            resetTurnstile();
           });
           paymentObject.open();
         } else {
@@ -260,8 +264,21 @@ export default function Checkout() {
   return (
     <div className="checkout-container">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" />
-      <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
+      <Script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+        async
+        defer
+        onLoad={() => setTurnstileReady(true)}
+      />
 
+      {!turnstileReady ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', width: '100%' }}>
+          <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #5A3424', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <p style={{ marginTop: '16px', color: '#888', fontSize: '0.95rem' }}>Loading checkout...</p>
+          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+        </div>
+      ) : (
+      <>
 
       {/* LEFT COLUMN - FORM */}
       <div className="checkout-left">
@@ -460,7 +477,6 @@ export default function Checkout() {
         {/* Place Order Button - Desktop/Mobile */}
         <div style={{ marginBottom: '16px' }}>
           <div
-            ref={turnstileRef}
             className="cf-turnstile"
             data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
             data-action="turnstile-spin-v2"
@@ -603,6 +619,9 @@ export default function Checkout() {
             @keyframes slideDown { from { transform: translateY(-40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
           `}</style>
         </div>
+      )}
+
+      </>
       )}
 
     </div>
