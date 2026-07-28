@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
 import Image from 'next/image';
@@ -16,12 +16,30 @@ export default function Checkout() {
   const [turnstileReady, setTurnstileReady] = useState(
     typeof window !== 'undefined' && !!window.turnstile
   );
+  const turnstileWidgetId = useRef(null);
+  const turnstileContainerRef = useRef(null);
+
+  const renderTurnstile = useCallback(() => {
+    if (!window.turnstile || !turnstileContainerRef.current) return;
+    // Remove any previously rendered widget before re-rendering
+    if (turnstileWidgetId.current !== null) {
+      try { window.turnstile.remove(turnstileWidgetId.current); } catch (_) {}
+      turnstileWidgetId.current = null;
+    }
+    turnstileContainerRef.current.innerHTML = '';
+    turnstileWidgetId.current = window.turnstile.render(turnstileContainerRef.current, {
+      sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+      action: 'turnstile-spin-v2',
+    });
+  }, []);
 
   const resetTurnstile = useCallback(() => {
-    if (window.turnstile) {
-      window.turnstile.reset();
+    if (window.turnstile && turnstileWidgetId.current !== null) {
+      window.turnstile.reset(turnstileWidgetId.current);
+    } else {
+      renderTurnstile();
     }
-  }, []);
+  }, [renderTurnstile]);
 
   // Compute tomorrow's date in IST for minimum delivery date
   const getTomorrowIST = () => {
@@ -48,6 +66,13 @@ export default function Checkout() {
   const [errors, setErrors] = useState({});
   const [showModal, setShowModal] = useState({ isOpen: false, type: '', message: '' });
   const [distance, setDistance] = useState(0);
+
+  // Render Turnstile when it's ready and the container is available
+  useEffect(() => {
+    if (turnstileReady) {
+      renderTurnstile();
+    }
+  }, [turnstileReady, renderTurnstile]);
 
   useEffect(() => {
     const savedLocation = sessionStorage.getItem('deliveryLocation');
@@ -124,11 +149,18 @@ export default function Checkout() {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      // Get Turnstile token
-      const turnstileInput = document.querySelector('[name="cf-turnstile-response"]');
-      const turnstileToken = turnstileInput?.value;
+      // Get Turnstile token from the explicitly rendered widget
+      let turnstileToken = null;
+      if (turnstileWidgetId.current !== null && window.turnstile) {
+        turnstileToken = window.turnstile.getResponse(turnstileWidgetId.current);
+      }
+      // Fallback: check hidden input in case of auto-render
       if (!turnstileToken) {
-        setShowModal({ isOpen: true, type: 'error', message: 'Security verification failed. Please refresh the page and try again.' });
+        const turnstileInput = document.querySelector('[name="cf-turnstile-response"]');
+        turnstileToken = turnstileInput?.value || null;
+      }
+      if (!turnstileToken) {
+        setShowModal({ isOpen: true, type: 'error', message: 'Please complete the bot verification challenge before placing your order.' });
         return;
       }
 
@@ -268,7 +300,10 @@ export default function Checkout() {
         src="https://challenges.cloudflare.com/turnstile/v0/api.js"
         async
         defer
-        onLoad={() => setTurnstileReady(true)}
+          onLoad={() => {
+          setTurnstileReady(true);
+          renderTurnstile();
+        }}
       />
 
       {!turnstileReady ? (
@@ -476,11 +511,7 @@ export default function Checkout() {
 
             {/* Place Order Button - Desktop/Mobile */}
             <div style={{ marginBottom: '16px' }}>
-              <div
-                className="cf-turnstile"
-                data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
-                data-action="turnstile-spin-v2"
-              ></div>
+              <div ref={turnstileContainerRef}></div>
             </div>
             <div className="mobile-sticky-bottom">
               <button className="place-order-btn" onClick={handlePlaceOrder}>
