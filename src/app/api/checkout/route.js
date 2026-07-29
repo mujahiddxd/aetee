@@ -31,8 +31,8 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: 'Name fields are invalid' }, { status: 400 });
     }
 
-    if (typeof postalCode !== 'string' || !/^400\d{3}$/.test(postalCode)) {
-      return NextResponse.json({ success: false, error: 'We only deliver to Mumbai (400xxx) pincodes' }, { status: 400 });
+    if (typeof postalCode !== 'string' || (postalCode !== '' && !/^\d{6}$/.test(postalCode))) {
+      return NextResponse.json({ success: false, error: 'Invalid pincode format' }, { status: 400 });
     }
 
     if (!Array.isArray(items) || items.length === 0 || items.length > 50) {

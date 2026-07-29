@@ -141,10 +141,10 @@ export default function Checkout() {
     if (!formData.houseNo.trim()) newErrors.houseNo = "House number or apartment is required.";
 
     const trimmedPincode = formData.pincode.trim();
-    if (!trimmedPincode) {
-      newErrors.pincode = "Pincode is required.";
-    } else if (!/^400\d{3}$/.test(trimmedPincode)) {
-      newErrors.pincode = "Sorry, we currently only deliver to Mumbai (400xxx) pincodes.";
+    // Pincode is optional since it's locked and auto-fetched. 
+    // If fetched, we accept whatever was extracted as long as it's a 6-digit number.
+    if (trimmedPincode && !/^\d{6}$/.test(trimmedPincode)) {
+      newErrors.pincode = "Invalid pincode format.";
     }
 
     setErrors(newErrors);
@@ -482,10 +482,10 @@ export default function Checkout() {
                     value={formData.pincode}
                     onChange={handleInputChange}
                     className={`form-input ${errors.pincode ? 'error' : ''}`}
-                    placeholder="Pincode (Mumbai Only)"
+                    placeholder="Pincode (Auto-fetched)"
                     maxLength="6"
-                    required
-                    pattern="^400[0-9]{3}$"
+                    readOnly
+                    style={{ backgroundColor: '#F0F0F0', cursor: 'not-allowed', color: '#555' }}
                   />
                   {errors.pincode && <div className="error-message">{errors.pincode}</div>}
                 </div>
