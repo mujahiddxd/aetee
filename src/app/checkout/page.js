@@ -61,7 +61,7 @@ export default function Checkout() {
     houseNo: '',
     landmark: '',
     additionalInfo: '',
-    pincode: '400001'
+    pincode: ''
   });
   const [errors, setErrors] = useState({});
   const [showModal, setShowModal] = useState({ isOpen: false, type: '', message: '' });
@@ -79,8 +79,8 @@ export default function Checkout() {
     if (savedLocation) {
       try {
         const info = JSON.parse(savedLocation);
-        let extractedPincode = '400001';
-        const pinMatch = info.address.match(/\b(400\d{3})\b/);
+        let extractedPincode = '';
+        const pinMatch = info.address.match(/\b(\d{6})\b/);
         if (pinMatch) {
           extractedPincode = pinMatch[1];
         }
@@ -140,9 +140,10 @@ export default function Checkout() {
     if (!formData.address.trim()) newErrors.address = "Delivery address is required.";
     if (!formData.houseNo.trim()) newErrors.houseNo = "House number or apartment is required.";
 
-    if (!formData.pincode.trim()) {
+    const trimmedPincode = formData.pincode.trim();
+    if (!trimmedPincode) {
       newErrors.pincode = "Pincode is required.";
-    } else if (!/^400\d{3}$/.test(formData.pincode)) {
+    } else if (!/^400\d{3}$/.test(trimmedPincode)) {
       newErrors.pincode = "Sorry, we currently only deliver to Mumbai (400xxx) pincodes.";
     }
 
@@ -177,7 +178,7 @@ export default function Checkout() {
             addressLine1: `${formData.houseNo}, ${formData.address}`,
             addressLine2: formData.landmark || null,
             city: 'Mumbai',
-            postalCode: formData.pincode,
+            postalCode: trimmedPincode,
             distance: distance,
             totalAmount: grandTotal,
             deliveryDate: formData.date,
@@ -485,8 +486,6 @@ export default function Checkout() {
                     maxLength="6"
                     required
                     pattern="^400[0-9]{3}$"
-                    readOnly
-                    style={{ backgroundColor: '#F0F0F0', cursor: 'not-allowed', color: '#555' }}
                   />
                   {errors.pincode && <div className="error-message">{errors.pincode}</div>}
                 </div>

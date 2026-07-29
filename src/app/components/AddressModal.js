@@ -38,7 +38,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
           if (status === 'OK' && response && response.rows && response.rows[0] && response.rows[0].elements[0].status === 'OK') {
             const distanceInMeters = response.rows[0].elements[0].distance.value;
             const distanceInKm = distanceInMeters / 1000;
-            
+
             if (distanceInKm > 40) {
               setError(`Sorry, we cannot deliver here. It is ${distanceInKm.toFixed(1)}km away (Max limit is 40km).`);
             } else {
@@ -53,11 +53,11 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
           } else {
             let errorMsg = 'Could not calculate distance. Please try a more specific address.';
             if (status !== 'OK') {
-               errorMsg = `API Error: ${status}. Please ensure Distance Matrix API is enabled in Google Cloud.`;
+              errorMsg = `API Error: ${status}. Please ensure Distance Matrix API is enabled in Google Cloud.`;
             } else if (response && response.rows && response.rows[0] && response.rows[0].elements[0].status === 'ZERO_RESULTS') {
-               errorMsg = 'Could not find a driving route to this address.';
+              errorMsg = 'Could not find a driving route to this address.';
             } else if (response && response.rows && response.rows[0]) {
-               errorMsg = `Route Error: ${response.rows[0].elements[0].status}`;
+              errorMsg = `Route Error: ${response.rows[0].elements[0].status}`;
             }
             setError(errorMsg);
           }
@@ -77,17 +77,24 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
       if (window.google && window.google.maps && window.google.maps.places && inputRef.current && !autocompleteRef.current) {
         autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
           componentRestrictions: { country: "IN" },
-          fields: ["formatted_address", "geometry", "name"],
+          fields: ["formatted_address", "geometry", "name", "address_components"],
         });
 
         autocompleteRef.current.addListener("place_changed", () => {
           const place = autocompleteRef.current.getPlace();
           if (place && place.formatted_address) {
-            setAddress(place.formatted_address);
+            let currentAddress = place.formatted_address;
+            if (place.address_components) {
+              const postalComponent = place.address_components.find(c => c.types.includes("postal_code"));
+              if (postalComponent && !currentAddress.includes(postalComponent.long_name)) {
+                currentAddress = currentAddress + " - " + postalComponent.long_name;
+              }
+            }
+            setAddress(currentAddress);
             if (place.geometry) {
-              checkDistance(place.formatted_address, place.geometry.location);
+              checkDistance(currentAddress, place.geometry.location);
             } else {
-              checkDistance(place.formatted_address);
+              checkDistance(currentAddress);
             }
           }
         });
@@ -124,7 +131,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
 
     setLoading(true);
     setError('');
-    
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         if (!window.google || !window.google.maps) {
@@ -135,14 +142,25 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
 
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
-        
+
         // Reverse geocode to get the address string
         const geocoder = new window.google.maps.Geocoder();
         const latlng = { lat, lng };
-        
+
         geocoder.geocode({ location: latlng }, (results, status) => {
-          if (status === "OK" && results[0]) {
-            const currentAddress = results[0].formatted_address;
+          if (status === "OK" && results.length > 0) {
+            let currentAddress = results[0].formatted_address;
+            let postalCode = "";
+            for (const result of results) {
+              const postalComponent = result.address_components?.find(c => c.types.includes("postal_code"));
+              if (postalComponent) {
+                postalCode = postalComponent.long_name;
+                break;
+              }
+            }
+            if (postalCode && !currentAddress.includes(postalCode)) {
+              currentAddress = currentAddress + " - " + postalCode;
+            }
             setAddress(currentAddress);
             if (inputRef.current) inputRef.current.value = currentAddress;
             checkDistance(currentAddress, latlng);
@@ -165,7 +183,36 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
       setError('Please enter a delivery address.');
       return;
     }
-    checkDistance(address);
+    setLoading(true);
+    setError('');
+
+    if (window.google && window.google.maps) {
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ address: address }, (results, status) => {
+        if (status === "OK" && results.length > 0) {
+          let currentAddress = results[0].formatted_address;
+          let postalCode = "";
+          for (const result of results) {
+            const postalComponent = result.address_components?.find(c => c.types.includes("postal_code"));
+            if (postalComponent) {
+              postalCode = postalComponent.long_name;
+              break;
+            }
+          }
+          if (postalCode && !currentAddress.includes(postalCode)) {
+            currentAddress = currentAddress + " - " + postalCode;
+          }
+          setAddress(currentAddress);
+          if (inputRef.current) inputRef.current.value = currentAddress;
+          checkDistance(currentAddress, results[0].geometry.location);
+        } else {
+          // Fallback if geocoding fails
+          checkDistance(address);
+        }
+      });
+    } else {
+      checkDistance(address);
+    }
   };
 
   if (!isOpen) return null;
@@ -193,16 +240,16 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
           <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: '#333' }}>Delivery Address Details</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#999' }}>&times;</button>
         </div>
-        
+
         <div style={{ padding: '24px' }}>
           <p style={{ margin: '0 0 16px 0', color: '#666', fontSize: '0.9rem' }}>
             Please enter the exact drop location for a hassle free delivery experience
           </p>
-          
+
           <div style={{ position: 'relative', marginBottom: '16px' }}>
-            <input 
+            <input
               ref={inputRef}
-              type="text" 
+              type="text"
               placeholder="Search for a building, street name, or area"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
@@ -217,11 +264,11 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
               }}
             />
             <svg style={{ position: 'absolute', left: '12px', top: '14px', width: '20px', height: '20px', color: '#EA4335' }} viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
             </svg>
           </div>
-          
-          <button 
+
+          <button
             onClick={handleUseLocation}
             disabled={loading}
             style={{
@@ -236,10 +283,10 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
             </svg>
             Use your location
           </button>
-          
+
           {error && <div style={{ color: '#D32F2F', backgroundColor: '#FEF6F6', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>{error}</div>}
-          
-          <button 
+
+          <button
             onClick={handleManualSubmit}
             disabled={loading || !address}
             style={{
