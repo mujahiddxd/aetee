@@ -81,13 +81,12 @@ export default function Home() {
             <h2 style={{ fontSize: '3.5rem', lineHeight: '1.1', marginBottom: '24px' }}>YOUR &quot;I DESERVE A
               TREAT&quot;
               MOMENT</h2>
-            <p style={{ color: 'var(--color-text-main)', fontSize: '1rem', lineHeight: '1.6', marginBottom: '32px' }}>
+            <p style={{ color: 'var(--color-text-main)', fontSize: '1rem', lineHeight: '1.6' }}>
               Freshly baked. Freshly layered.
 
               Every cheesecake and tiramisu is handcrafted only after you order, so every bite arrives as fresh
               as it should be.
             </p>
-            <Link href="/menu"><button className="btn btn-primary" style={{ padding: '16px 32px' }}>SEE THE MENU ↓</button></Link>
           </div>
         </div>
 
