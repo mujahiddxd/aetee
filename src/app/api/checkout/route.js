@@ -312,7 +312,7 @@ export async function POST(req) {
 
     if (error.message === 'RATE_LIMITED') {
       return NextResponse.json(
-        { success: false, error: 'Sorry for the inconvenience, but you have reached the maximum limit of 25 orders in a day. Please try ordering again tomorrow.' },
+        { success: false, error: 'This date is fully booked. Please select another delivery date to place your order. Thank you for choosing AeTee\'s Bakehouse.' },
         { status: 429 }
       );
     }
