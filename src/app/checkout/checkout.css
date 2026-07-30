@@ -11,10 +11,12 @@
 }
 .checkout-left {
   flex: 1.2;
+  min-width: 0;
   padding: 24px 16px;
 }
 .checkout-right {
   flex: 0.8;
+  min-width: 0;
   padding: 24px 16px;
   background-color: #FAFAFA;
 }
@@ -155,7 +157,8 @@
 /* DateStrip Styles - Premium & Mobile Optimized */
 .date-strip-container {
   width: 100%;
-  box-sizing: border-box; /* Fix for horizontal scroll overflow */
+  box-sizing: border-box;
+  max-width: 100%;
   overflow-x: auto;
   padding: 8px 4px 20px 4px; /* extra bottom padding for shadow/scale */
   -webkit-overflow-scrolling: touch; /* Smooth iOS scrolling */
@@ -164,6 +167,7 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
   cursor: grab;
+  user-select: none; /* Prevents text highlighting while dragging */
 }
 .date-strip-container.active-drag {
   cursor: grabbing;

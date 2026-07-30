@@ -16,7 +16,7 @@ export default function DateStrip({ selectedDate, onDateChange }) {
       const now = new Date();
       const currentISTHour = getISTHour(now);
 
-      for (let i = 0; i < 14; i++) {
+      for (let i = 0; i < 62; i++) {
         const targetDate = new Date(now.getTime() + i * 24 * 60 * 60 * 1000);
         const dateString = getISTDateString(targetDate);
         const displayDate = new Date(dateString);
@@ -41,8 +41,11 @@ export default function DateStrip({ selectedDate, onDateChange }) {
     generateDates();
   }, [selectedDate, onDateChange]);
 
+  const isDragging = useRef(false);
+
   const handleMouseDown = (e) => {
     isDown.current = true;
+    isDragging.current = false;
     stripRef.current.classList.add('active-drag');
     startX.current = e.pageX - stripRef.current.offsetLeft;
     scrollLeft.current = stripRef.current.scrollLeft;
@@ -54,12 +57,20 @@ export default function DateStrip({ selectedDate, onDateChange }) {
   const handleMouseUp = () => {
     isDown.current = false;
     stripRef.current.classList.remove('active-drag');
+    // We don't reset isDragging here so onClick can see it was a drag
+    setTimeout(() => { isDragging.current = false; }, 50);
   };
   const handleMouseMove = (e) => {
     if (!isDown.current) return;
     e.preventDefault();
     const x = e.pageX - stripRef.current.offsetLeft;
     const walk = (x - startX.current) * 2; // scroll-fast
+    
+    // Only consider it a drag if moved more than 5px
+    if (Math.abs(x - startX.current) > 5) {
+      isDragging.current = true;
+    }
+    
     stripRef.current.scrollLeft = scrollLeft.current - walk;
   };
 
@@ -80,7 +91,12 @@ export default function DateStrip({ selectedDate, onDateChange }) {
               key={index}
               type="button"
               className={`date-card ${isSelected ? 'selected' : ''} ${item.isDisabled ? 'disabled' : ''}`}
-              onClick={() => {
+              onClick={(e) => {
+                if (isDragging.current) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  return;
+                }
                 if (!item.isDisabled) {
                   onDateChange(item.dateString);
                 }
