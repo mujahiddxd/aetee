@@ -191,7 +191,7 @@ export default function Home() {
             <p style={{ color: '#5A3424', fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '40px' }}>
               From the timeless Classic, to our bold Filter Coffee, indulgent Nutella, caramelised Lotus Biscoff, and luxurious Pistachio—every tiramisu is layered with premium ingredients for the perfect balance of creamy, coffee-soaked, melt-in-your-mouth goodness.
             </p>
-            <Link href="/menu"><button className="btn btn-primary" style={{ backgroundColor: '#5A3424', color: '#FFFFFF', padding: '16px 32px', border: 'none', borderRadius: '24px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', letterSpacing: '0.05em' }}>SEE THE MENU</button></Link>
+
           </div>
         </div>
       </section>
