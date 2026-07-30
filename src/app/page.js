@@ -124,8 +124,16 @@ export default function Home() {
           }}
         >
           {extendedSlides.map((slide, index) => (
-            <div key={index} style={{ width: '100%', position: 'relative', aspectRatio: '16/9', flexShrink: 0, overflow: 'hidden' }}>
-              <Image src={slide} alt={`Slide ${(index % slides.length) + 1}`} fill sizes="100vw" style={{ objectFit: 'cover' }} priority={index === 1} />
+            <div key={index} style={{ width: '100%', position: 'relative', aspectRatio: '3/2', flexShrink: 0, overflow: 'hidden' }}>
+              <Image
+                src={slide}
+                alt={`Slide ${(index % slides.length) + 1}`}
+                fill
+                quality={95}
+                sizes="(max-width: 1200px) 100vw, 1200px"
+                style={{ objectFit: 'cover', objectPosition: 'center' }}
+                priority={index === 1}
+              />
             </div>
           ))}
         </div>
