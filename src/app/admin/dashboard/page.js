@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 
 export default function AdminDashboard() {
@@ -13,6 +13,92 @@ export default function AdminDashboard() {
     realBestSellers: []
   });
   const [loading, setLoading] = useState(true);
+
+  // ── Queue State ──────────────────────────────────────────────
+  const [queueStats, setQueueStats] = useState({
+    enabled: false,
+    activeCount: 0,
+    waitingCount: 0,
+    maxConcurrent: 100,
+    tokenTTLSeconds: 600,
+  });
+  const [queueLoading, setQueueLoading] = useState(true);
+  const [queueConfigOpen, setQueueConfigOpen] = useState(false);
+  const [queueConfig, setQueueConfig] = useState({ maxConcurrent: 100, tokenTTL: 600 });
+  const queuePollRef = useRef(null);
+
+  // Fetch queue stats
+  const fetchQueueStats = async () => {
+    try {
+      const res = await fetch('/api/queue/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'stats' }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setQueueStats(data);
+        setQueueConfig({ maxConcurrent: data.maxConcurrent, tokenTTL: data.tokenTTLSeconds });
+      }
+    } catch (err) {
+      console.error('Failed to fetch queue stats:', err);
+    } finally {
+      setQueueLoading(false);
+    }
+  };
+
+  const toggleQueue = async () => {
+    const action = queueStats.enabled ? 'disable' : 'enable';
+    try {
+      const res = await fetch('/api/queue/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setQueueStats(data);
+      }
+    } catch (err) {
+      console.error('Failed to toggle queue:', err);
+    }
+  };
+
+  const saveQueueConfig = async () => {
+    try {
+      const res = await fetch('/api/queue/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'configure',
+          maxConcurrent: Number(queueConfig.maxConcurrent),
+          tokenTTL: Number(queueConfig.tokenTTL),
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setQueueStats(data);
+        setQueueConfigOpen(false);
+      }
+    } catch (err) {
+      console.error('Failed to save queue config:', err);
+    }
+  };
+
+  // Auto-refresh queue stats every 5 seconds when queue is enabled
+  useEffect(() => {
+    fetchQueueStats();
+  }, []);
+
+  useEffect(() => {
+    if (queueStats.enabled) {
+      queuePollRef.current = setInterval(fetchQueueStats, 5000);
+    } else {
+      if (queuePollRef.current) clearInterval(queuePollRef.current);
+    }
+    return () => { if (queuePollRef.current) clearInterval(queuePollRef.current); };
+  }, [queueStats.enabled]);
+  // ────────────────────────────────────────────────────────────
 
   useEffect(() => {
     async function fetchStats() {
@@ -37,6 +123,153 @@ export default function AdminDashboard() {
       <div className="page-header">
         <h1>📊 Dashboard</h1>
       </div>
+
+      {/* ── Queue Control Panel ─────────────────────────────────── */}
+      <div className="card" style={{ marginBottom: '24px', border: queueStats.enabled ? '2px solid #22c55e' : '1px solid var(--color-border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: queueStats.enabled ? '20px' : '0', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '1.4rem' }}>🚦</span>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '1.15rem' }}>Queue System</h2>
+              <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                {queueStats.enabled
+                  ? 'Active — visitors are being queued'
+                  : 'Inactive — all visitors have direct access'}
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {!queueLoading && (
+              <button
+                onClick={() => setQueueConfigOpen(!queueConfigOpen)}
+                style={{
+                  background: 'none',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '8px',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                ⚙️ Settings
+              </button>
+            )}
+
+            {/* Toggle Switch */}
+            <label style={{ position: 'relative', display: 'inline-block', width: '52px', height: '28px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={queueStats.enabled}
+                onChange={toggleQueue}
+                style={{ opacity: 0, width: 0, height: 0 }}
+              />
+              <span style={{
+                position: 'absolute', inset: 0,
+                backgroundColor: queueStats.enabled ? '#22c55e' : '#ccc',
+                borderRadius: '999px',
+                transition: 'background-color 0.3s',
+              }}>
+                <span style={{
+                  position: 'absolute',
+                  top: '3px',
+                  left: queueStats.enabled ? '26px' : '3px',
+                  width: '22px',
+                  height: '22px',
+                  backgroundColor: '#fff',
+                  borderRadius: '50%',
+                  transition: 'left 0.3s',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                }} />
+              </span>
+            </label>
+          </div>
+        </div>
+
+        {/* Live Stats — only when enabled */}
+        {queueStats.enabled && (
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{
+              flex: '1 1 120px', background: 'var(--color-bg-grey)', borderRadius: '12px',
+              padding: '16px', textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: '4px' }}>Active Users</div>
+              <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#22c55e' }}>{queueStats.activeCount}</div>
+            </div>
+            <div style={{
+              flex: '1 1 120px', background: 'var(--color-bg-grey)', borderRadius: '12px',
+              padding: '16px', textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: '4px' }}>In Queue</div>
+              <div style={{ fontSize: '1.8rem', fontWeight: '700', color: queueStats.waitingCount > 0 ? '#f97316' : 'var(--color-primary)' }}>{queueStats.waitingCount}</div>
+            </div>
+            <div style={{
+              flex: '1 1 120px', background: 'var(--color-bg-grey)', borderRadius: '12px',
+              padding: '16px', textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: '4px' }}>Max Concurrent</div>
+              <div style={{ fontSize: '1.8rem', fontWeight: '700', color: 'var(--color-primary)' }}>{queueStats.maxConcurrent}</div>
+            </div>
+            <div style={{
+              flex: '1 1 120px', background: 'var(--color-bg-grey)', borderRadius: '12px',
+              padding: '16px', textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: '4px' }}>Session TTL</div>
+              <div style={{ fontSize: '1.8rem', fontWeight: '700', color: 'var(--color-primary)' }}>{queueStats.tokenTTLSeconds / 60}m</div>
+            </div>
+          </div>
+        )}
+
+        {/* Config Panel */}
+        {queueConfigOpen && (
+          <div style={{
+            marginTop: '16px', padding: '16px', background: 'var(--color-bg-grey)',
+            borderRadius: '12px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end',
+          }}>
+            <div style={{ flex: '1 1 180px' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '600', marginBottom: '4px', color: 'var(--color-text-muted)' }}>
+                Max Concurrent Users
+              </label>
+              <input
+                type="number"
+                value={queueConfig.maxConcurrent}
+                onChange={(e) => setQueueConfig(prev => ({ ...prev, maxConcurrent: e.target.value }))}
+                min={1}
+                max={10000}
+                style={{
+                  width: '100%', padding: '8px 12px', border: '1px solid var(--color-border)',
+                  borderRadius: '8px', fontSize: '0.9rem',
+                }}
+              />
+            </div>
+            <div style={{ flex: '1 1 180px' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '600', marginBottom: '4px', color: 'var(--color-text-muted)' }}>
+                Session TTL (seconds)
+              </label>
+              <input
+                type="number"
+                value={queueConfig.tokenTTL}
+                onChange={(e) => setQueueConfig(prev => ({ ...prev, tokenTTL: e.target.value }))}
+                min={60}
+                max={3600}
+                style={{
+                  width: '100%', padding: '8px 12px', border: '1px solid var(--color-border)',
+                  borderRadius: '8px', fontSize: '0.9rem',
+                }}
+              />
+            </div>
+            <button
+              onClick={saveQueueConfig}
+              className="btn btn-primary"
+              style={{ padding: '8px 20px', fontSize: '0.85rem', height: 'fit-content' }}
+            >
+              Save
+            </button>
+          </div>
+        )}
+      </div>
+      {/* ────────────────────────────────────────────────────────── */}
       
       <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
         <div className="card" style={{ flex: '1 1 200px', textAlign: 'center' }}>
@@ -124,3 +357,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+

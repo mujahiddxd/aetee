@@ -62,6 +62,49 @@ export async function middleware(request) {
   // Use the evaluated path for authentication checks
   const pathname = rewriteRequired ? url.pathname : request.nextUrl.pathname;
 
+  // ── Virtual Queue Gating ─────────────────────────────────────────
+  // Routes that are EXEMPT from queue (must always be accessible):
+  const queueExemptPaths = [
+    '/queue',           // The queue waiting room itself
+    '/api/queue',       // All queue API routes
+    '/api/webhooks',    // Razorpay webhooks (must always reach the server)
+    '/api/payment',     // Payment verification (user already past queue when paying)
+    '/api/checkout',    // Checkout API (user already admitted, don't block mid-payment)
+    '/api/admin',       // Admin API routes
+    '/admin',           // Admin UI pages
+  ];
+
+  const isQueueExempt = queueExemptPaths.some(p => pathname.startsWith(p))
+    || isAdminSubdomain
+    || pathname.startsWith('/_next')
+    || pathname.includes('.');  // Static files (.js, .css, .png, etc.)
+
+  if (!isQueueExempt) {
+    try {
+      // Check queue status via internal API (Edge Runtime can't access Node.js memory)
+      const queueToken = request.cookies.get('queue_token')?.value || '';
+      const origin = request.nextUrl.origin;
+      const validateRes = await fetch(
+        `${origin}/api/queue/validate?token=${encodeURIComponent(queueToken)}`,
+        { headers: { 'x-internal-queue-check': '1' } }
+      );
+
+      if (validateRes.ok) {
+        const queueData = await validateRes.json();
+
+        // If queue is enabled and token is not valid → redirect to /queue
+        if (queueData.enabled && !queueData.valid) {
+          return NextResponse.redirect(new URL('/queue', request.url));
+        }
+      }
+      // If the validate endpoint fails, let the user through (fail-open)
+    } catch (e) {
+      // Network error talking to our own API — fail-open to avoid blocking everyone
+      console.error('Queue validation error in middleware:', e);
+    }
+  }
+  // ────────────────────────────────────────────────────────────────
+
   // Protect specific API routes
   const protectedRoutes = ['/api/products', '/api/categories', '/api/orders', '/api/filters'];
 
