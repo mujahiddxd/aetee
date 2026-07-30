@@ -75,23 +75,8 @@ export default function Home() {
     <>
       {/* Hero Section */}
       <section className="home-split-section">
-        {/* Left Side (Yellow) */}
-        <div className="home-split-left" style={{ backgroundColor: 'var(--color-highlight)' }}>
-          <div style={{ maxWidth: '480px', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '3.5rem', lineHeight: '1.1', marginBottom: '24px' }}>YOUR &quot;I DESERVE A
-              TREAT&quot;
-              MOMENT</h2>
-            <p style={{ color: 'var(--color-text-main)', fontSize: '1rem', lineHeight: '1.6' }}>
-              Freshly baked. Freshly layered.
-
-              Every cheesecake and tiramisu is handcrafted only after you order, so every bite arrives as fresh
-              as it should be.
-            </p>
-          </div>
-        </div>
-
-        {/* Right Side (Image + Box) */}
-        <div className="home-split-right" style={{ position: 'relative', backgroundImage: 'url("/hero-cakes.jpg")', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        {/* Full Width Hero (Image + Box) */}
+        <div className="home-split-right" style={{ position: 'relative', backgroundImage: 'url("/hero-cakes.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', width: '100%', minHeight: '500px' }}>
           <div style={{ backgroundColor: '#FFFFFF', padding: '40px', width: '90%', maxWidth: '400px', textAlign: 'center', boxShadow: 'var(--shadow-card)' }}>
             <h2 style={{ fontSize: '2.5rem', lineHeight: '1.1', marginBottom: '16px' }}>CHEESECAKES.
               TIRAMISUS.
