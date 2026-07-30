@@ -7,6 +7,8 @@ import Image from 'next/image';
 
 import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
+import { getISTHour, getISTDateString } from '@/lib/ist-time';
+import DateStrip from '../components/DateStrip';
 import './checkout.css';
 
 export default function Checkout() {
@@ -23,7 +25,7 @@ export default function Checkout() {
     if (!window.turnstile || !turnstileContainerRef.current) return;
     // Remove any previously rendered widget before re-rendering
     if (turnstileWidgetId.current !== null) {
-      try { window.turnstile.remove(turnstileWidgetId.current); } catch (_) {}
+      try { window.turnstile.remove(turnstileWidgetId.current); } catch (_) { }
       turnstileWidgetId.current = null;
     }
     turnstileContainerRef.current.innerHTML = '';
@@ -41,15 +43,19 @@ export default function Checkout() {
     }
   }, [renderTurnstile]);
 
-  // Compute tomorrow's date in IST for minimum delivery date
-  const getTomorrowIST = () => {
+  // 1. Calculate Minimum Date for the Date Picker
+  const getMinDeliveryDateIST = () => {
     const now = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const istNow = new Date(now.getTime() + istOffset + now.getTimezoneOffset() * 60 * 1000);
-    istNow.setDate(istNow.getDate() + 1);
-    return istNow.toISOString().split('T')[0];
+    const istHour = getISTHour(now);
+
+    // If it's 12 PM IST or later, add 24 hours to enforce tomorrow as the minimum
+    const targetDate = istHour >= 12 
+      ? new Date(now.getTime() + 24 * 60 * 60 * 1000) 
+      : now;
+
+    return getISTDateString(targetDate);
   };
-  const minDeliveryDate = getTomorrowIST();
+  const minDeliveryDate = getMinDeliveryDateIST();
 
   const [formData, setFormData] = useState({
     date: minDeliveryDate,
@@ -120,7 +126,17 @@ export default function Checkout() {
     if (!formData.date) {
       newErrors.date = "Delivery date is required.";
     } else if (formData.date < minDeliveryDate) {
-      newErrors.date = "Delivery date must be tomorrow or later.";
+      const now = new Date();
+      const todayIST = getISTDateString(now);
+      const hourIST = getISTHour(now);
+      
+      // Specific error if they try to bypass the 12 PM rule for today
+      if (formData.date === todayIST && hourIST >= 12) {
+        newErrors.date = "Same-day delivery is only available before 12 PM. Please select tomorrow or later.";
+      } else {
+        // General error for yesterday or earlier
+        newErrors.date = "Delivery date cannot be in the past.";
+      }
     }
     if (!formData.firstName.trim()) newErrors.firstName = "First name is required.";
     if (!formData.lastName.trim()) newErrors.lastName = "Last name is required.";
@@ -301,7 +317,7 @@ export default function Checkout() {
         src="https://challenges.cloudflare.com/turnstile/v0/api.js"
         async
         defer
-          onLoad={() => {
+        onLoad={() => {
           setTurnstileReady(true);
           renderTurnstile();
         }}
@@ -328,17 +344,17 @@ export default function Checkout() {
             <div className="section-card">
               <h2 className="section-title">Delivery Date</h2>
               <div className="row-flex">
-                <div style={{ flex: 1 }} className="input-group">
-                  <input
-                    type="date"
-                    name="date"
-                    value={formData.date}
-                    min={minDeliveryDate}
-                    onChange={handleInputChange}
-                    className={`form-input ${errors.date ? 'error' : ''}`}
-                    required
+                <div style={{ flex: 1, minWidth: 0 }} className="input-group">
+                  <DateStrip 
+                    selectedDate={formData.date}
+                    onDateChange={(newDate) => {
+                      setFormData((prev) => ({ ...prev, date: newDate }));
+                      if (errors.date) {
+                        setErrors((prev) => ({ ...prev, date: '' }));
+                      }
+                    }}
                   />
-                  {errors.date && <div className="error-message">{errors.date}</div>}
+                  {errors.date && <div className="error-message" style={{ marginTop: '12px' }}>{errors.date}</div>}
                 </div>
               </div>
             </div>

@@ -3,15 +3,16 @@ import Razorpay from 'razorpay';
 import { prisma } from '@/lib/prisma';
 import { stripHtml } from '@/lib/sanitize';
 import { verifyTurnstile } from '@/lib/turnstile';
+import { getISTHour, getISTDateString } from '@/lib/ist-time';
 
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { 
-      firstName, lastName, email, phone, 
+    const {
+      firstName, lastName, email, phone,
       addressLine1, addressLine2, city, postalCode,
       distance,
-      totalAmount, items, deliveryDate, additionalInfo 
+      totalAmount, items, deliveryDate, additionalInfo
     } = body;
 
     // ── 1. Strict Input Validation ──────────────────────────────────
@@ -52,10 +53,23 @@ export async function POST(req) {
     // Validate delivery date is not in the past (IST)
     if (deliveryDate) {
       const now = new Date();
-      const istFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' });
-      const todayIST = istFormatter.format(now); // 'YYYY-MM-DD'
+      const todayIST = getISTDateString(now);
+
+      // Block past dates outright
       if (deliveryDate < todayIST) {
         return NextResponse.json({ success: false, error: 'Delivery date cannot be in the past' }, { status: 400 });
+      }
+
+      // Enforce the 12 PM cutoff for same-day requests
+      if (deliveryDate === todayIST) {
+        const istHour = getISTHour(now);
+        
+        if (istHour >= 12) {
+          return NextResponse.json({ 
+            success: false, 
+            error: 'Same-day delivery is only available for orders placed before 12 PM. Please select a future date.' 
+          }, { status: 400 });
+        }
       }
     }
 
@@ -142,36 +156,36 @@ export async function POST(req) {
     // ── 3.5 Calculate Delivery Charges Securely on the Server ──
     // We IGNORE the client-provided distance completely and recalculate it here
     let deliveryCharges = 0;
-    
+
     if (serverCalculatedTotal > 0) {
       try {
         const SHOP_ADDRESS = "NDR 9, B-703 Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089";
         // Create full destination string exactly as the frontend would
         const destinationAddress = `${safeAddressLine1}, ${safeCity} - ${postalCode}`;
-        
+
         const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-        
+
         if (!googleApiKey) {
-           throw new Error("Missing Google Maps API Key in environment");
+          throw new Error("Missing Google Maps API Key in environment");
         }
 
         const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(SHOP_ADDRESS)}&destinations=${encodeURIComponent(destinationAddress)}&key=${googleApiKey}`;
-        
+
         // We spoof the Referer just in case the API key has HTTP referer restrictions
         const mapsRes = await fetch(url, {
           headers: { 'Referer': 'https://aeteesbakehouse.com/' }
         });
-        
+
         const mapsData = await mapsRes.json();
 
         if (mapsData.status === 'OK' && mapsData.rows[0] && mapsData.rows[0].elements[0].status === 'OK') {
           const distanceInMeters = mapsData.rows[0].elements[0].distance.value;
           const verifiedDistanceKm = distanceInMeters / 1000;
-          
+
           if (verifiedDistanceKm > 40) {
-             return NextResponse.json({ success: false, error: `Sorry, your location is ${verifiedDistanceKm.toFixed(1)}km away. We do not deliver beyond 40km.` }, { status: 400 });
+            return NextResponse.json({ success: false, error: `Sorry, your location is ${verifiedDistanceKm.toFixed(1)}km away. We do not deliver beyond 40km.` }, { status: 400 });
           }
-          
+
           // Base fee of ₹50 plus ₹10 per km
           const BASE_DELIVERY_FEE = 50;
           const COST_PER_KM = 10;

@@ -151,3 +151,85 @@
     margin-top: 32px;
   }
 }
+
+/* DateStrip Styles */
+.date-strip-container {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  /* Hide scrollbar for a cleaner look */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.date-strip-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+.date-strip {
+  display: inline-flex;
+  gap: 12px;
+  padding: 4px;
+}
+.date-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 84px;
+  border-radius: 12px;
+  border: 1px solid #E5E5E5;
+  background-color: #FAFAFA;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+.date-card:hover:not(.disabled):not(.selected) {
+  border-color: #5A3424;
+  background-color: #FDF9F7;
+}
+.date-card.selected {
+  border-color: #5A3424;
+  background-color: #5A3424;
+  color: white;
+  box-shadow: 0 4px 12px rgba(90, 52, 36, 0.3);
+}
+.date-card.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background-color: #EFEFEF;
+  border-color: #DDD;
+}
+.date-card-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+}
+.date-card.selected .date-card-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+.date-card:not(.selected) .date-card-label {
+  color: #888;
+}
+.date-card-num {
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.date-card.selected .date-card-num {
+  color: white;
+}
+.date-card:not(.selected) .date-card-num {
+  color: #333;
+}
+.date-card-month {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.date-card.selected .date-card-month {
+  color: rgba(255, 255, 255, 0.9);
+}
+.date-card:not(.selected) .date-card-month {
+  color: #666;
+}
