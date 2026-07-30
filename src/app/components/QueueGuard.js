@@ -42,8 +42,12 @@ export default function QueueGuard() {
 
     checkQueue();
 
+    // Ping every 30 seconds to maintain the slot (heartbeat)
+    const interval = setInterval(checkQueue, 30000);
+
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [pathname, router]);
 

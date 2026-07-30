@@ -20,8 +20,8 @@ class QueueEngine {
     this.enabled = false;
 
     /**
-     * Map of admitted tokens → { sessionId, expiresAt }
-     * @type {Map<string, { sessionId: string, expiresAt: number }>}
+     * Map of admitted tokens → { sessionId, expiresAt, lastSeen }
+     * @type {Map<string, { sessionId: string, expiresAt: number, lastSeen: number }>}
      */
     this.activeTokens = new Map();
 
@@ -106,6 +106,7 @@ class QueueEngine {
       this.activeTokens.set(token, {
         sessionId,
         expiresAt: Date.now() + this.tokenTTL,
+        lastSeen: Date.now(),
       });
       this.sessionIndex.set(sessionId, token);
       addToken(token);
@@ -207,8 +208,9 @@ class QueueEngine {
       removeToken(token);
       return false;
     }
-    // Extend the token TTL on activity (sliding window)
+    // Extend the token TTL and lastSeen heartbeat
     entry.expiresAt = Date.now() + this.tokenTTL;
+    entry.lastSeen = Date.now();
     return true;
   }
 
@@ -245,6 +247,7 @@ class QueueEngine {
       this.activeTokens.set(token, {
         sessionId: next.sessionId,
         expiresAt: Date.now() + this.tokenTTL,
+        lastSeen: Date.now(),
       });
       this.sessionIndex.set(next.sessionId, token);
       addToken(token);
@@ -257,7 +260,8 @@ class QueueEngine {
   _cleanup() {
     const now = Date.now();
     for (const [token, entry] of this.activeTokens) {
-      if (entry.expiresAt <= now) {
+      // Evict if token TTL expired OR no heartbeat received for 60 seconds
+      if (entry.expiresAt <= now || now - entry.lastSeen > 60000) {
         this.sessionIndex.delete(entry.sessionId);
         this.activeTokens.delete(token);
         removeToken(token);

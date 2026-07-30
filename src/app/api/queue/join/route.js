@@ -13,13 +13,23 @@ export async function POST(req) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const existingSessionId = body.sessionId || null;
+    // Try body first, then fallback to queue_session cookie
+    const existingSessionId = body.sessionId || req.cookies.get('queue_session')?.value || null;
 
     const result = queue.enqueue(existingSessionId);
 
     const response = NextResponse.json(result);
 
-    // If admitted immediately, set the cookie
+    // Always set a session cookie so users don't lose their place if they reload
+    response.cookies.set('queue_session', result.sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 24 * 60 * 60, // 24 hours
+    });
+
+    // If admitted, set the secure token cookie
     if (result.admitted && result.token) {
       response.cookies.set('queue_token', result.token, {
         httpOnly: true,
