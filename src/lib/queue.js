@@ -7,6 +7,12 @@
  */
 
 import crypto from 'crypto';
+import {
+  setQueueEnabled,
+  addToken,
+  removeToken,
+  clearTokens,
+} from '@/lib/queue-state';
 
 class QueueEngine {
   constructor() {
@@ -52,6 +58,7 @@ class QueueEngine {
    */
   enable() {
     this.enabled = true;
+    setQueueEnabled(true);
   }
 
   /**
@@ -60,9 +67,11 @@ class QueueEngine {
    */
   disable() {
     this.enabled = false;
+    setQueueEnabled(false);
     this.activeTokens.clear();
     this.waitingQueue = [];
     this.sessionIndex.clear();
+    clearTokens();
   }
 
   /**
@@ -99,6 +108,7 @@ class QueueEngine {
         expiresAt: Date.now() + this.tokenTTL,
       });
       this.sessionIndex.set(sessionId, token);
+      addToken(token);
       return {
         sessionId,
         position: 0,
@@ -155,6 +165,7 @@ class QueueEngine {
       // Token expired — they need to re-queue
       this.activeTokens.delete(token);
       this.sessionIndex.delete(sessionId);
+      removeToken(token);
       return this.enqueue();
     }
 
@@ -193,6 +204,7 @@ class QueueEngine {
       // Expired — clean up
       this.sessionIndex.delete(entry.sessionId);
       this.activeTokens.delete(token);
+      removeToken(token);
       return false;
     }
     // Extend the token TTL on activity (sliding window)
@@ -235,6 +247,7 @@ class QueueEngine {
         expiresAt: Date.now() + this.tokenTTL,
       });
       this.sessionIndex.set(next.sessionId, token);
+      addToken(token);
     }
   }
 
@@ -247,6 +260,7 @@ class QueueEngine {
       if (entry.expiresAt <= now) {
         this.sessionIndex.delete(entry.sessionId);
         this.activeTokens.delete(token);
+        removeToken(token);
       }
     }
   }

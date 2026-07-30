@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { isQueueEnabled, isTokenValid } from '@/lib/queue-state';
 
 // NOTE: This file uses the deprecated "middleware" convention in Next.js 16.
 // It still works correctly. A future migration to route-level auth checks
@@ -62,7 +63,7 @@ export async function middleware(request) {
   // Use the evaluated path for authentication checks
   const pathname = rewriteRequired ? url.pathname : request.nextUrl.pathname;
 
-  // ── Virtual Queue Gating ─────────────────────────────────────────
+  // ── Virtual Queue Gating (direct globalThis — no HTTP fetch) ─────
   // Routes that are EXEMPT from queue (must always be accessible):
   const queueExemptPaths = [
     '/queue',           // The queue waiting room itself
@@ -79,28 +80,10 @@ export async function middleware(request) {
     || pathname.startsWith('/_next')
     || pathname.includes('.');  // Static files (.js, .css, .png, etc.)
 
-  if (!isQueueExempt) {
-    try {
-      // Check queue status via internal API (Edge Runtime can't access Node.js memory)
-      const queueToken = request.cookies.get('queue_token')?.value || '';
-      const origin = request.nextUrl.origin;
-      const validateRes = await fetch(
-        `${origin}/api/queue/validate?token=${encodeURIComponent(queueToken)}`,
-        { headers: { 'x-internal-queue-check': '1' } }
-      );
-
-      if (validateRes.ok) {
-        const queueData = await validateRes.json();
-
-        // If queue is enabled and token is not valid → redirect to /queue
-        if (queueData.enabled && !queueData.valid) {
-          return NextResponse.redirect(new URL('/queue', request.url));
-        }
-      }
-      // If the validate endpoint fails, let the user through (fail-open)
-    } catch (e) {
-      // Network error talking to our own API — fail-open to avoid blocking everyone
-      console.error('Queue validation error in middleware:', e);
+  if (!isQueueExempt && isQueueEnabled()) {
+    const queueToken = request.cookies.get('queue_token')?.value || '';
+    if (!isTokenValid(queueToken)) {
+      return NextResponse.redirect(new URL('/queue', request.url));
     }
   }
   // ────────────────────────────────────────────────────────────────
