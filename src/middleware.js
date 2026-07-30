@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { isQueueEnabled, isTokenValid } from '@/lib/queue-state';
 
 // NOTE: This file uses the deprecated "middleware" convention in Next.js 16.
 // It still works correctly. A future migration to route-level auth checks
@@ -63,29 +62,10 @@ export async function middleware(request) {
   // Use the evaluated path for authentication checks
   const pathname = rewriteRequired ? url.pathname : request.nextUrl.pathname;
 
-  // ── Virtual Queue Gating (direct globalThis — no HTTP fetch) ─────
-  // Routes that are EXEMPT from queue (must always be accessible):
-  const queueExemptPaths = [
-    '/queue',           // The queue waiting room itself
-    '/api/queue',       // All queue API routes
-    '/api/webhooks',    // Razorpay webhooks (must always reach the server)
-    '/api/payment',     // Payment verification (user already past queue when paying)
-    '/api/checkout',    // Checkout API (user already admitted, don't block mid-payment)
-    '/api/admin',       // Admin API routes
-    '/admin',           // Admin UI pages
-  ];
-
-  const isQueueExempt = queueExemptPaths.some(p => pathname.startsWith(p))
-    || isAdminSubdomain
-    || pathname.startsWith('/_next')
-    || pathname.includes('.');  // Static files (.js, .css, .png, etc.)
-
-  if (!isQueueExempt && isQueueEnabled()) {
-    const queueToken = request.cookies.get('queue_token')?.value || '';
-    if (!isTokenValid(queueToken)) {
-      return NextResponse.redirect(new URL('/queue', request.url));
-    }
-  }
+  // ── Queue enforcement is handled client-side by QueueGuard ────
+  // (Edge Runtime middleware cannot access Node.js in-memory state,
+  //  so queue gating is done via a client component in the root layout
+  //  that calls /api/queue/validate on every navigation.)
   // ────────────────────────────────────────────────────────────────
 
   // Protect specific API routes
