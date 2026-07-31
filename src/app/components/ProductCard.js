@@ -4,7 +4,7 @@ import React from 'react';
 import { useCart } from '../context/CartContext';
 import Image from 'next/image';
 
-export function ProductCard({ product, onSelect, onRepeatSelect }) {
+export function ProductCard({ product, onSelect, onRepeatSelect, priority = false }) {
   const { cartItems, addToCart, updateQuantity } = useCart();
 
   // Data-driven tag based on actual product flags from the admin panel
@@ -14,7 +14,7 @@ export function ProductCard({ product, onSelect, onRepeatSelect }) {
   return (
     <div className="product-card" style={{ opacity: product.isSoldOut ? 0.6 : 1 }}>
       <div className="product-image-container" onClick={() => onSelect(product)} style={{ cursor: 'pointer', position: 'relative', width: '100%', aspectRatio: '4/3', overflow: 'hidden' }}>
-        <Image src={product.image} alt={product.name} className="product-image" fill sizes="(max-width: 768px) 100vw, 300px" style={{ objectFit: 'cover' }} />
+        <Image src={product.image} alt={product.name} priority={priority} className="product-image" fill sizes="(max-width: 768px) 100vw, 300px" style={{ objectFit: 'cover' }} />
       </div>
 
       <div className="product-content">

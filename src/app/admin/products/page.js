@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import ImageCropperModal from "@/app/components/ImageCropperModal";
+import dynamic from "next/dynamic";
+const ImageCropperModal = dynamic(() => import("@/app/components/ImageCropperModal"), { ssr: false });
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);

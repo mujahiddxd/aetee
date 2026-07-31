@@ -5,7 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
-import AddressModal from '../components/AddressModal';
+import dynamic from 'next/dynamic';
+const AddressModal = dynamic(() => import('../components/AddressModal'), { ssr: false });
 
 export default function Cart() {
   const router = useRouter();
@@ -268,14 +269,16 @@ export default function Cart() {
         </div>
       )}
 
-      <AddressModal 
-        isOpen={showAddressModal}
-        onClose={() => setShowAddressModal(false)}
-        onSuccess={(deliveryInfo) => {
-          setShowAddressModal(false);
-          router.push('/checkout');
-        }}
-      />
+      {showAddressModal && (
+        <AddressModal 
+          isOpen={true}
+          onClose={() => setShowAddressModal(false)}
+          onSuccess={(deliveryInfo) => {
+            setShowAddressModal(false);
+            router.push('/checkout');
+          }}
+        />
+      )}
     </div>
   );
 }

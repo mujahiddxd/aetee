@@ -1,8 +1,12 @@
 "use client";
 
+import Script from "next/script";
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function AddressModal({ isOpen, onClose, onSuccess }) {
+  const [mapsReady, setMapsReady] = useState(
+    () => typeof window !== "undefined" && Boolean(window.google?.maps)
+  );
   const [address, setAddress] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -12,6 +16,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
   const SHOP_ADDRESS = "NDR 9, B-703 Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089";
 
   const checkDistance = useCallback((destinationAddress, locationGeometry = null) => {
+    if (!isOpen || !mapsReady) return;
     console.log("Checking distance for:", destinationAddress);
     setLoading(true);
     setError('');
@@ -71,7 +76,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
   }, [onSuccess]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !mapsReady) return;
 
     const initAutocomplete = () => {
       if (window.google && window.google.maps && window.google.maps.places && inputRef.current && !autocompleteRef.current) {
@@ -101,29 +106,16 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
       }
     };
 
-    if (!window.google || !window.google.maps || !window.google.maps.places) {
-      const scriptId = "google-maps-script";
-      const script = document.getElementById(scriptId);
-      if (script) {
-        script.addEventListener("load", initAutocomplete);
-        script.addEventListener("error", () => {
-          setError("Network Error: Failed to load Google Maps. Please disable ad-blockers and try again.");
-        });
-        return () => {
-          script.removeEventListener("load", initAutocomplete);
-        };
-      } else {
-        // Fallback if script tag is not found
-        setTimeout(initAutocomplete, 1000);
-      }
-    } else {
-      initAutocomplete();
-    }
-  }, [isOpen, checkDistance]);
+    initAutocomplete();
+  }, [isOpen, mapsReady, checkDistance]);
 
 
 
   const handleUseLocation = () => {
+    if (!isOpen || !mapsReady) {
+      setError("Google Maps is not ready yet.");
+      return;
+    }
     if (!navigator.geolocation) {
       setError("Geolocation is not supported by your browser.");
       return;
@@ -179,6 +171,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
   };
 
   const handleManualSubmit = () => {
+    if (!isOpen || !mapsReady) return;
     if (!address) {
       setError('Please enter a delivery address.');
       return;
@@ -218,16 +211,23 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
   if (!isOpen) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.6)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      padding: '24px'
-    }}>
+    <>
+      <Script
+        id="google-maps-script"
+        src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&loading=async&libraries=places`}
+        strategy="afterInteractive"
+        onReady={() => setMapsReady(true)}
+      />
+      <div style={{
+        position: 'fixed',
+        top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: '24px'
+      }}>
       <div style={{
         backgroundColor: '#FFF',
         borderRadius: '16px',
@@ -300,5 +300,6 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
         </div>
       </div>
     </div>
-  );
+  </>
+);
 }
