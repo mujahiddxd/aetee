@@ -200,13 +200,19 @@ export default function Checkout() {
             deliveryDate: formData.date,
             additionalInfo: formData.additionalInfo || null,
             'cf-turnstile-response': turnstileToken,
-            items: cartItems.map(item => ({
-              productId: item.product.id,
-              quantity: item.quantity,
-              price: item.price,
-              size: item.selectedSize || null,
-              addons: item.selectedAddons && item.selectedAddons.length > 0 ? item.selectedAddons.join(', ') : null
-            }))
+            items: cartItems.map(item => {
+              const eggPrefLabel = item.eggPreference === 'eggless' ? 'Eggless' : item.eggPreference === 'egg' ? 'Egg' : null;
+              const addonParts = [];
+              if (eggPrefLabel) addonParts.push(eggPrefLabel);
+              if (item.selectedAddons && item.selectedAddons.length > 0) addonParts.push(...item.selectedAddons);
+              return {
+                productId: item.product.id,
+                quantity: item.quantity,
+                price: item.price,
+                size: item.selectedSize || null,
+                addons: addonParts.length > 0 ? addonParts.join(', ') : null
+              };
+            })
           })
         });
 
@@ -219,6 +225,7 @@ export default function Checkout() {
           const orderDescription = cartItems.map(item => {
             let desc = `${item.quantity}x ${item.product.name}`;
             if (item.selectedSize) desc += ` [${item.selectedSize}]`;
+            if (item.eggPreference) desc += ` (${item.eggPreference === 'eggless' ? 'Eggless' : 'Egg'})`;
             if (item.selectedAddons && item.selectedAddons.length > 0) desc += ` + ${item.selectedAddons.join(', ')}`;
             return desc;
           }).join(' | ');
@@ -566,6 +573,7 @@ export default function Checkout() {
                   <div style={{ flex: 1 }}>
                     <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#333', margin: '0 0 4px 0' }}>{item.product.name}</h3>
                     {item.selectedSize && <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>Size: {item.selectedSize}</p>}
+                    {item.eggPreference && <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>{item.eggPreference === 'eggless' ? '🟢 Eggless' : '🟤 Egg'}</p>}
                     {item.selectedAddons && item.selectedAddons.length > 0 && <p style={{ margin: 0, fontSize: '0.75rem', color: '#666' }}>Addons: {item.selectedAddons.join(', ')}</p>}
                   </div>
                   <div style={{ fontWeight: '600', color: '#333' }}>

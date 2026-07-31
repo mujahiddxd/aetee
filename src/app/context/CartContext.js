@@ -29,13 +29,13 @@ export function CartProvider({ children }) {
     }
   }, [cartItems, isLoaded]);
 
-  const generateCartItemId = (product, size, addons) => {
+  const generateCartItemId = (product, size, addons, eggPreference) => {
     const addonsStr = addons ? addons.sort().join('_') : '';
-    return `${product.id}-${size || 'default'}-${addonsStr}`;
+    return `${product.id}-${size || 'default'}-${addonsStr}-${eggPreference || 'nopref'}`;
   };
 
-  const addToCart = ({ product, selectedSize, selectedAddons, totalPrice }) => {
-    const cartItemId = generateCartItemId(product, selectedSize, selectedAddons);
+  const addToCart = ({ product, selectedSize, selectedAddons, totalPrice, eggPreference }) => {
+    const cartItemId = generateCartItemId(product, selectedSize, selectedAddons, eggPreference);
 
     setCartItems(prev => {
       const existingItemIndex = prev.findIndex(item => item.cartItemId === cartItemId);
@@ -54,6 +54,7 @@ export function CartProvider({ children }) {
           product,
           selectedSize,
           selectedAddons,
+          eggPreference: eggPreference || null,
           price: totalPrice,
           quantity: 1
         }];

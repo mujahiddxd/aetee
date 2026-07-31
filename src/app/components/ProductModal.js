@@ -9,6 +9,9 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
   const cartItemCount = cartItems?.reduce((total, item) => total + item.quantity, 0) || 0;
   const [selectedSize, setSelectedSize] = useState(0);
   const [selectedAddons, setSelectedAddons] = useState(new Set());
+  const [eggPreference, setEggPreference] = useState(null); // null | 'eggless' | 'egg'
+
+  const isCustomisable = (product.sizes?.length > 0) || (product.addons?.length > 0);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -112,7 +115,51 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
               </div>
             )}
 
-            {product.sizes && product.sizes.length > 0 && product.addons && product.addons.length > 0 && (
+            {product.sizes && product.sizes.length > 0 && isCustomisable && (
+              <div style={{ height: '8px', backgroundColor: '#F1F1F6', margin: '0 -20px 24px -20px' }}></div>
+            )}
+
+            {isCustomisable && (
+              <div style={{ marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '1.1rem', color: 'var(--color-primary)', marginBottom: '16px' }}>
+                  Egg / Eggless <span style={{ color: '#888', fontSize: '0.9rem', fontWeight: 400 }}>(0/1)</span><span style={{ color: '#e53935', marginLeft: '4px' }}>*</span>
+                </h3>
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid var(--color-border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <input
+                        type="radio"
+                        name={`egg-pref-${product.id}`}
+                        checked={eggPreference === 'eggless'}
+                        onChange={() => setEggPreference('eggless')}
+                        style={{ width: '20px', height: '20px', accentColor: 'var(--color-primary)' }}
+                      />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span className="veg-icon"><span className="veg-dot"></span></span>
+                        <span style={{ fontSize: '1rem', color: 'var(--color-primary)' }}>Eggless</span>
+                      </div>
+                    </div>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid var(--color-border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <input
+                        type="radio"
+                        name={`egg-pref-${product.id}`}
+                        checked={eggPreference === 'egg'}
+                        onChange={() => setEggPreference('egg')}
+                        style={{ width: '20px', height: '20px', accentColor: 'var(--color-primary)' }}
+                      />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span className="veg-icon non-veg-icon"><span className="veg-dot non-veg-dot"></span></span>
+                        <span style={{ fontSize: '1rem', color: 'var(--color-primary)' }}>Egg</span>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {isCustomisable && product.addons && product.addons.length > 0 && (
               <div style={{ height: '8px', backgroundColor: '#F1F1F6', margin: '0 -20px 24px -20px' }}></div>
             )}
 
@@ -149,7 +196,7 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
             const currentSelectedSizeName = product.sizes && product.sizes.length > 0 ? product.sizes[selectedSize]?.name : null;
             const currentSelectedAddonNames = product.addons && product.addons.length > 0 ? Array.from(selectedAddons).map(idx => product.addons[idx]?.name).filter(Boolean) : [];
             const addonsStr = currentSelectedAddonNames.length > 0 ? currentSelectedAddonNames.sort().join('_') : '';
-            const currentCartItemId = `${product.id}-${currentSelectedSizeName || 'default'}-${addonsStr}`;
+            const currentCartItemId = `${product.id}-${currentSelectedSizeName || 'default'}-${addonsStr}-${eggPreference || 'nopref'}`;
 
             const cartItem = cartItems.find(item => item.cartItemId === currentCartItemId);
             const currentQuantity = cartItem ? cartItem.quantity : 0;
@@ -208,16 +255,18 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
 
             return (
               <button
-                style={{ width: '100%', backgroundColor: 'var(--color-primary)', color: '#FFF', border: 'none', borderRadius: '4px', padding: '14px', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.5px' }}
+                disabled={isCustomisable && !eggPreference}
+                style={{ width: '100%', backgroundColor: (isCustomisable && !eggPreference) ? '#ccc' : 'var(--color-primary)', color: (isCustomisable && !eggPreference) ? '#888' : '#FFF', border: 'none', borderRadius: '4px', padding: '14px', fontSize: '1rem', fontWeight: 700, cursor: (isCustomisable && !eggPreference) ? 'not-allowed' : 'pointer', letterSpacing: '0.5px' }}
                 onClick={() => {
                   addToCart({
                     product,
                     selectedSize: currentSelectedSizeName,
                     selectedAddons: currentSelectedAddonNames,
-                    totalPrice
+                    totalPrice,
+                    eggPreference: eggPreference
                   });
                 }}>
-                ADD TO CART
+                {(isCustomisable && !eggPreference) ? 'SELECT EGG / EGGLESS' : 'ADD TO CART'}
               </button>
             );
           })()}

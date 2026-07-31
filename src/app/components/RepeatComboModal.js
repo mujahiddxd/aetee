@@ -54,6 +54,7 @@ export function RepeatComboModal({ product, onClose, onSelectNew }) {
             >
               <div>
                 {item.selectedSize && <p style={{ margin: '0 0 4px 0', fontSize: '0.95rem', color: '#000', fontWeight: 500 }}>{item.selectedSize}</p>}
+                {item.eggPreference && <p style={{ margin: '0 0 4px 0', fontSize: '0.95rem', color: '#000', fontWeight: 500 }}>{item.eggPreference === 'eggless' ? '🟢 Eggless' : '🟤 Egg'}</p>}
                 {item.selectedAddons && item.selectedAddons.length > 0 && (
                   <div style={{ marginBottom: '8px' }}>
                     {item.selectedAddons.map((addon, idx) => (
@@ -61,7 +62,7 @@ export function RepeatComboModal({ product, onClose, onSelectNew }) {
                     ))}
                   </div>
                 )}
-                {!item.selectedSize && (!item.selectedAddons || item.selectedAddons.length === 0) && (
+                {!item.selectedSize && !item.eggPreference && (!item.selectedAddons || item.selectedAddons.length === 0) && (
                   <p style={{ margin: '0 0 4px 0', fontSize: '0.95rem', color: '#000', fontWeight: 500 }}>Standard</p>
                 )}
                 <p style={{ margin: '8px 0 0 0', fontSize: '0.85rem', color: '#888' }}>Qty: {item.quantity}</p>

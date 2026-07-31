@@ -150,6 +150,7 @@ export default function Cart() {
               <div style={{ flex: 1 }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: 0, color: '#333' }}>{item.product.name}</h3>
                 {item.selectedSize && <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#666' }}>Size: {item.selectedSize}</p>}
+                {item.eggPreference && <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#666' }}>{item.eggPreference === 'eggless' ? '🟢 Eggless' : '🟤 Egg'}</p>}
                 {item.selectedAddons && item.selectedAddons.length > 0 && <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#666' }}>Addons: {item.selectedAddons.join(', ')}</p>}
                 <p style={{ color: '#000', fontWeight: '700', fontSize: '1.1rem', margin: '8px 0 0 0' }}>₹{(item.price * item.quantity).toFixed(2)}</p>
               </div>
