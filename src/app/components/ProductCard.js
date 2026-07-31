@@ -71,15 +71,11 @@ export function ProductCard({ product, onSelect, onRepeatSelect, priority = fals
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (product.customisable || (product.sizes && product.sizes.length > 0)) {
-                        if (onRepeatSelect) {
-                          onSelect(product);
-                          onRepeatSelect(product);
-                        } else {
-                          onSelect(product);
-                        }
+                      if (onRepeatSelect) {
+                        onSelect(product);
+                        onRepeatSelect(product);
                       } else {
-                        updateQuantity(matchingItems[0].cartItemId, 1);
+                        onSelect(product);
                       }
                     }} 
                     style={{ padding: '6px 8px', background: 'transparent', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
@@ -94,20 +90,11 @@ export function ProductCard({ product, onSelect, onRepeatSelect, priority = fals
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (product.customisable || (product.sizes && product.sizes.length > 0)) {
-                    onSelect(product);
-                  } else {
-                    addToCart({
-                      product,
-                      selectedSize: null,
-                      selectedAddons: [],
-                      totalPrice: product.price
-                    });
-                  }
+                  onSelect(product);
                 }}
                 style={{ padding: '0', background: 'transparent', border: 'none', color: 'var(--color-primary)', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
               >
-                {product.customisable || (product.sizes && product.sizes.length > 0) ? 'ADD+' : 'ADD'}
+                ADD+
               </button>
             );
           })()}

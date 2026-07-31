@@ -11,8 +11,6 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
   const [selectedAddons, setSelectedAddons] = useState(new Set());
   const [eggPreference, setEggPreference] = useState(null); // null | 'eggless' | 'egg'
 
-  const isCustomisable = (product.sizes?.length > 0) || (product.addons?.length > 0);
-
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
@@ -115,12 +113,11 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
               </div>
             )}
 
-            {product.sizes && product.sizes.length > 0 && isCustomisable && (
+            {product.sizes && product.sizes.length > 0 && (
               <div style={{ height: '8px', backgroundColor: '#F1F1F6', margin: '0 -20px 24px -20px' }}></div>
             )}
 
-            {isCustomisable && (
-              <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '24px' }}>
                 <h3 style={{ fontSize: '1.1rem', color: 'var(--color-primary)', marginBottom: '16px' }}>
                   Egg / Eggless <span style={{ color: '#888', fontSize: '0.9rem', fontWeight: 400 }}>(0/1)</span><span style={{ color: '#e53935', marginLeft: '4px' }}>*</span>
                 </h3>
@@ -155,11 +152,10 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
                       </div>
                     </div>
                   </label>
-                </div>
               </div>
-            )}
+            </div>
 
-            {isCustomisable && product.addons && product.addons.length > 0 && (
+            {product.addons && product.addons.length > 0 && (
               <div style={{ height: '8px', backgroundColor: '#F1F1F6', margin: '0 -20px 24px -20px' }}></div>
             )}
 
@@ -255,8 +251,8 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
 
             return (
               <button
-                disabled={isCustomisable && !eggPreference}
-                style={{ width: '100%', backgroundColor: (isCustomisable && !eggPreference) ? '#ccc' : 'var(--color-primary)', color: (isCustomisable && !eggPreference) ? '#888' : '#FFF', border: 'none', borderRadius: '4px', padding: '14px', fontSize: '1rem', fontWeight: 700, cursor: (isCustomisable && !eggPreference) ? 'not-allowed' : 'pointer', letterSpacing: '0.5px' }}
+                disabled={!eggPreference}
+                style={{ width: '100%', backgroundColor: !eggPreference ? '#ccc' : 'var(--color-primary)', color: !eggPreference ? '#888' : '#FFF', border: 'none', borderRadius: '4px', padding: '14px', fontSize: '1rem', fontWeight: 700, cursor: !eggPreference ? 'not-allowed' : 'pointer', letterSpacing: '0.5px' }}
                 onClick={() => {
                   addToCart({
                     product,
@@ -266,7 +262,7 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
                     eggPreference: eggPreference
                   });
                 }}>
-                {(isCustomisable && !eggPreference) ? 'SELECT EGG / EGGLESS' : 'ADD TO CART'}
+                {!eggPreference ? 'SELECT EGG / EGGLESS' : 'ADD TO CART'}
               </button>
             );
           })()}
