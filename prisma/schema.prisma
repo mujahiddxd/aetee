@@ -142,6 +142,7 @@ model Order {
   @@index([status])
   @@index([createdAt])
   @@index([userId, status, createdAt])
+  @@index([deliveryDate, status, createdAt])
   @@map("orders")
 }
 

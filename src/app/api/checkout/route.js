@@ -244,74 +244,92 @@ export async function POST(req) {
       notes: notesObj
     });
 
-    // ── 7. Wrap all DB writes in a transaction ──────────────────────
-    const { user, dbOrder } = await prisma.$transaction(async (tx) => {
-      let txUser = await tx.user.findUnique({ where: { email } });
+    // ── 7. Wrap all DB writes in a transaction with Retry Wrapper ───
+    let txResult;
+    let retries = 0;
+    const MAX_RETRIES = 3;
 
-      if (!txUser) {
-        txUser = await tx.user.create({
-          data: { firstName: safeFirstName, lastName: safeLastName, email, phone },
-        });
-      } else {
-        // ⚠️ CRITICAL — ROW LOCK: This update acquires an EXCLUSIVE ROW LOCK (X lock)
-        // on this user record in MySQL/InnoDB. Any concurrent transaction for the same
-        // user will be blocked at this line until this transaction commits or rolls back.
-        // This serializes concurrent checkouts and makes the rate limit check below
-        // race-condition-proof. DO NOT REMOVE this update without adding an alternative
-        // locking mechanism (e.g., SELECT ... FOR UPDATE).
-        txUser = await tx.user.update({
-          where: { id: txUser.id },
-          data: { firstName: safeFirstName, lastName: safeLastName, phone },
-        });
+    while (retries < MAX_RETRIES) {
+      try {
+        txResult = await prisma.$transaction(async (tx) => {
+          let txUser = await tx.user.findUnique({ where: { email } });
+
+          if (!txUser) {
+            txUser = await tx.user.create({
+              data: { firstName: safeFirstName, lastName: safeLastName, email, phone },
+            });
+          } else {
+            txUser = await tx.user.update({
+              where: { id: txUser.id },
+              data: { firstName: safeFirstName, lastName: safeLastName, phone },
+            });
+          }
+
+          // ── 5. Global Capacity Limit (Max 25 orders per Delivery Date) ─
+          if (deliveryDate) {
+            const targetDate = new Date(deliveryDate);
+            const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+
+            const capacityCount = await tx.order.count({
+              where: {
+                deliveryDate: targetDate,
+                OR: [
+                  { status: 'PAID' },
+                  { status: 'PENDING', createdAt: { gte: fifteenMinsAgo } }
+                ]
+              },
+            });
+
+            if (capacityCount >= 25) {
+              throw new Error('DATE_FULL');
+            }
+          }
+
+          await tx.address.create({
+            data: {
+              userId: txUser.id,
+              addressLine1: safeAddressLine1,
+              addressLine2: safeAddressLine2,
+              city: safeCity,
+              postalCode,
+            },
+          });
+
+          const txOrder = await tx.order.create({
+            data: {
+              userId: txUser.id,
+              totalAmount: verifiedTotal,
+              status: 'PENDING',
+              razorpayOrderId: razorpayOrder.id,
+              deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
+              notes: safeAdditionalInfo,
+              items: {
+                create: verifiedItems,
+              },
+            },
+          });
+
+          return { user: txUser, dbOrder: txOrder };
+        }, { isolationLevel: 'Serializable' });
+
+        break; // Success! Break out of the retry loop.
+      } catch (err) {
+        if (err.message === 'DATE_FULL') throw err; // Naturally full, don't retry
+
+        // P2034 is Prisma's error code for a write conflict / deadlock in Serializable transactions
+        if (err.code === 'P2034') {
+          retries++;
+          if (retries >= MAX_RETRIES) throw new Error('DATE_FULL'); // Assume full if we can't get a lock
+          // Exponential backoff: 50ms, 100ms
+          await new Promise(res => setTimeout(res, 50 * retries));
+          continue;
+        }
+
+        throw err; // Throw any other unexpected errors
       }
+    }
 
-      // ── 5 (moved here). Rate limit: max 0 paid orders per 24 hours ─
-      // Safe from race conditions because the tx.user.update above holds an
-      // exclusive row lock, serializing all concurrent requests for this user.
-      const now = new Date();
-      const year = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', year: 'numeric' }).format(now);
-      const month = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', month: '2-digit' }).format(now);
-      const day = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', day: '2-digit' }).format(now);
-      const startOfDay = new Date(`${year}-${month}-${day}T00:00:00+05:30`);
-
-      const recentPaidOrders = await tx.order.count({
-        where: {
-          userId: txUser.id,
-          status: 'PAID',
-          createdAt: { gte: startOfDay },
-        },
-      });
-
-      if (recentPaidOrders >= 0) {
-        throw new Error('RATE_LIMITED');
-      }
-
-      await tx.address.create({
-        data: {
-          userId: txUser.id,
-          addressLine1: safeAddressLine1,
-          addressLine2: safeAddressLine2,
-          city: safeCity,
-          postalCode,
-        },
-      });
-
-      const txOrder = await tx.order.create({
-        data: {
-          userId: txUser.id,
-          totalAmount: verifiedTotal,
-          status: 'PENDING',
-          razorpayOrderId: razorpayOrder.id,
-          deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
-          notes: safeAdditionalInfo,
-          items: {
-            create: verifiedItems,
-          },
-        },
-      });
-
-      return { user: txUser, dbOrder: txOrder };
-    });
+    const { user, dbOrder } = txResult;
 
     return NextResponse.json({
       success: true,
@@ -324,7 +342,7 @@ export async function POST(req) {
   } catch (error) {
     console.error('Error in checkout:', error);
 
-    if (error.message === 'RATE_LIMITED') {
+    if (error.message === 'DATE_FULL' || error.message === 'RATE_LIMITED') {
       return NextResponse.json(
         { success: false, error: 'This date is fully booked. Please select another delivery date to place your order. Thank you for choosing AeTee\'s Bakehouse.' },
         { status: 429 }
