@@ -265,7 +265,7 @@ export async function POST(req) {
         });
       }
 
-      // ── 5 (moved here). Rate limit: max 25 paid orders per 24 hours ─
+      // ── 5 (moved here). Rate limit: max 0 paid orders per 24 hours ─
       // Safe from race conditions because the tx.user.update above holds an
       // exclusive row lock, serializing all concurrent requests for this user.
       const now = new Date();
@@ -282,7 +282,7 @@ export async function POST(req) {
         },
       });
 
-      if (recentPaidOrders >= 25) {
+      if (recentPaidOrders >= 0) {
         throw new Error('RATE_LIMITED');
       }
 
