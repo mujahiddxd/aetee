@@ -269,7 +269,7 @@ export async function POST(req) {
             });
           }
 
-          // ── 5. Global Capacity Limit (Max 25 orders per Delivery Date) ─
+          // ── 5. Global Capacity Limit (Max 1 order per Delivery Date for testing) ─
           if (deliveryDate) {
             const targetDate = new Date(deliveryDate);
             const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
@@ -284,7 +284,7 @@ export async function POST(req) {
               },
             });
 
-            if (capacityCount >= 25) {
+            if (capacityCount >= 1) {
               throw new Error('DATE_FULL');
             }
           }
