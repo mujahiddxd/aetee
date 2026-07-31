@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { escapeHtml, sendOrderNotification, sendPaymentFailedNotification } from '@/lib/telegram';
 
 export async function POST(req) {
   try {
@@ -93,24 +94,18 @@ export async function POST(req) {
         return NextResponse.json({ success: true, message: 'Order already processed concurrently' });
       }
 
-      // Format Telegram message
+      // Format Telegram message (escape all user-supplied values)
       let itemsText = '';
       order.items.forEach((item, index) => {
-        const pName = item.product?.name || `Product #${item.productId}`;
+        const pName = escapeHtml(item.product?.name || `Product #${item.productId}`);
 
         let extras = [];
-        if (item.size) extras.push(`Size: ${item.size}`);
-        if (item.addons) extras.push(`Addons: ${item.addons}`);
+        if (item.size) extras.push(`Size: ${escapeHtml(item.size)}`);
+        if (item.addons) extras.push(`Addons: ${escapeHtml(item.addons)}`);
         const extrasStr = extras.length > 0 ? ` [${extras.join(', ')}]` : '';
 
         itemsText += `${index + 1}. ${pName}${extrasStr} - Qty: ${item.quantity} (₹${Number(item.price).toFixed(2)})\n`;
       });
-
-      // Extract address
-      const address = order.user.addresses && order.user.addresses.length > 0 ? order.user.addresses[0] : null;
-      const addressText = address
-        ? `${address.addressLine1}${address.addressLine2 ? ', ' + address.addressLine2 : ''}, ${address.city} - ${address.postalCode}`
-        : 'N/A';
 
       // Calculate Delivery Time (Before 12 PM IST = Same Day)
       const hourFormatter = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', hour12: false });
@@ -119,8 +114,6 @@ export async function POST(req) {
       const dateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
       const todayStr = dateFormatter.format(order.createdAt);
       const tomorrowStr = dateFormatter.format(new Date(order.createdAt.getTime() + 24 * 60 * 60 * 1000));
-
-      const deliveryNote = orderHourIST < 12 ? `<b>Delivery:</b> SAME DAY (${todayStr})` : `<b>Delivery:</b> NEXT DAY (${tomorrowStr})`;
 
       // Calculate Daily Serial Number
       const startOfDay = new Date(`${todayStr}T00:00:00+05:30`);
@@ -137,41 +130,13 @@ export async function POST(req) {
         ? new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(order.deliveryDate))
         : null;
 
-      const message = `
-<b>NEW ORDER RECEIVED! (Daily #${serialNumber})</b>
+      const finalDeliveryText = deliveryDateStr || (orderHourIST < 12 ? `SAME DAY (${todayStr})` : `NEXT DAY (${tomorrowStr})`);
 
-<b>Daily Order No:</b> #${serialNumber}
-<b>System ID:</b> ${order.id}
-<b>Razorpay ID:</b> ${order.razorpayOrderId}
-<b>Customer:</b> ${order.user.firstName} ${order.user.lastName}
-<b>Phone:</b> ${order.user.phone || 'N/A'}
-<b>Address:</b> ${addressText}
-<b>Amount Paid:</b> ₹${order.totalAmount}
-<b>Delivery Date:</b> ${deliveryDateStr || 'Not specified'}
-${deliveryNote}
-${order.notes ? `\n<b>Special Instructions:</b>\n${order.notes}\n` : ''}
+      // Send using centralized helper (handles escaping, retries, and plain-text fallback)
+      const tgResult = await sendOrderNotification(order, serialNumber, finalDeliveryText, itemsText);
 
-<b>Items Ordered:</b>
-${itemsText}
-      `.trim();
-
-      // Send to Telegram
-      const telegramUrl = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`;
-      const response = await fetch(telegramUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chat_id: process.env.TELEGRAM_CHAT_ID,
-          text: message,
-          parse_mode: 'HTML',
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Failed to send Telegram message:', errorData);
+      if (!tgResult.ok) {
+        console.error('Failed to send Telegram message:', tgResult.description);
       } else {
         console.log('Successfully sent Telegram notification for order:', order.id);
       }
@@ -179,8 +144,7 @@ ${itemsText}
       // Send WhatsApp Receipt
       if (order.user.phone && process.env.WHATSAPP_API_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {
         const cleanPhone = order.user.phone.replace(/\D/g, '');
-        const waDeliveryNote = deliveryNote.replace(/<\/?b>/g, '*');
-        const waMessage = `*Payment Successful!*\n\nHi ${order.user.firstName},\nThank you for your order! Your payment of ₹${order.totalAmount} has been received.\n\n${waDeliveryNote}\n\nWe will notify you once it's out for delivery.`;
+        const waMessage = `*Payment Successful!*\n\nHi ${order.user.firstName},\nThank you for your order! Your payment of ₹${order.totalAmount} has been received.\n\n*Delivery:* ${finalDeliveryText}\n\nWe will notify you once it's out for delivery.`;
         
         const waUrl = `https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
         await fetch(waUrl, {
@@ -215,22 +179,11 @@ ${itemsText}
           });
 
           if (updateResult.count > 0) {
-            const failMessage = `
-<b>PAYMENT FAILED!!</b>
-
-<b>System ID:</b> ${order.id}
-<b>Razorpay ID:</b> ${order.razorpayOrderId}
-<b>Customer:</b> ${order.user.firstName} ${order.user.lastName}
-<b>Phone:</b> ${order.user.phone || 'N/A'}
-<b>Amount:</b> ₹${order.totalAmount}
-<b>Error:</b> ${body.payload.payment?.entity?.error_description || 'Unknown error'}
-            `.trim();
-
-            await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: failMessage, parse_mode: 'HTML' })
-            }).catch(e => console.error(e));
+            // Send failure notification using centralized helper
+            await sendPaymentFailedNotification(
+              order,
+              body.payload.payment?.entity?.error_description
+            );
 
             // Send WhatsApp Failure Alert
             if (order.user.phone && process.env.WHATSAPP_API_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {

@@ -82,7 +82,7 @@ export default function Storefront() {
 
         setExpandedCategories(prev => {
           if (Object.keys(prev).length === 0) {
-            return formattedCats.reduce((acc, cat) => ({ ...acc, [cat.name]: true }), {});
+            return formattedCats.reduce((acc, cat) => ({ ...acc, [cat.name]: false }), {});
           }
           return prev;
         });

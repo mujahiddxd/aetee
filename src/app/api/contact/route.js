@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyTurnstile } from '@/lib/turnstile';
 import { prisma } from '@/lib/prisma';
+import { sendTelegramMessage, escapeHtml } from '@/lib/telegram';
 
 
 
@@ -73,29 +74,19 @@ export async function POST(request) {
       const text = [
         'NEW CONTACT MESSAGE',
         '',
-        'Name: ' + name,
-        'Email: ' + email,
+        'Name: ' + escapeHtml(name),
+        'Email: ' + escapeHtml(email),
         '',
         'Message:',
-        message,
+        escapeHtml(message),
         '',
         'Time: ' + new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
       ].join('\n');
 
-      const tgRes = await fetch('https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/sendMessage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text: text,
-        }),
-      });
+      const tgResult = await sendTelegramMessage(text);
 
-      const tgData = await tgRes.json();
-      console.log('Telegram response:', JSON.stringify(tgData));
-
-      if (!tgData.ok) {
-        console.error('Telegram error:', tgData.description);
+      if (!tgResult.ok) {
+        console.error('Telegram error:', tgResult.description);
         return NextResponse.json({ error: 'Failed to send' }, { status: 500 });
       }
     } else {

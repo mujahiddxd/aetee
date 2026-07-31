@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { escapeHtml, sendOrderNotification } from '@/lib/telegram';
 
 import Razorpay from 'razorpay';
 
@@ -93,7 +94,7 @@ export async function POST(req) {
         });
 
         return NextResponse.json(
-          { success: false, error: 'Sorry for the inconvenience, but you have reached the maximum limit of 25 orders in a day. Your payment has been automatically refunded.' },
+          { success: false, error: 'This date is fully booked. Please select another delivery date to place your order. Thank you for choosing AeTee\'s Bakehouse. Your payment has been automatically refunded.' },
           { status: 429 }
         );
       }
@@ -136,23 +137,19 @@ export async function POST(req) {
       if (fullOrder && process.env.TELEGRAM_BOT_TOKEN && !wasAlreadyPaid) {
         let itemsText = '';
         fullOrder.items.forEach((item, index) => {
-          const pName = item.product?.name || `Product #${item.productId}`;
+          const pName = escapeHtml(item.product?.name || `Product #${item.productId}`);
           let extras = [];
-          if (item.size) extras.push(`Size: ${item.size}`);
-          if (item.addons) extras.push(`Addons: ${item.addons}`);
+          if (item.size) extras.push(`Size: ${escapeHtml(item.size)}`);
+          if (item.addons) extras.push(`Addons: ${escapeHtml(item.addons)}`);
           const extrasStr = extras.length > 0 ? ` [${extras.join(', ')}]` : '';
           itemsText += `${index + 1}. ${pName}${extrasStr} - Qty: ${item.quantity} (₹${Number(item.price).toFixed(2)})\n`;
         });
-
-        const address = fullOrder.user.addresses && fullOrder.user.addresses.length > 0 ? fullOrder.user.addresses[0] : null;
-        const addressText = address ? `${address.addressLine1}${address.addressLine2 ? ', ' + address.addressLine2 : ''}, ${address.city} - ${address.postalCode}` : 'N/A';
 
         const hourFormatter = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', hour12: false });
         const orderHourIST = parseInt(hourFormatter.format(fullOrder.createdAt), 10);
         const dateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' });
         const todayStr = dateFormatter.format(fullOrder.createdAt);
         const tomorrowStr = dateFormatter.format(new Date(fullOrder.createdAt.getTime() + 24 * 60 * 60 * 1000));
-        const deliveryNote = orderHourIST < 12 ? ` <b>Delivery:</b> SAME DAY (${todayStr})` : ` <b>Delivery:</b> NEXT DAY (${tomorrowStr})`;
 
         const startOfDay = new Date(`${todayStr}T00:00:00+05:30`);
         const serialNumber = await prisma.order.count({
@@ -166,33 +163,16 @@ export async function POST(req) {
           ? new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(fullOrder.deliveryDate))
           : (orderHourIST < 12 ? `SAME DAY (${todayStr})` : `NEXT DAY (${tomorrowStr})`);
 
-        const message = `
-<b>NEW ORDER RECEIVED! (Daily #${serialNumber})</b>
-
-<b>Daily Order No:</b> #${serialNumber}
-<b>System ID:</b> ${fullOrder.id}
-<b>Razorpay ID:</b> ${fullOrder.razorpayOrderId}
-<b>Customer:</b> ${fullOrder.user.firstName} ${fullOrder.user.lastName}
-<b>Phone:</b> ${fullOrder.user.phone || 'N/A'}
-<b>Address:</b> ${addressText}
-<b>Amount Paid:</b> ₹${fullOrder.totalAmount}
-<b>Delivery:</b> ${finalDeliveryText}
-${fullOrder.notes ? `\n<b>Special Instructions:</b>\n${fullOrder.notes}\n` : ''}
-
-<b>Items Ordered:</b>
-${itemsText}
-        `.trim();
-
         // Collect notification promises and await them with a timeout
         // so they complete before the process exits
         const notificationPromises = [];
 
         notificationPromises.push(
-          fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML' }),
-          }).catch(e => console.error('Telegram error:', e))
+          sendOrderNotification(fullOrder, serialNumber, finalDeliveryText, itemsText)
+            .then(result => {
+              if (!result.ok) console.error('Telegram send failed:', result.description);
+            })
+            .catch(e => console.error('Telegram error:', e))
         );
 
         // --- Send Email Receipt via Google Apps Script ---
