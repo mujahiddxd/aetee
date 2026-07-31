@@ -271,7 +271,8 @@ export async function POST(req) {
 
           // ── 5. Global Capacity Limit (Max 1 order per Delivery Date for testing) ─
           if (deliveryDate) {
-            const targetDate = new Date(deliveryDate);
+            const cleanDateStr = typeof deliveryDate === 'string' ? deliveryDate.split('T')[0] : new Date(deliveryDate).toISOString().split('T')[0];
+            const targetDate = new Date(`${cleanDateStr}T00:00:00.000Z`);
             const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
 
             const capacityCount = await tx.order.count({
@@ -299,13 +300,16 @@ export async function POST(req) {
             },
           });
 
+          const cleanDateStr = deliveryDate ? (typeof deliveryDate === 'string' ? deliveryDate.split('T')[0] : new Date(deliveryDate).toISOString().split('T')[0]) : null;
+          const finalDeliveryDate = cleanDateStr ? new Date(`${cleanDateStr}T00:00:00.000Z`) : null;
+
           const txOrder = await tx.order.create({
             data: {
               userId: txUser.id,
               totalAmount: verifiedTotal,
               status: 'PENDING',
               razorpayOrderId: razorpayOrder.id,
-              deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
+              deliveryDate: finalDeliveryDate,
               notes: safeAdditionalInfo,
               items: {
                 create: verifiedItems,
