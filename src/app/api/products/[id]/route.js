@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { invalidateCache } from '@/lib/cache';
 
 export async function PUT(request, { params }) {
   try {
@@ -52,6 +53,8 @@ export async function PUT(request, { params }) {
       }
     });
 
+    invalidateCache('products');
+
     return NextResponse.json({
       id: product.id,
       name: product.name,
@@ -81,6 +84,8 @@ export async function DELETE(request, { params }) {
     await prisma.product.delete({
       where: { id },
     });
+
+    invalidateCache('products');
 
     return NextResponse.json({ success: true });
   } catch (error) {

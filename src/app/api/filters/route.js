@@ -1,17 +1,20 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { getOrSetCache, invalidateCache } from '@/lib/cache';
 
 export const revalidate = 60;
 
 export async function GET() {
   try {
-    const filters = await prisma.filterTag.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        _count: {
-          select: { products: true },
+    const filters = await getOrSetCache('filters', 3600, async () => {
+      return await prisma.filterTag.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: {
+          _count: {
+            select: { products: true },
+          },
         },
-      },
+      });
     });
 
     const formatted = filters.map((f) => ({
@@ -46,6 +49,9 @@ export async function POST(request) {
     const filter = await prisma.filterTag.create({
       data: { name: name.trim() },
     });
+
+    // Bust the cache so changes are reflected immediately
+    invalidateCache('filters');
 
     return NextResponse.json(
       { id: filter.id, name: filter.name, products: 0, createdAt: filter.createdAt },

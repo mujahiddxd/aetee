@@ -1,20 +1,23 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { getOrSetCache, invalidateCache } from '@/lib/cache';
 
 export const revalidate = 60;
 
 export async function GET() {
   try {
-    const products = await prisma.product.findMany({
-      orderBy: [
-        { sortOrder: 'asc' },
-        { createdAt: 'desc' }
-      ],
-      include: {
-        category: true,
-        options: true,
-        filters: true,
-      },
+    const products = await getOrSetCache('products', 60, async () => {
+      return await prisma.product.findMany({
+        orderBy: [
+          { sortOrder: 'asc' },
+          { createdAt: 'desc' }
+        ],
+        include: {
+          category: true,
+          options: true,
+          filters: true,
+        },
+      });
     });
 
     const formatted = products.map((prod) => ({
@@ -96,6 +99,9 @@ export async function POST(request) {
         filters: true,
       }
     });
+
+    // Bust the cache so the menu reflects the new product immediately
+    invalidateCache('products');
 
     return NextResponse.json({
       id: product.id,

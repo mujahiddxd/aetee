@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { invalidateCache } from '@/lib/cache';
 
 export async function DELETE(request) {
   try {
@@ -17,6 +18,8 @@ export async function DELETE(request) {
         id: { in: ids }
       }
     });
+
+    invalidateCache('categories');
 
     return NextResponse.json({ success: true, message: 'Categories deleted successfully' });
   } catch (error) {

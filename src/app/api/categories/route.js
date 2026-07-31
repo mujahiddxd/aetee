@@ -1,21 +1,24 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { getOrSetCache, invalidateCache } from '@/lib/cache';
 
 export const revalidate = 60;
 
 // GET /api/categories — Fetch all categories with product count
 export async function GET() {
   try {
-    const categories = await prisma.category.findMany({
-      orderBy: [
-        { sortOrder: 'asc' },
-        { createdAt: 'desc' }
-      ],
-      include: {
-        _count: {
-          select: { products: true },
+    const categories = await getOrSetCache('categories', 3600, async () => {
+      return await prisma.category.findMany({
+        orderBy: [
+          { sortOrder: 'asc' },
+          { createdAt: 'desc' }
+        ],
+        include: {
+          _count: {
+            select: { products: true },
+          },
         },
-      },
+      });
     });
 
     const formatted = categories.map((cat) => ({
@@ -53,6 +56,9 @@ export async function POST(request) {
         name: name.trim()
       },
     });
+
+    // Bust the cache so changes are reflected immediately
+    invalidateCache('categories');
 
     return NextResponse.json(
       { id: category.id, name: category.name, products: 0, createdAt: category.createdAt },

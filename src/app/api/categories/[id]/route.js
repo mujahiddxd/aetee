@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { invalidateCache } from '@/lib/cache';
 
 // DELETE /api/categories/[id] — Delete a category by ID
 export async function DELETE(request, { params }) {
@@ -9,6 +10,8 @@ export async function DELETE(request, { params }) {
     await prisma.category.delete({
       where: { id },
     });
+
+    invalidateCache('categories');
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -46,6 +49,8 @@ export async function PUT(request, { params }) {
         name: name.trim()
       },
     });
+
+    invalidateCache('categories');
 
     return NextResponse.json(updatedCategory);
   } catch (error) {

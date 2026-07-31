@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { invalidateCache } from '@/lib/cache';
 
 export async function PUT(request) {
   try {
@@ -18,6 +19,8 @@ export async function PUT(request) {
         })
       )
     );
+
+    invalidateCache('products');
 
     return NextResponse.json({ success: true, message: 'Products reordered successfully' });
   } catch (error) {

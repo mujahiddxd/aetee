@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { invalidateCache } from '@/lib/cache';
 
 export async function DELETE(request, { params }) {
   try {
@@ -8,6 +9,8 @@ export async function DELETE(request, { params }) {
     await prisma.filterTag.delete({
       where: { id },
     });
+
+    invalidateCache('filters');
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -44,6 +47,8 @@ export async function PUT(request, { params }) {
         name: name.trim()
       },
     });
+
+    invalidateCache('filters');
 
     return NextResponse.json(updatedFilter);
   } catch (error) {

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { invalidateCache } from '@/lib/cache';
 
 export async function PUT(request) {
   try {
@@ -18,6 +19,8 @@ export async function PUT(request) {
         })
       )
     );
+
+    invalidateCache('categories');
 
     return NextResponse.json({ success: true });
   } catch (error) {
