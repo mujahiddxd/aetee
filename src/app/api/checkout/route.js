@@ -4,8 +4,12 @@ import { prisma } from '@/lib/prisma';
 import { stripHtml } from '@/lib/sanitize';
 import { verifyTurnstile } from '@/lib/turnstile';
 import { getISTHour, getISTDateString } from '@/lib/ist-time';
+import { checkRateLimit } from '@/lib/rateLimitMemory';
 
 export async function POST(req) {
+  const limited = checkRateLimit(req, 'checkout', { max: 15, windowMs: 60000 });
+  if (limited) return limited;
+
   try {
     const body = await req.json();
     const {

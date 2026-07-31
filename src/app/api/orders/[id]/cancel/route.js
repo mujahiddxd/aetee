@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { checkRateLimit } from '@/lib/rateLimitMemory';
 
 /**
  * POST /api/orders/[id]/cancel
@@ -14,6 +15,9 @@ import { prisma } from '@/lib/prisma';
  * anyone else to guess and cancel someone else's order.
  */
 export async function POST(req, { params }) {
+  const limited = checkRateLimit(req, 'order_cancel', { max: 20, windowMs: 60000 });
+  if (limited) return limited;
+
   try {
     const { id } = await params;
     const body = await req.json();

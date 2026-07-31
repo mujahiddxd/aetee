@@ -2,10 +2,14 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { escapeHtml, sendOrderNotification } from '@/lib/telegram';
+import { checkRateLimit } from '@/lib/rateLimitMemory';
 
 import Razorpay from 'razorpay';
 
 export async function POST(req) {
+  const limited = checkRateLimit(req, 'payment_verify', { max: 20, windowMs: 60000 });
+  if (limited) return limited;
+
   try {
     const body = await req.json();
     const {

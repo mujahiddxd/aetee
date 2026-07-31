@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import { queue } from '@/lib/queue';
+import { checkRateLimit } from '@/lib/rateLimitMemory';
 
 /**
  * POST /api/queue/join
  * Called when a user lands on the queue page. Assigns them a session and enqueues.
  */
 export async function POST(req) {
+  const limited = checkRateLimit(req, 'queue_join', { max: 20, windowMs: 60000 });
+  if (limited) return limited;
+
   try {
     if (!queue.enabled) {
       // Queue is off — admit immediately with a bypass signal
