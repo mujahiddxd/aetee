@@ -191,8 +191,8 @@ export async function POST(req) {
           }
 
           // Base fee of ₹50 plus ₹10 per km
-          const BASE_DELIVERY_FEE = 50;
-          const COST_PER_KM = 10;
+          const BASE_DELIVERY_FEE = 0; // Set to 0 for testing
+          const COST_PER_KM = 0; // Set to 0 for testing
           deliveryCharges = BASE_DELIVERY_FEE + Math.ceil(verifiedDistanceKm * COST_PER_KM);
         } else {
           // If Google Maps fails (e.g. unrecognizable address), reject the order to prevent free delivery abuse
