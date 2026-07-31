@@ -20,7 +20,7 @@ export async function POST(req) {
     } = body;
 
     // ── 1. Strict Input Validation ──────────────────────────────────
-    if (!email || !firstName || !lastName || !addressLine1 || !city || !postalCode || !items || !items.length) {
+    if (!email || !firstName || !lastName || !addressLine1 || !city || !items || !items.length) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 

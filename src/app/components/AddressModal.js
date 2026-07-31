@@ -5,13 +5,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function AddressModal({ isOpen, onClose, onSuccess }) {
   const [mapsReady, setMapsReady] = useState(
-    () => typeof window !== "undefined" && Boolean(window.google?.maps)
+    () => typeof window !== "undefined" && Boolean(window.google?.maps?.places)
   );
   const [address, setAddress] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
-  const autocompleteRef = useRef(null);
 
   const SHOP_ADDRESS = "NDR 9, B-703 Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089";
 
@@ -76,17 +75,38 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
   }, [onSuccess, isOpen, mapsReady]);
 
   useEffect(() => {
+    if (!isOpen) return;
+
+    if (window.google && window.google.maps && window.google.maps.places) {
+      setMapsReady(true);
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      if (window.google && window.google.maps && window.google.maps.places) {
+        setMapsReady(true);
+        clearInterval(intervalId);
+      }
+    }, 100);
+
+    return () => clearInterval(intervalId);
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!isOpen || !mapsReady) return;
 
+    let autocomplete = null;
+    let listener = null;
+
     const initAutocomplete = () => {
-      if (window.google && window.google.maps && window.google.maps.places && inputRef.current && !autocompleteRef.current) {
-        autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+      if (window.google && window.google.maps && window.google.maps.places && inputRef.current) {
+        autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
           componentRestrictions: { country: "IN" },
           fields: ["formatted_address", "geometry", "name", "address_components"],
         });
 
-        autocompleteRef.current.addListener("place_changed", () => {
-          const place = autocompleteRef.current.getPlace();
+        listener = autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
           if (place && place.formatted_address) {
             let currentAddress = place.formatted_address;
             if (place.address_components) {
@@ -107,6 +127,12 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
     };
 
     initAutocomplete();
+    
+    return () => {
+      if (listener) {
+        window.google.maps.event.removeListener(listener);
+      }
+    };
   }, [isOpen, mapsReady, checkDistance]);
 
 
