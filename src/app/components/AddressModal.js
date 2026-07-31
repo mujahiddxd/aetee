@@ -73,7 +73,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
       setLoading(false);
       setError("An unexpected error occurred while checking distance.");
     }
-  }, [onSuccess]);
+  }, [onSuccess, isOpen, mapsReady]);
 
   useEffect(() => {
     if (!isOpen || !mapsReady) return;
