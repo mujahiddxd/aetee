@@ -1,11 +1,15 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { getOrSetCache, invalidateCache } from '@/lib/cache';
+import { checkRateLimit } from '@/lib/rateLimitMemory';
 
 export const revalidate = 60;
 
 // GET /api/categories — Fetch all categories with product count
-export async function GET() {
+export async function GET(req) {
+  const limited = checkRateLimit(req, 'categories_get', { max: 120, windowMs: 60000 });
+  if (limited) return limited;
+
   try {
     const formatted = await getOrSetCache('categories', 3600, async () => {
       const categories = await prisma.category.findMany({

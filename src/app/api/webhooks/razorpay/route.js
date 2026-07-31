@@ -37,15 +37,7 @@ export async function POST(req) {
 
     const body = JSON.parse(rawBody);
 
-    // Replay Protection: Reject if webhook is older than 5 minutes
-    const MAX_WEBHOOK_AGE_MS = 5 * 60 * 1000;
-    if (body.created_at) {
-      const webhookTimeMs = body.created_at * 1000;
-      if (Date.now() - webhookTimeMs > MAX_WEBHOOK_AGE_MS) {
-        console.error('Webhook replay detected. Event too old.');
-        return NextResponse.json({ error: 'Webhook event expired' }, { status: 400 });
-      }
-    }
+
 
     // We can listen for 'order.paid' or 'payment.captured'
     if (body.event === 'order.paid' || body.event === 'payment.captured') {

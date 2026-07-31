@@ -2,10 +2,14 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { escapeHtml, sendOrderNotification } from '@/lib/telegram';
+import { checkRateLimit } from '@/lib/rateLimitMemory';
 
 import Razorpay from 'razorpay';
 
 export async function POST(req) {
+  const limited = checkRateLimit(req, 'payment_verify', { max: 20, windowMs: 60000 });
+  if (limited) return limited;
+
   try {
     const body = await req.json();
     const {
@@ -44,61 +48,7 @@ export async function POST(req) {
       );
     }
 
-    // 3. Defense-in-depth: re-check limit before marking PAID
-    const order = await prisma.order.findUnique({
-      where: { razorpayOrderId: razorpay_order_id },
-      select: { userId: true },
-    });
-
-    if (order) {
-      const recentPaidOrders = await prisma.order.count({
-        where: {
-          userId: order.userId,
-          status: 'PAID',
-          createdAt: {
-            gte: (() => {
-              const now = new Date();
-              const year = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', year: 'numeric' }).format(now);
-              const month = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', month: '2-digit' }).format(now);
-              const day = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', day: '2-digit' }).format(now);
-              return new Date(`${year}-${month}-${day}T00:00:00+05:30`);
-            })()
-          },
-        },
-      });
-
-      if (recentPaidOrders >= 25) {
-        // Auto-refund — customer never loses money
-        const razorpay = new Razorpay({
-          key_id: process.env.RAZORPAY_KEY_ID,
-          key_secret: process.env.RAZORPAY_KEY_SECRET,
-        });
-
-        try {
-          await razorpay.payments.refund(razorpay_payment_id, {
-            speed: 'normal',
-          });
-        } catch (refundError) {
-          console.error('Auto-refund failed:', refundError);
-          // still mark as FAILED so it's visible for manual refund
-        }
-
-        // Mark order as FAILED so admin dashboard reflects reality
-        await prisma.order.update({
-          where: { razorpayOrderId: razorpay_order_id },
-          data: {
-            status: 'FAILED',
-            razorpayPaymentId: razorpay_payment_id,
-            razorpaySignature: razorpay_signature,
-          },
-        });
-
-        return NextResponse.json(
-          { success: false, error: 'This date is fully booked. Please select another delivery date to place your order. Thank you for choosing AeTee\'s Bakehouse. Your payment has been automatically refunded.' },
-          { status: 429 }
-        );
-      }
-    }
+    // 3. Removed: Old auto-refund rate limit check (capacity is now safely reserved at checkout)
 
     // 4. Signature is valid, update the order in the database to PAID
     const updateResult = await prisma.order.updateMany({
@@ -124,8 +74,44 @@ export async function POST(req) {
       return NextResponse.json({ success: true, message: 'Payment verified but order missing' });
     }
 
-    // 5. Send Telegram Message Instantly
+    // 5. Send Telegram Message Instantly and Check Overbooking
     try {
+      if (updatedOrder.deliveryDate && !wasAlreadyPaid) {
+        const dateStr = updatedOrder.deliveryDate.toISOString().split('T')[0];
+        const capacityCount = await prisma.order.count({
+          where: {
+            deliveryDate: updatedOrder.deliveryDate,
+            status: 'PAID'
+          }
+        });
+
+        // Deduplicate the alert using globalThis so we don't spam if multiple stale payments land
+        if (capacityCount >= 26) {
+          const alertKey = `overbook-alerted-${dateStr}`;
+          const alreadyAlerted = globalThis[alertKey];
+          
+          if (!alreadyAlerted) {
+            globalThis[alertKey] = true;
+            
+            const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
+            const telegramChatId = process.env.TELEGRAM_CHAT_ID;
+            if (telegramToken && telegramChatId) {
+              const url = `https://api.telegram.org/bot${telegramToken}/sendMessage`;
+              const message = `🚨 ⚠️ *OVERBOOK ALERT* ⚠️ 🚨\n\nDelivery date *${dateStr}* has exceeded capacity!\nCurrently at *${capacityCount}/25* paid orders.\n\n_Please check the dashboard and contact a customer if necessary._`;
+              
+              await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  chat_id: telegramChatId,
+                  text: message,
+                  parse_mode: 'Markdown'
+                })
+              }).catch(err => console.error('Failed to send overbook alert:', err));
+            }
+          }
+        }
+      }
       const fullOrder = await prisma.order.findUnique({
         where: { id: updatedOrder.id },
         include: {

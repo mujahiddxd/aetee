@@ -4,9 +4,10 @@ import '../globals.css';
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useCart } from '../context/CartContext';
 import { ChevronDown, ChevronUp } from '../components/Icons';
-import { ProductModal } from '../components/ProductModal';
+import dynamic from 'next/dynamic';
+const ProductModal = dynamic(() => import('../components/ProductModal').then((mod) => mod.ProductModal), { ssr: false });
 import { ProductCard } from '../components/ProductCard';
-import { RepeatComboModal } from '../components/RepeatComboModal';
+const RepeatComboModal = dynamic(() => import('../components/RepeatComboModal').then((mod) => mod.RepeatComboModal), { ssr: false });
 import Image from 'next/image';
 
 export default function Storefront() {
@@ -288,12 +289,13 @@ export default function Storefront() {
               </div>
             ) : (
               <div className="product-grid">
-                {filteredProducts.map((product) => (
+                {filteredProducts.map((product, index) => (
                   <ProductCard
                     key={product.id}
                     product={product}
                     onSelect={setSelectedProduct}
                     onRepeatSelect={setSelectedRepeatProduct}
+                    priority={index < 4}
                   />
                 ))}
               </div>

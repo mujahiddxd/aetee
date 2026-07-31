@@ -1,8 +1,12 @@
 "use client";
 
+import Script from "next/script";
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function AddressModal({ isOpen, onClose, onSuccess }) {
+  const [mapsReady, setMapsReady] = useState(
+    () => typeof window !== "undefined" && Boolean(window.google?.maps)
+  );
   const [address, setAddress] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -12,6 +16,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
   const SHOP_ADDRESS = "NDR 9, B-703 Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089";
 
   const checkDistance = useCallback((destinationAddress, locationGeometry = null) => {
+    if (!isOpen || !mapsReady) return;
     console.log("Checking distance for:", destinationAddress);
     setLoading(true);
     setError('');
@@ -68,10 +73,10 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
       setLoading(false);
       setError("An unexpected error occurred while checking distance.");
     }
-  }, [onSuccess]);
+  }, [onSuccess, isOpen, mapsReady]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !mapsReady) return;
 
     const initAutocomplete = () => {
       if (window.google && window.google.maps && window.google.maps.places && inputRef.current && !autocompleteRef.current) {
@@ -101,29 +106,16 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
       }
     };
 
-    if (!window.google || !window.google.maps || !window.google.maps.places) {
-      const scriptId = "google-maps-script";
-      const script = document.getElementById(scriptId);
-      if (script) {
-        script.addEventListener("load", initAutocomplete);
-        script.addEventListener("error", () => {
-          setError("Network Error: Failed to load Google Maps. Please disable ad-blockers and try again.");
-        });
-        return () => {
-          script.removeEventListener("load", initAutocomplete);
-        };
-      } else {
-        // Fallback if script tag is not found
-        setTimeout(initAutocomplete, 1000);
-      }
-    } else {
-      initAutocomplete();
-    }
-  }, [isOpen, checkDistance]);
+    initAutocomplete();
+  }, [isOpen, mapsReady, checkDistance]);
 
 
 
   const handleUseLocation = () => {
+    if (!isOpen || !mapsReady) {
+      setError("Google Maps is not ready yet.");
+      return;
+    }
     if (!navigator.geolocation) {
       setError("Geolocation is not supported by your browser.");
       return;
@@ -179,6 +171,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
   };
 
   const handleManualSubmit = () => {
+    if (!isOpen || !mapsReady) return;
     if (!address) {
       setError('Please enter a delivery address.');
       return;
@@ -218,87 +211,95 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
   if (!isOpen) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.6)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      padding: '24px'
-    }}>
+    <>
+      <Script
+        id="google-maps-script"
+        src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&loading=async&libraries=places`}
+        strategy="afterInteractive"
+        onReady={() => setMapsReady(true)}
+      />
       <div style={{
-        backgroundColor: '#FFF',
-        borderRadius: '16px',
-        width: '100%',
-        maxWidth: '500px',
-        boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-        overflow: 'hidden'
+        position: 'fixed',
+        top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: '24px'
       }}>
-        <div style={{ padding: '24px 24px 16px', borderBottom: '1px solid #EEE', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: '#333' }}>Delivery Address Details</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#999' }}>&times;</button>
-        </div>
-
-        <div style={{ padding: '24px' }}>
-          <p style={{ margin: '0 0 16px 0', color: '#666', fontSize: '0.9rem' }}>
-            Please enter the exact drop location for a hassle free delivery experience
-          </p>
-
-          <div style={{ position: 'relative', marginBottom: '16px' }}>
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder="Search for a building, street name, or area"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '14px 16px 14px 40px',
-                borderRadius: '8px',
-                border: '1px solid #DDD',
-                fontSize: '1rem',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
-            />
-            <svg style={{ position: 'absolute', left: '12px', top: '14px', width: '20px', height: '20px', color: '#EA4335' }} viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-            </svg>
+        <div style={{
+          backgroundColor: '#FFF',
+          borderRadius: '16px',
+          width: '100%',
+          maxWidth: '500px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+          overflow: 'hidden'
+        }}>
+          <div style={{ padding: '24px 24px 16px', borderBottom: '1px solid #EEE', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold', color: '#333' }}>Delivery Address Details</h2>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#999' }}>&times;</button>
           </div>
 
-          <button
-            onClick={handleUseLocation}
-            disabled={loading}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #EA4335',
-              backgroundColor: '#FFF0F0', color: '#D32F2F', fontWeight: '600', cursor: 'pointer',
-              marginBottom: '16px', transition: 'background 0.2s'
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
-            </svg>
-            Use your location
-          </button>
+          <div style={{ padding: '24px' }}>
+            <p style={{ margin: '0 0 16px 0', color: '#666', fontSize: '0.9rem' }}>
+              Please enter the exact drop location for a hassle free delivery experience
+            </p>
 
-          {error && <div style={{ color: '#D32F2F', backgroundColor: '#FEF6F6', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>{error}</div>}
+            <div style={{ position: 'relative', marginBottom: '16px' }}>
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Search for a building, street name, or area"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '14px 16px 14px 40px',
+                  borderRadius: '8px',
+                  border: '1px solid #DDD',
+                  fontSize: '1rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+              <svg style={{ position: 'absolute', left: '12px', top: '14px', width: '20px', height: '20px', color: '#EA4335' }} viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+              </svg>
+            </div>
 
-          <button
-            onClick={handleManualSubmit}
-            disabled={loading || !address}
-            style={{
-              width: '100%', padding: '14px', borderRadius: '8px', border: 'none',
-              backgroundColor: (loading || !address) ? '#CCC' : '#5A3424', color: '#FFF', fontWeight: 'bold', fontSize: '1rem',
-              cursor: (loading || !address) ? 'not-allowed' : 'pointer'
-            }}
-          >
-            {loading ? 'Checking Distance...' : 'CONTINUE'}
-          </button>
+            <button
+              onClick={handleUseLocation}
+              disabled={loading}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #EA4335',
+                backgroundColor: '#FFF0F0', color: '#D32F2F', fontWeight: '600', cursor: 'pointer',
+                marginBottom: '16px', transition: 'background 0.2s'
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+              </svg>
+              Use your location
+            </button>
+
+            {error && <div style={{ color: '#D32F2F', backgroundColor: '#FEF6F6', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>{error}</div>}
+
+            <button
+              onClick={handleManualSubmit}
+              disabled={loading || !address}
+              style={{
+                width: '100%', padding: '14px', borderRadius: '8px', border: 'none',
+                backgroundColor: (loading || !address) ? '#CCC' : '#5A3424', color: '#FFF', fontWeight: 'bold', fontSize: '1rem',
+                cursor: (loading || !address) ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {loading ? 'Checking Distance...' : 'CONTINUE'}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
