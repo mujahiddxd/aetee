@@ -14,7 +14,7 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
   const isCustomisable = (product.sizes?.length > 0) || (product.addons?.length > 0);
 
   // Determine which egg options are available
-  const showEggSection = isCustomisable && (product.hasEggless || product.hasEgg);
+  const showEggSection = (product.hasEggless || product.hasEgg);
   const onlyOneEggOption = (product.hasEggless && !product.hasEgg) || (!product.hasEggless && product.hasEgg);
   const needsEggSelection = showEggSection && !onlyOneEggOption;
 
