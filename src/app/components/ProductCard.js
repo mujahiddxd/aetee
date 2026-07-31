@@ -23,10 +23,11 @@ export function ProductCard({ product, onSelect, onRepeatSelect, priority = fals
             <span style={{ backgroundColor: tagColor, color: 'white', fontSize: '0.65rem', fontWeight: 600, padding: '2px 6px', letterSpacing: '0.05em' }}>{tag}</span>
           ) : <div></div>}
 
-          <div className="product-card-veg-icon" style={{ display: 'flex', alignItems: 'center' }}>
-            {product.isVeg ? (
+          <div className="product-card-veg-icon" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {product.hasEggless && (
               <span className="veg-icon"><span className="veg-dot"></span></span>
-            ) : (
+            )}
+            {product.hasEgg && (
               <span className="veg-icon non-veg-icon"><span className="veg-dot non-veg-dot"></span></span>
             )}
           </div>
