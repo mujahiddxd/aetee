@@ -6,8 +6,8 @@ export const revalidate = 60;
 
 export async function GET() {
   try {
-    const filters = await getOrSetCache('filters', 3600, async () => {
-      return await prisma.filterTag.findMany({
+    const formatted = await getOrSetCache('filters', 3600, async () => {
+      const filters = await prisma.filterTag.findMany({
         orderBy: { createdAt: 'desc' },
         include: {
           _count: {
@@ -15,14 +15,14 @@ export async function GET() {
           },
         },
       });
-    });
 
-    const formatted = filters.map((f) => ({
-      id: f.id,
-      name: f.name,
-      products: f._count.products,
-      createdAt: f.createdAt,
-    }));
+      return filters.map((f) => ({
+        id: f.id,
+        name: f.name,
+        products: f._count.products,
+        createdAt: f.createdAt,
+      }));
+    });
 
     return NextResponse.json(formatted);
   } catch (error) {

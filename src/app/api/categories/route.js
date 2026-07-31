@@ -7,8 +7,8 @@ export const revalidate = 60;
 // GET /api/categories — Fetch all categories with product count
 export async function GET() {
   try {
-    const categories = await getOrSetCache('categories', 3600, async () => {
-      return await prisma.category.findMany({
+    const formatted = await getOrSetCache('categories', 3600, async () => {
+      const categories = await prisma.category.findMany({
         orderBy: [
           { sortOrder: 'asc' },
           { createdAt: 'desc' }
@@ -19,14 +19,14 @@ export async function GET() {
           },
         },
       });
-    });
 
-    const formatted = categories.map((cat) => ({
-      id: cat.id,
-      name: cat.name,
-      products: cat._count.products,
-      createdAt: cat.createdAt,
-    }));
+      return categories.map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        products: cat._count.products,
+        createdAt: cat.createdAt,
+      }));
+    });
 
     return NextResponse.json(formatted);
   } catch (error) {

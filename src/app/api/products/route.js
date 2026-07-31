@@ -6,8 +6,8 @@ export const revalidate = 60;
 
 export async function GET() {
   try {
-    const products = await getOrSetCache('products', 60, async () => {
-      return await prisma.product.findMany({
+    const formatted = await getOrSetCache('products', 60, async () => {
+      const products = await prisma.product.findMany({
         orderBy: [
           { sortOrder: 'asc' },
           { createdAt: 'desc' }
@@ -18,36 +18,35 @@ export async function GET() {
           filters: true,
         },
       });
-    });
 
-    const formatted = products.map((prod) => ({
-      id: prod.id,
-      name: prod.name,
-      description: prod.description || '',
-      price: Number(prod.price),
-      categoryId: prod.categoryId,
-      category: prod.category ? prod.category.name : 'Uncategorized',
-      image: prod.imageUrl || 'https://placehold.co/400x300/FDF3D5/4A2C1D?text=No+Image',
-      isFeatured: prod.isFeatured,
-      isBestSelling: prod.isBestSeller,
-      isSoldOut: prod.isSoldOut,
-      isVeg: prod.isVeg,
-      // We map database options back to sizes and addons using prefixes
-      addons: prod.options.filter(opt => !opt.name.startsWith('SIZE:::')).map(opt => ({
-        id: opt.id,
-        name: opt.name.startsWith('ADDON:::') ? opt.name.replace('ADDON:::', '') : opt.name,
-        price: Number(opt.extraPrice),
-        image: opt.imageUrl
-      })),
-      sizes: prod.options.filter(opt => opt.name.startsWith('SIZE:::')).map(opt => ({
-        id: opt.id,
-        name: opt.name.replace('SIZE:::', ''),
-        price: Number(opt.extraPrice),
-        image: opt.imageUrl
-      })),
-      filters: prod.filters.map(f => f.id),
-      filterTags: prod.filters.map(f => ({ id: f.id, name: f.name }))
-    }));
+      return products.map((prod) => ({
+        id: prod.id,
+        name: prod.name,
+        description: prod.description || '',
+        price: Number(prod.price),
+        categoryId: prod.categoryId,
+        category: prod.category ? prod.category.name : 'Uncategorized',
+        image: prod.imageUrl || 'https://placehold.co/400x300/FDF3D5/4A2C1D?text=No+Image',
+        isFeatured: prod.isFeatured,
+        isBestSelling: prod.isBestSeller,
+        isSoldOut: prod.isSoldOut,
+        isVeg: prod.isVeg,
+        addons: prod.options.filter(opt => !opt.name.startsWith('SIZE:::')).map(opt => ({
+          id: opt.id,
+          name: opt.name.startsWith('ADDON:::') ? opt.name.replace('ADDON:::', '') : opt.name,
+          price: Number(opt.extraPrice),
+          image: opt.imageUrl
+        })),
+        sizes: prod.options.filter(opt => opt.name.startsWith('SIZE:::')).map(opt => ({
+          id: opt.id,
+          name: opt.name.replace('SIZE:::', ''),
+          price: Number(opt.extraPrice),
+          image: opt.imageUrl
+        })),
+        filters: prod.filters.map(f => f.id),
+        filterTags: prod.filters.map(f => ({ id: f.id, name: f.name }))
+      }));
+    });
 
     return NextResponse.json(formatted);
   } catch (error) {
