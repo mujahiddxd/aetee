@@ -269,7 +269,7 @@ export async function POST(req) {
             });
           }
 
-          // ── 5. Global Capacity Limit (Max 1 order per Delivery Date for testing) ─
+          // ── 5. Global Capacity Limit (Max 25 orders per Delivery Date) ─
           if (deliveryDate) {
             const cleanDateStr = typeof deliveryDate === 'string' ? deliveryDate.split('T')[0] : new Date(deliveryDate).toISOString().split('T')[0];
             const targetDate = new Date(`${cleanDateStr}T00:00:00.000Z`);
@@ -285,7 +285,7 @@ export async function POST(req) {
               },
             });
 
-            if (capacityCount >= 1) {
+            if (capacityCount >= 25) {
               throw new Error('DATE_FULL');
             }
           }
