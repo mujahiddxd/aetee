@@ -251,7 +251,15 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
         id="google-maps-script"
         src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&loading=async&libraries=places`}
         strategy="afterInteractive"
-        onReady={() => setMapsReady(true)}
+        onReady={() => {
+          // Only set ready if the Places library has actually loaded.
+          // With loading=async, onReady fires for the main script BEFORE
+          // the Places library is available. The polling useEffect handles
+          // the case where Places loads later.
+          if (window.google?.maps?.places) {
+            setMapsReady(true);
+          }
+        }}
       />
       <div style={{
         position: 'fixed',
