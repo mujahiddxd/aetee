@@ -312,8 +312,8 @@ export default function Checkout() {
   };
 
   const itemTotal = parseFloat(cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2));
-  const BASE_DELIVERY_FEE = 0; // Set to 0 for testing
-  const COST_PER_KM = 0; // Set to 0 for testing
+  const BASE_DELIVERY_FEE = 50;
+  const COST_PER_KM = 10;
   const deliveryCharges = distance !== null ? BASE_DELIVERY_FEE + Math.ceil(distance * COST_PER_KM) : 0;
   const grandTotal = parseFloat((itemTotal + deliveryCharges).toFixed(2));
 
