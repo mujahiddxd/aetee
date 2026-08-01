@@ -285,7 +285,7 @@ export async function POST(req) {
               },
             });
 
-            if (capacityCount >= 1) {
+            if (capacityCount >= 25) {
               throw new Error('DATE_FULL');
             }
           }

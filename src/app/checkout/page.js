@@ -71,7 +71,7 @@ export default function Checkout() {
   });
   const [errors, setErrors] = useState({});
   const [showModal, setShowModal] = useState({ isOpen: false, type: '', message: '' });
-  const [distance, setDistance] = useState(0);
+  const [distance, setDistance] = useState(null);
 
   // Render Turnstile when it's ready and the container is available
   useEffect(() => {
