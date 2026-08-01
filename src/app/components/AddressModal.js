@@ -8,6 +8,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
     () => typeof window !== "undefined" && Boolean(window.google?.maps?.places)
   );
   const [address, setAddress] = useState('');
+  const addressRef = useRef('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
@@ -105,6 +106,11 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
           fields: ["formatted_address", "geometry", "name", "address_components"],
         });
 
+        // Prevent Google from submitting the form on Enter
+        inputRef.current.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') e.preventDefault();
+        });
+
         listener = autocomplete.addListener("place_changed", () => {
           const place = autocomplete.getPlace();
           if (place && place.formatted_address) {
@@ -115,7 +121,9 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
                 currentAddress = currentAddress + " - " + postalComponent.long_name;
               }
             }
+            addressRef.current = currentAddress;
             setAddress(currentAddress);
+            if (inputRef.current) inputRef.current.value = currentAddress;
             if (place.geometry) {
               checkDistance(currentAddress, place.geometry.location);
             } else {
@@ -198,7 +206,8 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
 
   const handleManualSubmit = () => {
     if (!isOpen || !mapsReady) return;
-    if (!address) {
+    const currentVal = inputRef.current?.value || addressRef.current || address;
+    if (!currentVal) {
       setError('Please enter a delivery address.');
       return;
     }
@@ -207,7 +216,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
 
     if (window.google && window.google.maps) {
       const geocoder = new window.google.maps.Geocoder();
-      geocoder.geocode({ address: address }, (results, status) => {
+      geocoder.geocode({ address: currentVal }, (results, status) => {
         if (status === "OK" && results.length > 0) {
           let currentAddress = results[0].formatted_address;
           let postalCode = "";
@@ -226,11 +235,11 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
           checkDistance(currentAddress, results[0].geometry.location);
         } else {
           // Fallback if geocoding fails
-          checkDistance(address);
+          checkDistance(currentVal);
         }
       });
     } else {
-      checkDistance(address);
+      checkDistance(currentVal);
     }
   };
 
@@ -277,8 +286,8 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
                 ref={inputRef}
                 type="text"
                 placeholder="Search for a building, street name, or area"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                defaultValue={address}
+                onChange={(e) => { addressRef.current = e.target.value; setAddress(e.target.value); }}
                 style={{
                   width: '100%',
                   padding: '14px 16px 14px 40px',
@@ -314,11 +323,11 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
 
             <button
               onClick={handleManualSubmit}
-              disabled={loading || !address}
+              disabled={loading}
               style={{
                 width: '100%', padding: '14px', borderRadius: '8px', border: 'none',
-                backgroundColor: (loading || !address) ? '#CCC' : '#5A3424', color: '#FFF', fontWeight: 'bold', fontSize: '1rem',
-                cursor: (loading || !address) ? 'not-allowed' : 'pointer'
+                backgroundColor: loading ? '#CCC' : '#5A3424', color: '#FFF', fontWeight: 'bold', fontSize: '1rem',
+                cursor: loading ? 'not-allowed' : 'pointer'
               }}
             >
               {loading ? 'Checking Distance...' : 'CONTINUE'}

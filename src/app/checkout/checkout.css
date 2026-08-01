@@ -218,6 +218,29 @@
   box-shadow: none;
   transform: none;
 }
+.date-card.fully-booked {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background-color: #FFF5F5;
+  border-color: #F5D5D5;
+  box-shadow: none;
+  transform: none;
+  position: relative;
+}
+.date-card.fully-booked .date-card-num {
+  color: #CC4444;
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+.date-card.fully-booked .date-card-month {
+  color: #CC4444;
+  font-weight: 700;
+  font-size: 0.6rem;
+  letter-spacing: 0.3px;
+}
+.date-card.fully-booked .date-card-label {
+  color: #CC4444;
+}
 .date-card-label {
   font-size: 0.65rem;
   font-weight: 700;

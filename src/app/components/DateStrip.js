@@ -3,12 +3,38 @@ import { getISTHour, getISTDateString } from '@/lib/ist-time';
 
 export default function DateStrip({ selectedDate, onDateChange }) {
   const [dates, setDates] = useState([]);
+  const [fullyBookedDates, setFullyBookedDates] = useState(new Set());
   const stripRef = useRef(null);
   
   // Drag to scroll state
   const isDown = useRef(false);
   const startX = useRef(null);
   const scrollLeft = useRef(null);
+
+  // Fetch fully-booked dates on mount
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchCapacity = async () => {
+      try {
+        const res = await fetch('/api/delivery-dates/capacity');
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled && data.fullyBookedDates) {
+            setFullyBookedDates(new Set(data.fullyBookedDates));
+          }
+        }
+      } catch (err) {
+        // Silently fail — worst case the user sees all dates as available
+        // and the backend will reject at checkout if the date is actually full
+        console.error('Failed to fetch date capacity:', err);
+      }
+    };
+
+    fetchCapacity();
+
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     const generateDates = () => {
@@ -28,9 +54,11 @@ export default function DateStrip({ selectedDate, onDateChange }) {
 
         const dayNum = displayDate.getDate();
         const month = displayDate.toLocaleDateString('en-US', { month: 'short' });
-        const isDisabled = i === 0 && currentISTHour >= 12;
+        const isPastCutoff = i === 0 && currentISTHour >= 12;
+        const isFullyBooked = fullyBookedDates.has(dateString);
+        const isDisabled = isPastCutoff || isFullyBooked;
 
-        dateList.push({ dateString, label, dayNum, month, isDisabled });
+        dateList.push({ dateString, label, dayNum, month, isDisabled, isFullyBooked });
       }
       setDates(dateList);
 
@@ -39,7 +67,7 @@ export default function DateStrip({ selectedDate, onDateChange }) {
       }
     };
     generateDates();
-  }, [selectedDate, onDateChange]);
+  }, [selectedDate, onDateChange, fullyBookedDates]);
 
   const isDragging = useRef(false);
 
@@ -90,7 +118,7 @@ export default function DateStrip({ selectedDate, onDateChange }) {
             <button
               key={index}
               type="button"
-              className={`date-card ${isSelected ? 'selected' : ''} ${item.isDisabled ? 'disabled' : ''}`}
+              className={`date-card ${isSelected ? 'selected' : ''} ${item.isDisabled ? 'disabled' : ''} ${item.isFullyBooked ? 'fully-booked' : ''}`}
               onClick={(e) => {
                 if (isDragging.current) {
                   e.preventDefault();
@@ -102,11 +130,13 @@ export default function DateStrip({ selectedDate, onDateChange }) {
                 }
               }}
               disabled={item.isDisabled}
-              aria-label={item.isDisabled ? `${item.label} unavailable` : `Select ${item.label}`}
+              aria-label={item.isFullyBooked ? `${item.label} fully booked` : item.isDisabled ? `${item.label} unavailable` : `Select ${item.label}`}
             >
               <span className="date-card-label">{item.label}</span>
               <span className="date-card-num">{item.dayNum}</span>
-              <span className="date-card-month">{item.month}</span>
+              <span className="date-card-month">
+                {item.isFullyBooked ? 'Full' : item.month}
+              </span>
             </button>
           );
         })}
