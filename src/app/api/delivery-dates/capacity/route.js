@@ -49,14 +49,6 @@ export async function GET() {
         .filter(r => r._count.id >= 25)
         .map(r => r.deliveryDate.toISOString().split('T')[0]);
 
-      // --- MOCK DATA FOR DEMO ---
-      // Adding the day after tomorrow as a fake fully booked date
-      const dayAfterTomorrow = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      if (!fullyBookedDates.includes(dayAfterTomorrow)) {
-        fullyBookedDates.push(dayAfterTomorrow);
-      }
-      // --------------------------
-
       return { fullyBookedDates };
     });
 
