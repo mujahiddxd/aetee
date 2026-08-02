@@ -37,7 +37,7 @@ export async function middleware(request) {
   let rewriteRequired = false;
 
   // Subdomain routing for Admin Panel
-  const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1');
+  const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1') || hostname.startsWith('192.168.');
   const isAdminSubdomain = hostname.startsWith('aeteesadmin.');
 
   if (isAdminSubdomain) {
@@ -54,13 +54,17 @@ export async function middleware(request) {
   } else {
     // Block direct access to /admin on the main domain (except on localhost for development)
     if (url.pathname.startsWith('/admin') && !isLocalhost) {
-      url.pathname = '/404'; 
-      return NextResponse.rewrite(url);
+      return NextResponse.redirect(new URL('/', request.url));
     }
   }
 
   // Use the evaluated path for authentication checks
   const pathname = rewriteRequired ? url.pathname : request.nextUrl.pathname;
+
+  // Redirect /checkout to /cart
+  if (pathname === '/checkout') {
+    return NextResponse.redirect(new URL('/cart', request.url));
+  }
 
   // ── Queue enforcement is handled client-side by QueueGuard ────
   // (Edge Runtime middleware cannot access Node.js in-memory state,
@@ -74,7 +78,7 @@ export async function middleware(request) {
   const isProtectedApi = protectedRoutes.some(route => pathname.startsWith(route));
 
   if (isProtectedApi) {
-    const isModifying = ['POST', 'PUT', 'DELETE'].includes(request.method);
+    const isModifying = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method);
 
     let requiresAuth = false;
 
@@ -103,6 +107,9 @@ export async function middleware(request) {
     const isValid = await verifyAdminToken(token?.value);
 
     if (!isValid) {
+      if (isAdminSubdomain) {
+        return NextResponse.redirect(new URL('/login', request.url));
+      }
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
   }
