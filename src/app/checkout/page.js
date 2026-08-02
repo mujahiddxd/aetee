@@ -14,6 +14,13 @@ import './checkout.css';
 export default function Checkout() {
   const router = useRouter();
   const { cartItems, isLoaded, clearCart } = useCart();
+
+  // Prevent direct URL access — redirect to menu if cart is empty
+  useEffect(() => {
+    if (isLoaded && cartItems.length === 0) {
+      router.replace('/menu');
+    }
+  }, [isLoaded, cartItems.length, router]);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [turnstileReady, setTurnstileReady] = useState(
     typeof window !== 'undefined' && !!window.turnstile
