@@ -1,1 +1,1 @@
-Maaz Khan Tower mein rehta h
+Maaz Khan Tower mein rehta hai
