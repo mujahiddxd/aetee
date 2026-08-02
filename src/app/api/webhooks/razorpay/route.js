@@ -14,6 +14,11 @@ export async function POST(req) {
 
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
+    if (!secret) {
+      console.error('[Razorpay Webhook] CRITICAL: RAZORPAY_WEBHOOK_SECRET is missing in environment variables. Webhook cannot be verified and will fail.');
+      return NextResponse.json({ error: 'Webhook configuration error' }, { status: 500 });
+    }
+
     // Verify the webhook signature
     const generated_signature = crypto
       .createHmac('sha256', secret)
@@ -207,7 +212,7 @@ export async function POST(req) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Webhook Processing Error:', error);
-    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
+    console.error('[Razorpay Webhook] Fatal Error:', error);
+    return NextResponse.json({ error: 'Webhook processing failed', details: error.message }, { status: 500 });
   }
 }
