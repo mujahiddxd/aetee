@@ -88,7 +88,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
         setMapsReady(true);
         clearInterval(intervalId);
       }
-    }, 100);
+    }, 50);
 
     return () => clearInterval(intervalId);
   }, [isOpen]);
@@ -131,6 +131,18 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
             }
           }
         });
+
+        // If the user typed before the autocomplete was ready, re-trigger
+        // so the widget picks up the existing text and shows suggestions.
+        if (inputRef.current && inputRef.current.value.length > 0) {
+          setTimeout(() => {
+            if (inputRef.current) {
+              inputRef.current.dispatchEvent(new Event('input', { bubbles: true }));
+              // Also refocus to nudge the dropdown open
+              inputRef.current.focus();
+            }
+          }, 100);
+        }
       }
     };
 

@@ -61,10 +61,8 @@ export async function middleware(request) {
   // Use the evaluated path for authentication checks
   const pathname = rewriteRequired ? url.pathname : request.nextUrl.pathname;
 
-  // Redirect /checkout to /cart
-  if (pathname === '/checkout') {
-    return NextResponse.redirect(new URL('/cart', request.url));
-  }
+  // NOTE: /checkout access control is handled client-side in the checkout page
+  // itself (redirects to /cart when cart is empty). No middleware redirect needed.
 
   // ── Queue enforcement is handled client-side by QueueGuard ────
   // (Edge Runtime middleware cannot access Node.js in-memory state,
