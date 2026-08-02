@@ -19,7 +19,7 @@ export default function Checkout() {
   // Prevent direct URL access — redirect to menu if cart is empty
   useEffect(() => {
     if (isLoaded && cartItems.length === 0) {
-      router.replace('/menu');
+      router.replace('/cart');
     }
   }, [isLoaded, cartItems.length, router]);
   const [paymentMethod, setPaymentMethod] = useState('');
