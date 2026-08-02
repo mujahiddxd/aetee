@@ -15,6 +15,13 @@ export default function Checkout() {
   const router = useRouter();
   const { cartItems, isLoaded, clearCart } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Prevent direct URL access — redirect to menu if cart is empty
+  useEffect(() => {
+    if (isLoaded && cartItems.length === 0) {
+      router.replace('/menu');
+    }
+  }, [isLoaded, cartItems.length, router]);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [turnstileReady, setTurnstileReady] = useState(
     typeof window !== 'undefined' && !!window.turnstile
@@ -72,7 +79,7 @@ export default function Checkout() {
   });
   const [errors, setErrors] = useState({});
   const [showModal, setShowModal] = useState({ isOpen: false, type: '', message: '' });
-  const [distance, setDistance] = useState(0);
+  const [distance, setDistance] = useState(null);
 
   // Render Turnstile when it's ready and the container is available
   useEffect(() => {
@@ -323,7 +330,7 @@ export default function Checkout() {
   const itemTotal = parseFloat(cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2));
   const BASE_DELIVERY_FEE = 50;
   const COST_PER_KM = 10;
-  const deliveryCharges = itemTotal > 0 && distance > 0 ? BASE_DELIVERY_FEE + Math.ceil(distance * COST_PER_KM) : 0;
+  const deliveryCharges = distance !== null ? BASE_DELIVERY_FEE + Math.ceil(distance * COST_PER_KM) : 0;
   const grandTotal = parseFloat((itemTotal + deliveryCharges).toFixed(2));
 
   return (

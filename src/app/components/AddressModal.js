@@ -5,13 +5,13 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function AddressModal({ isOpen, onClose, onSuccess }) {
   const [mapsReady, setMapsReady] = useState(
-    () => typeof window !== "undefined" && Boolean(window.google?.maps)
+    () => typeof window !== "undefined" && Boolean(window.google?.maps?.places)
   );
   const [address, setAddress] = useState('');
+  const addressRef = useRef('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
-  const autocompleteRef = useRef(null);
 
   const SHOP_ADDRESS = "NDR 9, B-703 Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089";
 
@@ -76,17 +76,43 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
   }, [onSuccess, isOpen, mapsReady]);
 
   useEffect(() => {
+    if (!isOpen) return;
+
+    if (window.google && window.google.maps && window.google.maps.places) {
+      setMapsReady(true);
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      if (window.google && window.google.maps && window.google.maps.places) {
+        setMapsReady(true);
+        clearInterval(intervalId);
+      }
+    }, 100);
+
+    return () => clearInterval(intervalId);
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!isOpen || !mapsReady) return;
 
+    let autocomplete = null;
+    let listener = null;
+
     const initAutocomplete = () => {
-      if (window.google && window.google.maps && window.google.maps.places && inputRef.current && !autocompleteRef.current) {
-        autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+      if (window.google && window.google.maps && window.google.maps.places && inputRef.current) {
+        autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
           componentRestrictions: { country: "IN" },
           fields: ["formatted_address", "geometry", "name", "address_components"],
         });
 
-        autocompleteRef.current.addListener("place_changed", () => {
-          const place = autocompleteRef.current.getPlace();
+        // Prevent Google from submitting the form on Enter
+        inputRef.current.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') e.preventDefault();
+        });
+
+        listener = autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
           if (place && place.formatted_address) {
             let currentAddress = place.formatted_address;
             if (place.address_components) {
@@ -95,7 +121,9 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
                 currentAddress = currentAddress + " - " + postalComponent.long_name;
               }
             }
+            addressRef.current = currentAddress;
             setAddress(currentAddress);
+            if (inputRef.current) inputRef.current.value = currentAddress;
             if (place.geometry) {
               checkDistance(currentAddress, place.geometry.location);
             } else {
@@ -107,6 +135,12 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
     };
 
     initAutocomplete();
+
+    return () => {
+      if (listener) {
+        window.google.maps.event.removeListener(listener);
+      }
+    };
   }, [isOpen, mapsReady, checkDistance]);
 
 
@@ -172,7 +206,8 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
 
   const handleManualSubmit = () => {
     if (!isOpen || !mapsReady) return;
-    if (!address) {
+    const currentVal = inputRef.current?.value || addressRef.current || address;
+    if (!currentVal) {
       setError('Please enter a delivery address.');
       return;
     }
@@ -181,7 +216,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
 
     if (window.google && window.google.maps) {
       const geocoder = new window.google.maps.Geocoder();
-      geocoder.geocode({ address: address }, (results, status) => {
+      geocoder.geocode({ address: currentVal }, (results, status) => {
         if (status === "OK" && results.length > 0) {
           let currentAddress = results[0].formatted_address;
           let postalCode = "";
@@ -200,11 +235,11 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
           checkDistance(currentAddress, results[0].geometry.location);
         } else {
           // Fallback if geocoding fails
-          checkDistance(address);
+          checkDistance(currentVal);
         }
       });
     } else {
-      checkDistance(address);
+      checkDistance(currentVal);
     }
   };
 
@@ -216,7 +251,15 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
         id="google-maps-script"
         src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&loading=async&libraries=places`}
         strategy="afterInteractive"
-        onReady={() => setMapsReady(true)}
+        onReady={() => {
+          // Only set ready if the Places library has actually loaded.
+          // With loading=async, onReady fires for the main script BEFORE
+          // the Places library is available. The polling useEffect handles
+          // the case where Places loads later.
+          if (window.google?.maps?.places) {
+            setMapsReady(true);
+          }
+        }}
       />
       <div style={{
         position: 'fixed',
@@ -251,8 +294,8 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
                 ref={inputRef}
                 type="text"
                 placeholder="Search for a building, street name, or area"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                defaultValue={address}
+                onChange={(e) => { addressRef.current = e.target.value; setAddress(e.target.value); }}
                 style={{
                   width: '100%',
                   padding: '14px 16px 14px 40px',
@@ -288,11 +331,11 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
 
             <button
               onClick={handleManualSubmit}
-              disabled={loading || !address}
+              disabled={loading}
               style={{
                 width: '100%', padding: '14px', borderRadius: '8px', border: 'none',
-                backgroundColor: (loading || !address) ? '#CCC' : '#5A3424', color: '#FFF', fontWeight: 'bold', fontSize: '1rem',
-                cursor: (loading || !address) ? 'not-allowed' : 'pointer'
+                backgroundColor: loading ? '#CCC' : '#5A3424', color: '#FFF', fontWeight: 'bold', fontSize: '1rem',
+                cursor: loading ? 'not-allowed' : 'pointer'
               }}
             >
               {loading ? 'Checking Distance...' : 'CONTINUE'}

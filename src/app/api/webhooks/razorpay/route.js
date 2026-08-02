@@ -137,7 +137,7 @@ export async function POST(req) {
       if (order.user.phone && process.env.WHATSAPP_API_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {
         const cleanPhone = order.user.phone.replace(/\D/g, '');
         const waMessage = `*Payment Successful!*\n\nHi ${order.user.firstName},\nThank you for your order! Your payment of ₹${order.totalAmount} has been received.\n\n*Delivery:* ${finalDeliveryText}\n\nWe will notify you once it's out for delivery.`;
-        
+
         const waUrl = `https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
         await fetch(waUrl, {
           method: 'POST',
@@ -153,7 +153,7 @@ export async function POST(req) {
             text: { body: waMessage },
           })
         }).then(async res => {
-           if (!res.ok) console.error('WhatsApp Receipt API Error:', await res.text());
+          if (!res.ok) console.error('WhatsApp Receipt API Error:', await res.text());
         }).catch(e => console.error('WhatsApp Receipt Exception:', e));
       }
     } else if (body.event === 'payment.failed') {
@@ -181,7 +181,7 @@ export async function POST(req) {
             if (order.user.phone && process.env.WHATSAPP_API_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {
               const cleanPhone = order.user.phone.replace(/\D/g, '');
               const waFailMessage = `*Payment Failed*\n\nHi ${order.user.firstName},\nWe noticed your recent payment attempt of ₹${order.totalAmount} failed.\n\nPlease try again on our website or contact support if you need help.`;
-              
+
               const waUrl = `https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
               await fetch(waUrl, {
                 method: 'POST',
@@ -197,7 +197,7 @@ export async function POST(req) {
                   text: { body: waFailMessage },
                 })
               }).then(async res => {
-                 if (!res.ok) console.error('WhatsApp Failure Alert API Error:', await res.text());
+                if (!res.ok) console.error('WhatsApp Failure Alert API Error:', await res.text());
               }).catch(e => console.error('WhatsApp Failure Alert Exception:', e));
             }
           }

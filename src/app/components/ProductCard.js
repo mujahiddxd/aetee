@@ -23,14 +23,7 @@ export function ProductCard({ product, onSelect, onRepeatSelect, priority = fals
             <span style={{ backgroundColor: tagColor, color: 'white', fontSize: '0.65rem', fontWeight: 600, padding: '2px 6px', letterSpacing: '0.05em' }}>{tag}</span>
           ) : <div></div>}
 
-          <div className="product-card-veg-icon" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            {product.hasEggless && (
-              <span className="veg-icon"><span className="veg-dot"></span></span>
-            )}
-            {product.hasEgg && (
-              <span className="veg-icon non-veg-icon"><span className="veg-dot non-veg-dot"></span></span>
-            )}
-          </div>
+
         </div>
 
         <h2 className="product-title" onClick={() => onSelect(product)} style={{ cursor: 'pointer', fontSize: '1.05rem', fontWeight: 700, color: 'var(--color-primary)', margin: '0 0 6px 0', lineHeight: '1.2' }}>{product.name}</h2>

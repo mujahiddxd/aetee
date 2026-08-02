@@ -20,7 +20,7 @@ export async function POST(req) {
     } = body;
 
     // ── 1. Strict Input Validation ──────────────────────────────────
-    if (!email || !firstName || !lastName || !addressLine1 || !city || !postalCode || !items || !items.length) {
+    if (!email || !firstName || !lastName || !addressLine1 || !city || !items || !items.length) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -271,7 +271,8 @@ export async function POST(req) {
 
           // ── 5. Global Capacity Limit (Max 25 orders per Delivery Date) ─
           if (deliveryDate) {
-            const targetDate = new Date(deliveryDate);
+            const cleanDateStr = typeof deliveryDate === 'string' ? deliveryDate.split('T')[0] : new Date(deliveryDate).toISOString().split('T')[0];
+            const targetDate = new Date(`${cleanDateStr}T00:00:00.000Z`);
             const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
 
             const capacityCount = await tx.order.count({
@@ -299,13 +300,16 @@ export async function POST(req) {
             },
           });
 
+          const cleanDateStr = deliveryDate ? (typeof deliveryDate === 'string' ? deliveryDate.split('T')[0] : new Date(deliveryDate).toISOString().split('T')[0]) : null;
+          const finalDeliveryDate = cleanDateStr ? new Date(`${cleanDateStr}T00:00:00.000Z`) : null;
+
           const txOrder = await tx.order.create({
             data: {
               userId: txUser.id,
               totalAmount: verifiedTotal,
               status: 'PENDING',
               razorpayOrderId: razorpayOrder.id,
-              deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
+              deliveryDate: finalDeliveryDate,
               notes: safeAdditionalInfo,
               items: {
                 create: verifiedItems,

@@ -3,9 +3,9 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  const TEST_DATE = new Date('2026-08-05T00:00:00.000Z'); // You can change this date
+  const TEST_DATE = new Date('2026-08-03T00:00:00.000Z'); // Monday 3 Aug 2026
 
-  console.log('Seeding 25 dummy PAID orders for', TEST_DATE.toDateString(), '...');
+  console.log('Seeding 24 dummy PAID orders for', TEST_DATE.toDateString(), '(leaving 1 slot)...');
 
   // 1. Create a dummy user
   const dummyUser = await prisma.user.upsert({
@@ -19,8 +19,8 @@ async function main() {
     },
   });
 
-  // 2. Inject 25 PAID orders for the target date
-  for (let i = 0; i < 25; i++) {
+  // 2. Inject 24 PAID orders for the target date (capacity is 25, leaving 1 spot open)
+  for (let i = 0; i < 24; i++) {
     await prisma.order.create({
       data: {
         userId: dummyUser.id,
@@ -32,7 +32,7 @@ async function main() {
     });
   }
 
-  console.log('✅ Successfully seeded 25 orders!');
+  console.log('✅ Successfully seeded 24 orders! 1 spot remaining out of 25.');
   console.log('Now go to your browser checkout, select', TEST_DATE.toDateString(), 'as your delivery date, and click checkout.');
   console.log('It should instantly block you with a fully booked message!');
 }
