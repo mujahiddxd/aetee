@@ -847,11 +847,7 @@ input[type="checkbox"].sr-only {
   object-position: center;
 }
 
-.product-card-veg-icon {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-}
+
 
 .non-veg-icon {
   border-color: #795548;
