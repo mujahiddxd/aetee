@@ -42,16 +42,17 @@ export async function POST(req) {
 
     const body = JSON.parse(rawBody);
 
-
-
-    // We can listen for 'order.paid' or 'payment.captured'
-    if (body.event === 'order.paid' || body.event === 'payment.captured') {
+    // Support 'order.paid', 'payment.captured', and 'payment.authorized'
+    if (['order.paid', 'payment.captured', 'payment.authorized'].includes(body.event)) {
       let razorpayOrderId = null;
+      let razorpayPaymentId = null;
 
       if (body.event === 'order.paid') {
-        razorpayOrderId = body.payload.order?.entity?.id;
-      } else if (body.event === 'payment.captured') {
-        razorpayOrderId = body.payload.payment?.entity?.order_id;
+        razorpayOrderId = body.payload.order?.entity?.id || body.payload.payment?.entity?.order_id;
+        razorpayPaymentId = body.payload.payment?.entity?.id || null;
+      } else {
+        razorpayOrderId = body.payload.payment?.entity?.order_id || null;
+        razorpayPaymentId = body.payload.payment?.entity?.id || null;
       }
 
       if (!razorpayOrderId) {
@@ -82,9 +83,14 @@ export async function POST(req) {
       }
 
       // Atomically check-and-set status to prevent duplicate messages from concurrent webhooks
+      const updateData = { status: 'PAID' };
+      if (razorpayPaymentId) {
+        updateData.razorpayPaymentId = razorpayPaymentId;
+      }
+
       const updateResult = await prisma.order.updateMany({
         where: { id: order.id, status: { in: ['PENDING', 'FAILED'] } },
-        data: { status: 'PAID' }
+        data: updateData
       });
 
       if (updateResult.count === 0) {
@@ -112,14 +118,15 @@ export async function POST(req) {
       const todayStr = dateFormatter.format(order.createdAt);
       const tomorrowStr = dateFormatter.format(new Date(order.createdAt.getTime() + 24 * 60 * 60 * 1000));
 
-      // Calculate Daily Serial Number
+      // Calculate Daily Serial Number (only counting paid/active orders)
       const startOfDay = new Date(`${todayStr}T00:00:00+05:30`);
       const serialNumber = await prisma.order.count({
         where: {
           createdAt: {
             gte: startOfDay,
             lte: order.createdAt
-          }
+          },
+          status: { notIn: ['PENDING', 'FAILED', 'CANCELLED'] }
         }
       });
 
@@ -163,6 +170,8 @@ export async function POST(req) {
       }
     } else if (body.event === 'payment.failed') {
       const razorpayOrderId = body.payload.payment?.entity?.order_id;
+      const razorpayPaymentId = body.payload.payment?.entity?.id || null;
+
       if (razorpayOrderId) {
         const order = await prisma.order.findUnique({
           where: { razorpayOrderId: razorpayOrderId },
@@ -170,9 +179,14 @@ export async function POST(req) {
         });
 
         if (order) {
+          const updateData = { status: 'FAILED' };
+          if (razorpayPaymentId) {
+            updateData.razorpayPaymentId = razorpayPaymentId;
+          }
+
           const updateResult = await prisma.order.updateMany({
             where: { id: order.id, status: 'PENDING' },
-            data: { status: 'FAILED' }
+            data: updateData
           });
 
           if (updateResult.count > 0) {
@@ -215,4 +229,23 @@ export async function POST(req) {
     console.error('[Razorpay Webhook] Fatal Error:', error);
     return NextResponse.json({ error: 'Webhook processing failed', details: error.message }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return NextResponse.json({
+    status: 'online',
+    message: 'Razorpay webhook endpoint is active. Webhook notifications must be sent via POST.',
+    timestamp: new Date().toISOString()
+  });
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, x-razorpay-signature',
+    },
+  });
 }
