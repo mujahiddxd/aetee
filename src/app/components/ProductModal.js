@@ -135,23 +135,6 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
                   Egg / Eggless {!onlyOneEggOption && <><span style={{ color: '#888', fontSize: '0.9rem', fontWeight: 400 }}>(0/1)</span><span style={{ color: '#e53935', marginLeft: '4px' }}>*</span></>}
                 </h3>
                 <div>
-                  {product.hasEggless && (
-                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid var(--color-border)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <input
-                          type="radio"
-                          name={`egg-pref-${product.id}`}
-                          checked={eggPreference === 'eggless'}
-                          onChange={() => setEggPreference('eggless')}
-                          style={{ width: '20px', height: '20px', accentColor: 'var(--color-primary)' }}
-                        />
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span className="veg-icon"><span className="veg-dot"></span></span>
-                          <span style={{ fontSize: '1rem', color: 'var(--color-primary)' }}>Eggless</span>
-                        </div>
-                      </div>
-                    </label>
-                  )}
                   {product.hasEgg && (
                     <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid var(--color-border)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -165,6 +148,23 @@ export function ProductModal({ product, onClose, onRepeatSelect }) {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <span className="veg-icon non-veg-icon"><span className="veg-dot non-veg-dot"></span></span>
                           <span style={{ fontSize: '1rem', color: 'var(--color-primary)' }}>Egg</span>
+                        </div>
+                      </div>
+                    </label>
+                  )}
+                  {product.hasEggless && (
+                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', cursor: 'pointer', borderBottom: '1px solid var(--color-border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <input
+                          type="radio"
+                          name={`egg-pref-${product.id}`}
+                          checked={eggPreference === 'eggless'}
+                          onChange={() => setEggPreference('eggless')}
+                          style={{ width: '20px', height: '20px', accentColor: 'var(--color-primary)' }}
+                        />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span className="veg-icon"><span className="veg-dot"></span></span>
+                          <span style={{ fontSize: '1rem', color: 'var(--color-primary)' }}>Eggless</span>
                         </div>
                       </div>
                     </label>
