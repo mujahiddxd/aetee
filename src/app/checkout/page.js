@@ -14,6 +14,7 @@ import './checkout.css';
 export default function Checkout() {
   const router = useRouter();
   const { cartItems, isLoaded, clearCart } = useCart();
+  const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [turnstileReady, setTurnstileReady] = useState(
     typeof window !== 'undefined' && !!window.turnstile
@@ -49,8 +50,8 @@ export default function Checkout() {
     const istHour = getISTHour(now);
 
     // If it's 12 PM IST or later, add 24 hours to enforce tomorrow as the minimum
-    const targetDate = istHour >= 12 
-      ? new Date(now.getTime() + 24 * 60 * 60 * 1000) 
+    const targetDate = istHour >= 12
+      ? new Date(now.getTime() + 24 * 60 * 60 * 1000)
       : now;
 
     return getISTDateString(targetDate);
@@ -121,6 +122,8 @@ export default function Checkout() {
   };
 
   const handlePlaceOrder = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
     const newErrors = {};
 
     if (!formData.date) {
@@ -129,7 +132,7 @@ export default function Checkout() {
       const now = new Date();
       const todayIST = getISTDateString(now);
       const hourIST = getISTHour(now);
-      
+
       // Specific error if they try to bypass the 12 PM rule for today
       if (formData.date === todayIST && hourIST >= 12) {
         newErrors.date = "Same-day delivery is only available before 12 PM. Please select tomorrow or later.";
@@ -178,6 +181,7 @@ export default function Checkout() {
       }
       if (!turnstileToken) {
         setShowModal({ isOpen: true, type: 'error', message: 'Please complete the bot verification challenge before placing your order.' });
+        setIsProcessing(false);
         return;
       }
 
@@ -277,6 +281,7 @@ export default function Checkout() {
             },
             modal: {
               ondismiss: function () {
+                setIsProcessing(false);
                 setShowModal({ isOpen: true, type: 'error', message: 'Payment was cancelled by the user.' });
                 resetTurnstile();
                 // Mark the abandoned order as CANCELLED in the database.
@@ -293,19 +298,23 @@ export default function Checkout() {
 
           const paymentObject = new window.Razorpay(options);
           paymentObject.on('payment.failed', function (response) {
+            setIsProcessing(false);
             setShowModal({ isOpen: true, type: 'error', message: 'Payment failed: ' + response.error.description });
             resetTurnstile();
           });
           paymentObject.open();
         } else {
+          setIsProcessing(false);
           setShowModal({ isOpen: true, type: 'error', message: data.error || 'Failed to initiate payment.' });
         }
       } catch (error) {
         console.error("Payment error:", error);
+        setIsProcessing(false);
         setShowModal({ isOpen: true, type: 'error', message: 'An error occurred while processing payment.' });
         resetTurnstile();
       }
     } else {
+      setIsProcessing(false);
       setShowModal({ isOpen: true, type: 'error', message: 'Invalid input! Please check all highlighted fields.' });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -352,7 +361,7 @@ export default function Checkout() {
               <h2 className="section-title">Delivery Date</h2>
               <div className="row-flex">
                 <div style={{ flex: 1, minWidth: 0 }} className="input-group">
-                  <DateStrip 
+                  <DateStrip
                     selectedDate={formData.date}
                     onDateChange={(newDate) => {
                       setFormData((prev) => ({ ...prev, date: newDate }));
@@ -536,8 +545,25 @@ export default function Checkout() {
               <div ref={turnstileContainerRef}></div>
             </div>
             <div className="mobile-sticky-bottom">
-              <button className="place-order-btn" onClick={handlePlaceOrder}>
-                Place Order
+              <button 
+                className="place-order-btn" 
+                onClick={handlePlaceOrder}
+                disabled={isProcessing}
+                style={{ 
+                  opacity: isProcessing ? 0.7 : 1, 
+                  cursor: isProcessing ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                {isProcessing ? (
+                  <>
+                    <div style={{ width: '20px', height: '20px', border: '3px solid rgba(255,255,255,0.3)', borderTop: '3px solid #FFF', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                    Processing...
+                  </>
+                ) : 'Place Order'}
               </button>
             </div>
           </div>
