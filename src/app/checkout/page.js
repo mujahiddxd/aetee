@@ -14,14 +14,24 @@ import './checkout.css';
 export default function Checkout() {
   const router = useRouter();
   const { cartItems, isLoaded, clearCart } = useCart();
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  // Prevent direct URL access — redirect to menu if cart is empty
+  // Prevent direct URL access — redirect to cart if cart is empty
   useEffect(() => {
     if (isLoaded && cartItems.length === 0) {
       router.replace('/cart');
     }
   }, [isLoaded, cartItems.length, router]);
+
+  // Block rendering until cart is loaded AND has items
+  if (!isLoaded || cartItems.length === 0) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #5A3424', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ marginTop: '16px', color: '#888', fontSize: '0.95rem' }}>Loading...</p>
+        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+  const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [turnstileReady, setTurnstileReady] = useState(
     typeof window !== 'undefined' && !!window.turnstile
