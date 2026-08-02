@@ -98,15 +98,18 @@ export default function Checkout() {
     }
   }, [turnstileReady, renderTurnstile]);
 
-  useEffect(() => {
+   useEffect(() => {
     const savedLocation = sessionStorage.getItem('deliveryLocation');
     if (savedLocation) {
       try {
         const info = JSON.parse(savedLocation);
-        let extractedPincode = '';
-        const pinMatch = info.address.match(/\b(\d{6})\b/);
-        if (pinMatch) {
-          extractedPincode = pinMatch[1];
+        // Use the dedicated pincode field if available, otherwise try regex extraction as fallback
+        let extractedPincode = info.pincode || '';
+        if (!extractedPincode && info.address) {
+          const pinMatch = info.address.match(/\b(\d{6})\b/);
+          if (pinMatch) {
+            extractedPincode = pinMatch[1];
+          }
         }
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setFormData(prev => ({

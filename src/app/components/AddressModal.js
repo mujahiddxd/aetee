@@ -15,7 +15,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
 
   const SHOP_ADDRESS = "NDR 9, B-703 Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089";
 
-  const checkDistance = useCallback((destinationAddress, locationGeometry = null) => {
+  const checkDistance = useCallback((destinationAddress, locationGeometry = null, pincode = '') => {
     if (!isOpen || !mapsReady) return;
     console.log("Checking distance for:", destinationAddress);
     setLoading(true);
@@ -50,7 +50,8 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
               // Success! Save to sessionStorage and call onSuccess
               const deliveryInfo = {
                 address: destinationAddress,
-                distance: distanceInKm
+                distance: distanceInKm,
+                pincode: pincode
               };
               sessionStorage.setItem('deliveryLocation', JSON.stringify(deliveryInfo));
               onSuccess(deliveryInfo);
@@ -93,64 +94,103 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
     return () => clearInterval(intervalId);
   }, [isOpen]);
 
+  const autocompleteRef = useRef(null);
+  const listenerRef = useRef(null);
+
   useEffect(() => {
-    if (!isOpen || !mapsReady) return;
+    if (!isOpen || !mapsReady || !inputRef.current) return;
 
-    let autocomplete = null;
-    let listener = null;
+    // 1. Initialize Autocomplete and static listeners EXACTLY ONCE per mount
+    if (!autocompleteRef.current) {
+      autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+        componentRestrictions: { country: "IN" },
+        fields: ["formatted_address", "geometry", "name", "address_components"],
+      });
 
-    const initAutocomplete = () => {
-      if (window.google && window.google.maps && window.google.maps.places && inputRef.current) {
-        autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-          componentRestrictions: { country: "IN" },
-          fields: ["formatted_address", "geometry", "name", "address_components"],
-        });
+      // Prevent Google from submitting the form on Enter
+      inputRef.current.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') e.preventDefault();
+      });
 
-        // Prevent Google from submitting the form on Enter
-        inputRef.current.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') e.preventDefault();
-        });
+      // If the user typed before the autocomplete was ready, re-trigger
+      // so the widget picks up the existing text and shows suggestions.
+      if (inputRef.current.value.length > 0) {
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.dispatchEvent(new Event('input', { bubbles: true }));
+            // Also refocus to nudge the dropdown open
+            inputRef.current.focus();
+          }
+        }, 100);
+      }
+    }
 
-        listener = autocomplete.addListener("place_changed", () => {
-          const place = autocomplete.getPlace();
-          if (place && place.formatted_address) {
-            let currentAddress = place.formatted_address;
-            if (place.address_components) {
-              const postalComponent = place.address_components.find(c => c.types.includes("postal_code"));
-              if (postalComponent && !currentAddress.includes(postalComponent.long_name)) {
-                currentAddress = currentAddress + " - " + postalComponent.long_name;
+    // 2. Clean up old place_changed listener if checkDistance changes (due to re-renders)
+    if (listenerRef.current) {
+      window.google.maps.event.removeListener(listenerRef.current);
+    }
+
+    // 3. Attach new place_changed listener with the latest closure
+    listenerRef.current = autocompleteRef.current.addListener("place_changed", () => {
+      const place = autocompleteRef.current.getPlace();
+      if (place && place.formatted_address) {
+        let currentAddress = place.formatted_address;
+        let extractedPincode = '';
+        if (place.address_components) {
+          const postalComponent = place.address_components.find(c => c.types.includes("postal_code"));
+          if (postalComponent) {
+            extractedPincode = postalComponent.long_name;
+            if (!currentAddress.includes(extractedPincode)) {
+              currentAddress = currentAddress + " - " + extractedPincode;
+            }
+          }
+        }
+
+        // If no pincode was found in the place data but we have geometry,
+        // do a reverse geocode to fetch the pincode (same as "use location" flow)
+        if (!extractedPincode && place.geometry && place.geometry.location) {
+          const geocoder = new window.google.maps.Geocoder();
+          const latlng = {
+            lat: typeof place.geometry.location.lat === 'function' ? place.geometry.location.lat() : place.geometry.location.lat,
+            lng: typeof place.geometry.location.lng === 'function' ? place.geometry.location.lng() : place.geometry.location.lng
+          };
+          geocoder.geocode({ location: latlng }, (results, status) => {
+            let reversePin = '';
+            if (status === "OK" && results && results.length > 0) {
+              for (const result of results) {
+                const postalComp = result.address_components?.find(c => c.types.includes("postal_code"));
+                if (postalComp) {
+                  reversePin = postalComp.long_name;
+                  break;
+                }
               }
+            }
+            if (reversePin && !currentAddress.includes(reversePin)) {
+              currentAddress = currentAddress + " - " + reversePin;
             }
             addressRef.current = currentAddress;
             setAddress(currentAddress);
             if (inputRef.current) inputRef.current.value = currentAddress;
-            if (place.geometry) {
-              checkDistance(currentAddress, place.geometry.location);
-            } else {
-              checkDistance(currentAddress);
-            }
+            checkDistance(currentAddress, place.geometry.location, reversePin);
+          });
+        } else {
+          addressRef.current = currentAddress;
+          setAddress(currentAddress);
+          if (inputRef.current) inputRef.current.value = currentAddress;
+          if (place.geometry) {
+            checkDistance(currentAddress, place.geometry.location, extractedPincode);
+          } else {
+            checkDistance(currentAddress, null, extractedPincode);
           }
-        });
-
-        // If the user typed before the autocomplete was ready, re-trigger
-        // so the widget picks up the existing text and shows suggestions.
-        if (inputRef.current && inputRef.current.value.length > 0) {
-          setTimeout(() => {
-            if (inputRef.current) {
-              inputRef.current.dispatchEvent(new Event('input', { bubbles: true }));
-              // Also refocus to nudge the dropdown open
-              inputRef.current.focus();
-            }
-          }, 100);
         }
       }
-    };
-
-    initAutocomplete();
+    });
 
     return () => {
-      if (listener) {
-        window.google.maps.event.removeListener(listener);
+      // Clean up listener on unmount
+      if (listenerRef.current) {
+        window.google.maps.event.removeListener(listenerRef.current);
+        listenerRef.current = null;
       }
     };
   }, [isOpen, mapsReady, checkDistance]);
@@ -201,7 +241,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
             }
             setAddress(currentAddress);
             if (inputRef.current) inputRef.current.value = currentAddress;
-            checkDistance(currentAddress, latlng);
+            checkDistance(currentAddress, latlng, postalCode);
           } else {
             setLoading(false);
             setError("Unable to fetch your current location. Please enter your location manually.");
@@ -244,7 +284,7 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
           }
           setAddress(currentAddress);
           if (inputRef.current) inputRef.current.value = currentAddress;
-          checkDistance(currentAddress, results[0].geometry.location);
+          checkDistance(currentAddress, results[0].geometry.location, postalCode);
         } else {
           // Fallback if geocoding fails
           checkDistance(currentVal);
