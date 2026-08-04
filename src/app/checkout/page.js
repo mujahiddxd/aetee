@@ -21,6 +21,7 @@ export default function Checkout() {
     }
   }, [isLoaded, cartItems.length, router]);
 
+
   // Block rendering until cart is loaded AND has items
   if (!isLoaded || cartItems.length === 0) {
     return (

@@ -75,8 +75,12 @@ export default function Footer() {
             * <Link href="/terms" style={{ color: 'inherit', textDecoration: 'none' }}>TERMS</Link> | <Link href="/privacy" style={{ color: 'inherit', textDecoration: 'none' }}>PRIVACY POLICY</Link> | <Link href="/policy" style={{ color: 'inherit', textDecoration: 'none' }}>PURCHASER POLICY</Link>
           </div>
         </div>
-        <div style={{ letterSpacing: '0.05em', paddingBottom: '2px', textAlign: 'right' }}>
-          © 2026 AETEES BAKE HOUSE
+
+        <div style={{ textAlign: 'right', fontSize: '1.05rem', color: '#888', lineHeight: '1.5' }}>
+          © 2026 Euphatics. All Rights Reserved.<br />
+          <a href="https://www.euphatics.com/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
+            Designed, Developed & Maintained by Euphatics
+          </a>
         </div>
       </div>
     </footer>
