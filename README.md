@@ -10,7 +10,7 @@ Welcome to the Aetee's Bakehouse codebase! This is the storefront and admin dash
 - **Payments:** [Razorpay](https://razorpay.com/)
 - **Maps/Location:** [Leaflet](https://leafletjs.com/) & React Leaflet
 - **Image Processing:** [Sharp](https://sharp.pixelplumbing.com/)
-- **Analytics:** Vercel Analytics
+  - **Analytics:** Vercel Analytics
 
 ## 🛠️ Getting Started
 
