@@ -1132,3 +1132,132 @@ input[type="checkbox"].sr-only {
     display: none !important;
   }
 }
+
+/* Responsive Footer Styles */
+.footer-container {
+  background-color: #F9F8F6;
+  padding: 40px 32px 32px;
+  color: #5A3424;
+  border-top: 1px solid #EBEBEB;
+}
+
+.footer-newsletter-box {
+  display: flex;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid #CCC;
+  background-color: #FFF;
+  width: 100%;
+}
+
+.footer-email-input {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px;
+  border: none;
+  outline: none;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.footer-email-input::placeholder {
+  color: #888;
+  opacity: 1;
+}
+
+.footer-signup-btn {
+  flex-shrink: 0;
+  background-color: #5A3424;
+  color: #FFF;
+  border: none;
+  padding: 0 24px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  border-radius: 0;
+}
+
+.footer-bottom {
+  max-width: 1200px;
+  margin: 64px auto 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 1rem;
+  color: #888;
+}
+
+.footer-bottom-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.footer-social-icons {
+  display: flex;
+  gap: 16px;
+  color: #666;
+}
+
+.footer-terms-links {
+  font-size: 0.95rem;
+}
+
+.footer-copyright {
+  text-align: right;
+  font-size: 1.05rem;
+  color: #888;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .footer-container {
+    padding: 32px 20px 24px;
+  }
+
+  .footer-newsletter-box {
+    border-radius: 20px;
+  }
+
+  .footer-email-input {
+    padding: 12px 12px;
+    font-size: 0.88rem;
+  }
+
+  .footer-signup-btn {
+    padding: 0 16px;
+    font-size: 0.88rem;
+  }
+
+  .footer-bottom {
+    margin-top: 40px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .footer-bottom-left {
+    align-items: center;
+    width: 100%;
+  }
+
+  .footer-social-icons {
+    justify-content: center;
+    margin-bottom: 0;
+  }
+
+  .footer-terms-links {
+    text-align: center;
+    width: 100%;
+  }
+
+  .footer-copyright {
+    text-align: center;
+    width: 100%;
+  }
+}

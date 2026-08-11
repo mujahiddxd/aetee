@@ -13,7 +13,7 @@ export default function Footer() {
   }
 
   return (
-    <footer style={{ backgroundColor: '#F9F8F6', padding: '40px 32px 32px', color: '#5A3424', borderTop: '1px solid #EBEBEB' }}>
+    <footer className="footer-container">
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         
         {/* Logo Section */}
@@ -47,12 +47,12 @@ export default function Footer() {
           </div>
 
           {/* Newsletter Column */}
-          <div style={{ maxWidth: '350px' }}>
+          <div style={{ maxWidth: '350px', width: '100%' }}>
             <h4 style={{ fontWeight: 'bold', marginBottom: '12px', fontSize: '1.2rem', textTransform: 'uppercase' }}>AETEES IN YOUR INBOX</h4>
             <p style={{ fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '24px', color: '#888' }}>For special offers, new goodies, and the latest news join our mailing list.</p>
-            <div style={{ display: 'flex', borderRadius: '24px', overflow: 'hidden', border: '1px solid #CCC', backgroundColor: '#FFF' }}>
-              <input type="email" placeholder="Enter your email address" style={{ flex: 1, minWidth: 0, padding: '16px 20px', border: 'none', outline: 'none', fontSize: '1.1rem' }} />
-              <button style={{ flexShrink: 0, backgroundColor: '#5A3424', color: '#FFF', border: 'none', padding: '0 32px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1.1rem', whiteSpace: 'nowrap' }}>SIGN UP</button>
+            <div className="footer-newsletter-box">
+              <input type="email" placeholder="Enter your email address" className="footer-email-input" />
+              <button className="footer-signup-btn">SIGN UP</button>
             </div>
           </div>
 
@@ -60,9 +60,9 @@ export default function Footer() {
       </div>
 
       {/* Footer Bottom */}
-      <div style={{ maxWidth: '1200px', margin: '64px auto 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px', fontSize: '1rem', color: '#888' }}>
-        <div>
-          <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', color: '#666' }}>
+      <div className="footer-bottom">
+        <div className="footer-bottom-left">
+          <div className="footer-social-icons">
             <a href="https://www.facebook.com/profile.php?id=61591983307438" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>
               <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" /></svg>
             </a>
@@ -71,12 +71,12 @@ export default function Footer() {
             </a>
           </div>
 
-          <div>
+          <div className="footer-terms-links">
             * <Link href="/terms" style={{ color: 'inherit', textDecoration: 'none' }}>TERMS</Link> | <Link href="/privacy" style={{ color: 'inherit', textDecoration: 'none' }}>PRIVACY POLICY</Link> | <Link href="/policy" style={{ color: 'inherit', textDecoration: 'none' }}>PURCHASER POLICY</Link>
           </div>
         </div>
 
-        <div style={{ textAlign: 'right', fontSize: '1.05rem', color: '#888', lineHeight: '1.5' }}>
+        <div className="footer-copyright">
           © 2026 Euphatics. All Rights Reserved.<br />
           <a href="https://www.euphatics.com/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
             Designed, Developed & Maintained by Euphatics
