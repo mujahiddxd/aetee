@@ -4,6 +4,7 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { CartProvider } from "./context/CartContext";
 import QueueGuard from "./components/QueueGuard";
+import PageTransition from "./components/PageTransition";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -53,6 +54,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className={`${inter.variable} ${oswald.variable}`}>
       <body>
         <QueueGuard />
+        <PageTransition />
 
         <CartProvider>
           <div style={{ backgroundColor: 'var(--color-bg-white)', minHeight: '100vh', position: 'relative', display: 'flex', flexDirection: 'column' }}>
