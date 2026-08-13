@@ -12,6 +12,8 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const inputRef = useRef(null);
+  const [deliveryType, setDeliveryType] = useState('DELIVERY');
+  const isPickup = deliveryType === 'PICKUP';
 
   const SHOP_ADDRESS = "NDR 9, B-703 Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089";
 
@@ -51,7 +53,8 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
               const deliveryInfo = {
                 address: destinationAddress,
                 distance: distanceInKm,
-                pincode: pincode
+                pincode: pincode,
+                deliveryType: 'DELIVERY'
               };
               sessionStorage.setItem('deliveryLocation', JSON.stringify(deliveryInfo));
               onSuccess(deliveryInfo);
@@ -295,6 +298,17 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
+  const handlePickupContinue = () => {
+    const pickupInfo = {
+      address: 'Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089',
+      distance: 0,
+      pincode: '400089',
+      deliveryType: 'PICKUP'
+    };
+    sessionStorage.setItem('deliveryLocation', JSON.stringify(pickupInfo));
+    onSuccess(pickupInfo);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -337,61 +351,147 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
           </div>
 
           <div style={{ padding: '24px' }}>
-            <p style={{ margin: '0 0 16px 0', color: '#666', fontSize: '0.9rem' }}>
-              Please enter the exact drop location for a hassle free delivery experience
-            </p>
-
-            <div style={{ position: 'relative', marginBottom: '16px' }}>
-              <input
-                ref={inputRef}
-                type="text"
-                placeholder="Search for a building, street name, or area"
-                defaultValue={address}
-                onChange={(e) => { addressRef.current = e.target.value; setAddress(e.target.value); }}
+            {/* Delivery / Pickup Toggle */}
+            <div style={{
+              display: 'flex',
+              backgroundColor: '#F0F0F0',
+              borderRadius: '12px',
+              padding: '4px',
+              marginBottom: '20px',
+              gap: '4px'
+            }}>
+              <button
+                type="button"
+                onClick={() => { setDeliveryType('DELIVERY'); setError(''); }}
                 style={{
-                  width: '100%',
-                  padding: '14px 16px 14px 40px',
-                  borderRadius: '8px',
-                  border: '1px solid #DDD',
-                  fontSize: '1rem',
-                  outline: 'none',
-                  boxSizing: 'border-box'
+                  flex: 1, padding: '11px 16px', borderRadius: '9px', border: 'none',
+                  cursor: 'pointer', fontWeight: '700', fontSize: '0.9rem',
+                  transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                  backgroundColor: deliveryType === 'DELIVERY' ? '#5A3424' : 'transparent',
+                  color: deliveryType === 'DELIVERY' ? '#FFF' : '#888',
+                  boxShadow: deliveryType === 'DELIVERY' ? '0 3px 10px rgba(90, 52, 36, 0.25)' : 'none',
                 }}
-              />
-              <svg style={{ position: 'absolute', left: '12px', top: '14px', width: '20px', height: '20px', color: '#EA4335' }} viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-              </svg>
+              >
+                🚚 Delivery
+              </button>
+              <button
+                type="button"
+                onClick={() => { setDeliveryType('PICKUP'); setError(''); }}
+                style={{
+                  flex: 1, padding: '11px 16px', borderRadius: '9px', border: 'none',
+                  cursor: 'pointer', fontWeight: '700', fontSize: '0.9rem',
+                  transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                  backgroundColor: deliveryType === 'PICKUP' ? '#5A3424' : 'transparent',
+                  color: deliveryType === 'PICKUP' ? '#FFF' : '#888',
+                  boxShadow: deliveryType === 'PICKUP' ? '0 3px 10px rgba(90, 52, 36, 0.25)' : 'none',
+                }}
+              >
+                🏪 Store Pickup
+              </button>
             </div>
 
-            <button
-              onClick={handleUseLocation}
-              disabled={loading}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #EA4335',
-                backgroundColor: '#FFF0F0', color: '#D32F2F', fontWeight: '600', cursor: 'pointer',
-                marginBottom: '16px', transition: 'background 0.2s'
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
-              </svg>
-              Use your location
-            </button>
+            {/* Delivery UI */}
+            {isPickup ? (
+              /* Pickup UI */
+              <>
+                <div style={{
+                  backgroundColor: '#FDF9F7',
+                  border: '1px solid #E8D8CE',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px'
+                }}>
+                  <div style={{
+                    width: '36px', height: '36px', borderRadius: '50%',
+                    backgroundColor: '#5A3424', color: '#FFF',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '1rem', flexShrink: 0
+                  }}>📍</div>
+                  <div>
+                    <p style={{ fontWeight: '700', color: '#5A3424', margin: '0 0 4px 0', fontSize: '0.95rem' }}>Pickup Location</p>
+                    <p style={{ color: '#555', margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
+                      Drushti Sai Pradnya, Tilak Nagar,<br />Mumbai 400089
+                    </p>
+                    <p style={{ color: '#999', margin: '6px 0 0 0', fontSize: '0.8rem' }}>
+                      Please collect your order on the selected date.
+                    </p>
+                  </div>
+                </div>
 
-            {error && <div style={{ color: '#D32F2F', backgroundColor: '#FEF6F6', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>{error}</div>}
+                <button
+                  onClick={handlePickupContinue}
+                  style={{
+                    width: '100%', padding: '14px', borderRadius: '8px', border: 'none',
+                    backgroundColor: '#5A3424', color: '#FFF', fontWeight: 'bold', fontSize: '1rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  CONTINUE
+                </button>
+              </>
+            ) : (
+              /* Delivery UI */
+              <>
+                <p style={{ margin: '0 0 16px 0', color: '#666', fontSize: '0.9rem' }}>
+                  Please enter the exact drop location for a hassle free delivery experience
+                </p>
 
-            <button
-              onClick={handleManualSubmit}
-              disabled={loading}
-              style={{
-                width: '100%', padding: '14px', borderRadius: '8px', border: 'none',
-                backgroundColor: loading ? '#CCC' : '#5A3424', color: '#FFF', fontWeight: 'bold', fontSize: '1rem',
-                cursor: loading ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {loading ? 'Checking Distance...' : 'CONTINUE'}
-            </button>
+                <div style={{ position: 'relative', marginBottom: '16px' }}>
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    placeholder="Search for a building, street name, or area"
+                    defaultValue={address}
+                    onChange={(e) => { addressRef.current = e.target.value; setAddress(e.target.value); }}
+                    style={{
+                      width: '100%',
+                      padding: '14px 16px 14px 40px',
+                      borderRadius: '8px',
+                      border: '1px solid #DDD',
+                      fontSize: '1rem',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <svg style={{ position: 'absolute', left: '12px', top: '14px', width: '20px', height: '20px', color: '#EA4335' }} viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                  </svg>
+                </div>
+
+                <button
+                  onClick={handleUseLocation}
+                  disabled={loading}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #EA4335',
+                    backgroundColor: '#FFF0F0', color: '#D32F2F', fontWeight: '600', cursor: 'pointer',
+                    marginBottom: '16px', transition: 'background 0.2s'
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                  </svg>
+                  Use your location
+                </button>
+
+                {error && <div style={{ color: '#D32F2F', backgroundColor: '#FEF6F6', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>{error}</div>}
+
+                <button
+                  onClick={handleManualSubmit}
+                  disabled={loading}
+                  style={{
+                    width: '100%', padding: '14px', borderRadius: '8px', border: 'none',
+                    backgroundColor: loading ? '#CCC' : '#5A3424', color: '#FFF', fontWeight: 'bold', fontSize: '1rem',
+                    cursor: loading ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {loading ? 'Checking Distance...' : 'CONTINUE'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

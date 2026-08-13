@@ -101,12 +101,16 @@ export default function Checkout() {
     }
   }, [turnstileReady, renderTurnstile]);
 
-   useEffect(() => {
+  useEffect(() => {
     const savedLocation = sessionStorage.getItem('deliveryLocation');
     if (savedLocation) {
       try {
         const info = JSON.parse(savedLocation);
-        // Use the dedicated pincode field if available, otherwise try regex extraction as fallback
+        // Read deliveryType from modal selection
+        if (info.deliveryType === 'PICKUP') {
+          setDeliveryType('PICKUP');
+        }
+        // Populate address fields for delivery orders
         let extractedPincode = info.pincode || '';
         if (!extractedPincode && info.address) {
           const pinMatch = info.address.match(/\b(\d{6})\b/);
@@ -485,59 +489,18 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* 4. Delivery Type Toggle + Address */}
+            {/* 4. Delivery Address Details */}
             <div className="section-card">
-              <h2 className="section-title">Order Type</h2>
+              <h2 className="section-title">Delivery Address Details</h2>
 
-              {/* Delivery / Pickup Toggle */}
+              {/* Read-only delivery type badge */}
               <div style={{
-                display: 'flex',
-                backgroundColor: '#F0F0F0',
-                borderRadius: '14px',
-                padding: '4px',
-                marginBottom: '24px',
-                gap: '4px'
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                backgroundColor: '#FDF9F7', border: '1px solid #E8D8CE',
+                borderRadius: '20px', padding: '6px 14px',
+                marginBottom: '20px', fontSize: '0.9rem', fontWeight: '600', color: '#5A3424'
               }}>
-                <button
-                  type="button"
-                  onClick={() => setDeliveryType('DELIVERY')}
-                  style={{
-                    flex: 1,
-                    padding: '14px 16px',
-                    borderRadius: '11px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontWeight: '700',
-                    fontSize: '0.95rem',
-                    letterSpacing: '0.3px',
-                    transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                    backgroundColor: deliveryType === 'DELIVERY' ? '#5A3424' : 'transparent',
-                    color: deliveryType === 'DELIVERY' ? '#FFF' : '#888',
-                    boxShadow: deliveryType === 'DELIVERY' ? '0 4px 12px rgba(90, 52, 36, 0.25)' : 'none',
-                  }}
-                >
-                  🚚 Delivery
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDeliveryType('PICKUP')}
-                  style={{
-                    flex: 1,
-                    padding: '14px 16px',
-                    borderRadius: '11px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontWeight: '700',
-                    fontSize: '0.95rem',
-                    letterSpacing: '0.3px',
-                    transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                    backgroundColor: deliveryType === 'PICKUP' ? '#5A3424' : 'transparent',
-                    color: deliveryType === 'PICKUP' ? '#FFF' : '#888',
-                    boxShadow: deliveryType === 'PICKUP' ? '0 4px 12px rgba(90, 52, 36, 0.25)' : 'none',
-                  }}
-                >
-                  🏪 Store Pickup
-                </button>
+                {isPickup ? '🏪 Store Pickup' : '🚚 Delivery'}
               </div>
 
               {/* Pickup Info Card */}
@@ -651,12 +614,12 @@ export default function Checkout() {
               <div ref={turnstileContainerRef}></div>
             </div>
             <div className="mobile-sticky-bottom">
-              <button 
-                className="place-order-btn" 
+              <button
+                className="place-order-btn"
                 onClick={handlePlaceOrder}
                 disabled={isProcessing}
-                style={{ 
-                  opacity: isProcessing ? 0.7 : 1, 
+                style={{
+                  opacity: isProcessing ? 0.7 : 1,
                   cursor: isProcessing ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   justifyContent: 'center',
