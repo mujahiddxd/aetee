@@ -14,12 +14,16 @@ import './checkout.css';
 export default function Checkout() {
   const router = useRouter();
   const { cartItems, isLoaded, clearCart } = useCart();
+  const [isValidSession, setIsValidSession] = useState(false);
+
   // Prevent direct URL access — redirect to cart if cart is empty or delivery type isn't selected
   useEffect(() => {
     if (isLoaded) {
       const savedLocation = sessionStorage.getItem('deliveryLocation');
       if (cartItems.length === 0 || !savedLocation) {
         router.replace('/cart');
+      } else {
+        setIsValidSession(true);
       }
     }
   }, [isLoaded, cartItems.length, router]);
@@ -348,8 +352,8 @@ export default function Checkout() {
   const deliveryCharges = isPickup ? 0 : (distance !== null ? BASE_DELIVERY_FEE + Math.ceil(distance * COST_PER_KM) : 0);
   const grandTotal = parseFloat((itemTotal + deliveryCharges).toFixed(2));
 
-  // Block rendering until cart is loaded AND has items
-  if (!isLoaded || cartItems.length === 0) {
+  // Block rendering until cart is loaded AND has items AND session is valid
+  if (!isLoaded || cartItems.length === 0 || !isValidSession) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
         <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #5A3424', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
