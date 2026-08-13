@@ -81,19 +81,35 @@ export default function Navbar() {
       </header>
 
       {/* Mobile Side Drawer */}
-      {isMenuOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 1050, display: 'flex' }}>
-          {/* Backdrop */}
-          <div onClick={() => setIsMenuOpen(false)} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)' }}></div>
+      <div style={{ 
+        position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
+        zIndex: 1050, display: 'flex',
+        pointerEvents: isMenuOpen ? 'auto' : 'none',
+        visibility: isMenuOpen ? 'visible' : 'hidden',
+        transition: 'visibility 0.3s'
+      }}>
+        {/* Backdrop */}
+        <div onClick={() => setIsMenuOpen(false)} style={{ 
+          position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          opacity: isMenuOpen ? 1 : 0,
+          transition: 'opacity 0.3s ease-in-out'
+        }}></div>
 
-          {/* Drawer Content */}
-          <div style={{ position: 'relative', width: '250px', height: '100%', backgroundColor: 'var(--color-bg-white)', padding: '80px 24px 24px', display: 'flex', flexDirection: 'column', gap: '24px', boxShadow: '2px 0 10px rgba(0,0,0,0.1)' }}>
-            <Link href="/" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none', color: 'var(--color-text-main)', fontSize: '1.25rem', fontWeight: 600, fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>Home</Link>
-            <Link href="/menu" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none', color: 'var(--color-text-main)', fontSize: '1.25rem', fontWeight: 600, fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>Menu</Link>
-            <Link href="/cart" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none', color: 'var(--color-text-main)', fontSize: '1.25rem', fontWeight: 600, fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>Cart</Link>
-          </div>
+        {/* Drawer Content */}
+        <div style={{ 
+          position: 'relative', width: '250px', height: '100%', 
+          backgroundColor: 'var(--color-bg-white)', padding: '80px 24px 24px', 
+          display: 'flex', flexDirection: 'column', gap: '24px', 
+          boxShadow: '2px 0 10px rgba(0,0,0,0.1)',
+          transform: isMenuOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.3s ease-in-out'
+        }}>
+          <Link href="/" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none', color: 'var(--color-text-main)', fontSize: '1.25rem', fontWeight: 600, fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>Home</Link>
+          <Link href="/menu" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none', color: 'var(--color-text-main)', fontSize: '1.25rem', fontWeight: 600, fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>Menu</Link>
+          <Link href="/cart" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none', color: 'var(--color-text-main)', fontSize: '1.25rem', fontWeight: 600, fontFamily: "'Oswald', sans-serif", textTransform: 'uppercase' }}>Cart</Link>
         </div>
-      )}
+      </div>
     </>
   );
 }
