@@ -11,7 +11,7 @@ const BAKERY_MESSAGES = [
   "Handcrafting sweetness...",
 ];
 
-const MIN_DURATION_MS = 2000; // Keep animation for at least 2 seconds
+const MIN_DURATION_MS = 1500; // Keep animation for at least 1.5 seconds
 
 function PageTransitionContent() {
   const pathname = usePathname();
