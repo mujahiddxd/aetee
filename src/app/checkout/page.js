@@ -34,6 +34,7 @@ export default function Checkout() {
   }
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [deliveryType, setDeliveryType] = useState('DELIVERY');
   const [turnstileReady, setTurnstileReady] = useState(
     typeof window !== 'undefined' && !!window.turnstile
   );
@@ -91,6 +92,7 @@ export default function Checkout() {
   const [errors, setErrors] = useState({});
   const [showModal, setShowModal] = useState({ isOpen: false, type: '', message: '' });
   const [distance, setDistance] = useState(null);
+  const isPickup = deliveryType === 'PICKUP';
 
   // Render Turnstile when it's ready and the container is available
   useEffect(() => {
@@ -177,8 +179,8 @@ export default function Checkout() {
       newErrors.phone = "Mobile number must be exactly 10 digits.";
     }
 
-    if (!formData.address.trim()) newErrors.address = "Delivery address is required.";
-    if (!formData.houseNo.trim()) newErrors.houseNo = "House number or apartment is required.";
+    if (!isPickup && !formData.address.trim()) newErrors.address = "Delivery address is required.";
+    if (!isPickup && !formData.houseNo.trim()) newErrors.houseNo = "House number or apartment is required.";
 
     const trimmedPincode = formData.pincode.trim();
     // Pincode is optional since it's locked and auto-fetched. 
@@ -216,14 +218,15 @@ export default function Checkout() {
             lastName: formData.lastName,
             email: formData.email,
             phone: formData.phone,
-            addressLine1: `${formData.houseNo}, ${formData.address}`,
-            addressLine2: formData.landmark || null,
-            city: 'Mumbai',
-            postalCode: trimmedPincode,
-            distance: distance,
+            addressLine1: isPickup ? 'Store Pickup' : `${formData.houseNo}, ${formData.address}`,
+            addressLine2: isPickup ? null : (formData.landmark || null),
+            city: isPickup ? 'Mumbai' : 'Mumbai',
+            postalCode: isPickup ? '' : trimmedPincode,
+            distance: isPickup ? 0 : distance,
             totalAmount: grandTotal,
             deliveryDate: formData.date,
             additionalInfo: formData.additionalInfo || null,
+            deliveryType: deliveryType,
             'cf-turnstile-response': turnstileToken,
             items: cartItems.map(item => {
               const eggPrefLabel = item.eggPreference === 'eggless' ? 'Eggless' : item.eggPreference === 'egg' ? 'Egg' : null;
@@ -287,7 +290,7 @@ export default function Checkout() {
               const verifyData = await verifyRes.json();
               if (verifyData.success) {
                 clearCart();
-                router.push('/success');
+                router.push(`/success${isPickup ? '?type=pickup' : ''}`);
               } else {
                 setShowModal({ isOpen: true, type: 'error', message: 'Payment verification failed!' });
               }
@@ -344,7 +347,7 @@ export default function Checkout() {
   const itemTotal = parseFloat(cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2));
   const BASE_DELIVERY_FEE = 50;
   const COST_PER_KM = 10;
-  const deliveryCharges = distance !== null ? BASE_DELIVERY_FEE + Math.ceil(distance * COST_PER_KM) : 0;
+  const deliveryCharges = isPickup ? 0 : (distance !== null ? BASE_DELIVERY_FEE + Math.ceil(distance * COST_PER_KM) : 0);
   const grandTotal = parseFloat((itemTotal + deliveryCharges).toFixed(2));
 
   return (
@@ -482,67 +485,149 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* 4. Delivery Address */}
+            {/* 4. Delivery Type Toggle + Address */}
             <div className="section-card">
-              <h2 className="section-title">Delivering To</h2>
+              <h2 className="section-title">Order Type</h2>
 
-              <div className="input-group">
-                <textarea
-                  name="address"
-                  autoComplete="street-address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  className={`form-input ${errors.address ? 'error' : ''}`}
-                  placeholder="Delivery Address"
-                  rows="3"
-                  style={{ resize: 'vertical' }}
-                  required
-                ></textarea>
-                {errors.address && <div className="error-message">{errors.address}</div>}
+              {/* Delivery / Pickup Toggle */}
+              <div style={{
+                display: 'flex',
+                backgroundColor: '#F0F0F0',
+                borderRadius: '14px',
+                padding: '4px',
+                marginBottom: '24px',
+                gap: '4px'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setDeliveryType('DELIVERY')}
+                  style={{
+                    flex: 1,
+                    padding: '14px 16px',
+                    borderRadius: '11px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: '700',
+                    fontSize: '0.95rem',
+                    letterSpacing: '0.3px',
+                    transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                    backgroundColor: deliveryType === 'DELIVERY' ? '#5A3424' : 'transparent',
+                    color: deliveryType === 'DELIVERY' ? '#FFF' : '#888',
+                    boxShadow: deliveryType === 'DELIVERY' ? '0 4px 12px rgba(90, 52, 36, 0.25)' : 'none',
+                  }}
+                >
+                  🚚 Delivery
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeliveryType('PICKUP')}
+                  style={{
+                    flex: 1,
+                    padding: '14px 16px',
+                    borderRadius: '11px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: '700',
+                    fontSize: '0.95rem',
+                    letterSpacing: '0.3px',
+                    transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                    backgroundColor: deliveryType === 'PICKUP' ? '#5A3424' : 'transparent',
+                    color: deliveryType === 'PICKUP' ? '#FFF' : '#888',
+                    boxShadow: deliveryType === 'PICKUP' ? '0 4px 12px rgba(90, 52, 36, 0.25)' : 'none',
+                  }}
+                >
+                  🏪 Store Pickup
+                </button>
               </div>
 
-              <div className="input-group">
-                <input
-                  type="text"
-                  name="houseNo"
-                  autoComplete="address-line2"
-                  value={formData.houseNo}
-                  onChange={handleInputChange}
-                  className={`form-input ${errors.houseNo ? 'error' : ''}`}
-                  placeholder="House No / Apartment"
-                  required
-                />
-                {errors.houseNo && <div className="error-message">{errors.houseNo}</div>}
-              </div>
-
-              <div className="row-flex" style={{ marginBottom: 0 }}>
-                <div style={{ flex: 1 }} className="input-group">
-                  <input
-                    type="text"
-                    name="landmark"
-                    autoComplete="address-level3"
-                    value={formData.landmark}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    placeholder="Nearest Landmark (Optional)"
-                  />
+              {/* Pickup Info Card */}
+              {isPickup ? (
+                <div style={{
+                  backgroundColor: '#FDF9F7',
+                  border: '1px solid #E8D8CE',
+                  borderRadius: '14px',
+                  padding: '20px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                    <div style={{
+                      width: '40px', height: '40px', borderRadius: '50%',
+                      backgroundColor: '#5A3424', color: '#FFF',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '1.2rem', flexShrink: 0
+                    }}>📍</div>
+                    <div>
+                      <p style={{ fontWeight: '700', color: '#5A3424', margin: '0 0 4px 0', fontSize: '1rem' }}>Pickup Location</p>
+                      <p style={{ color: '#666', margin: 0, lineHeight: '1.5', fontSize: '0.95rem' }}>
+                        Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089
+                      </p>
+                      <p style={{ color: '#999', margin: '8px 0 0 0', fontSize: '0.8rem' }}>
+                        Please collect your order on the selected date.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ flex: 1 }} className="input-group">
-                  <input
-                    type="text"
-                    name="pincode"
-                    autoComplete="postal-code"
-                    value={formData.pincode}
-                    onChange={handleInputChange}
-                    className={`form-input ${errors.pincode ? 'error' : ''}`}
-                    placeholder="Pincode (Auto-fetched)"
-                    maxLength="6"
-                    readOnly
-                    style={{ backgroundColor: '#F0F0F0', cursor: 'not-allowed', color: '#555' }}
-                  />
-                  {errors.pincode && <div className="error-message">{errors.pincode}</div>}
-                </div>
-              </div>
+              ) : (
+                /* Delivery Address Fields */
+                <>
+                  <div className="input-group">
+                    <textarea
+                      name="address"
+                      autoComplete="street-address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      className={`form-input ${errors.address ? 'error' : ''}`}
+                      placeholder="Delivery Address"
+                      rows="3"
+                      style={{ resize: 'vertical' }}
+                      required
+                    ></textarea>
+                    {errors.address && <div className="error-message">{errors.address}</div>}
+                  </div>
+
+                  <div className="input-group">
+                    <input
+                      type="text"
+                      name="houseNo"
+                      autoComplete="address-line2"
+                      value={formData.houseNo}
+                      onChange={handleInputChange}
+                      className={`form-input ${errors.houseNo ? 'error' : ''}`}
+                      placeholder="House No / Apartment"
+                      required
+                    />
+                    {errors.houseNo && <div className="error-message">{errors.houseNo}</div>}
+                  </div>
+
+                  <div className="row-flex" style={{ marginBottom: 0 }}>
+                    <div style={{ flex: 1 }} className="input-group">
+                      <input
+                        type="text"
+                        name="landmark"
+                        autoComplete="address-level3"
+                        value={formData.landmark}
+                        onChange={handleInputChange}
+                        className="form-input"
+                        placeholder="Nearest Landmark (Optional)"
+                      />
+                    </div>
+                    <div style={{ flex: 1 }} className="input-group">
+                      <input
+                        type="text"
+                        name="pincode"
+                        autoComplete="postal-code"
+                        value={formData.pincode}
+                        onChange={handleInputChange}
+                        className={`form-input ${errors.pincode ? 'error' : ''}`}
+                        placeholder="Pincode (Auto-fetched)"
+                        maxLength="6"
+                        readOnly
+                        style={{ backgroundColor: '#F0F0F0', cursor: 'not-allowed', color: '#555' }}
+                      />
+                      {errors.pincode && <div className="error-message">{errors.pincode}</div>}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* 5. Additional Information */}
@@ -639,7 +724,9 @@ export default function Checkout() {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', color: '#555' }}>
               <span>Shipping</span>
-              <span style={{ fontWeight: '500' }}>₹{deliveryCharges.toFixed(2)}</span>
+              <span style={{ fontWeight: '500', color: isPickup ? '#22c55e' : undefined }}>
+                {isPickup ? 'FREE (Pickup)' : `₹${deliveryCharges.toFixed(2)}`}
+              </span>
             </div>
             <div style={{ borderTop: '1px solid #E5E5E5', margin: '16px 0' }}></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -16,12 +16,22 @@ export async function POST(req) {
       firstName, lastName, email, phone,
       addressLine1, addressLine2, city, postalCode,
       distance,
-      totalAmount, items, deliveryDate, additionalInfo
+      totalAmount, items, deliveryDate, additionalInfo,
+      deliveryType: rawDeliveryType
     } = body;
 
+    // Normalize deliveryType — only 'PICKUP' or 'DELIVERY'
+    const deliveryType = rawDeliveryType === 'PICKUP' ? 'PICKUP' : 'DELIVERY';
+    const isPickup = deliveryType === 'PICKUP';
+
     // ── 1. Strict Input Validation ──────────────────────────────────
-    if (!email || !firstName || !lastName || !addressLine1 || !city || !items || !items.length) {
+    if (!email || !firstName || !lastName || !items || !items.length) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Address fields are only required for delivery orders
+    if (!isPickup && (!addressLine1 || !city)) {
+      return NextResponse.json({ success: false, error: 'Address is required for delivery orders' }, { status: 400 });
     }
 
     if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -36,7 +46,7 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: 'Name fields are invalid' }, { status: 400 });
     }
 
-    if (typeof postalCode !== 'string' || (postalCode !== '' && !/^\d{6}$/.test(postalCode))) {
+    if (!isPickup && typeof postalCode !== 'string' || (!isPickup && postalCode !== '' && !/^\d{6}$/.test(postalCode))) {
       return NextResponse.json({ success: false, error: 'Invalid pincode format' }, { status: 400 });
     }
 
@@ -91,9 +101,9 @@ export async function POST(req) {
     // ── 2. Sanitize text inputs ─────────────────────────────────────
     const safeFirstName = stripHtml(firstName);
     const safeLastName = stripHtml(lastName);
-    const safeAddressLine1 = stripHtml(addressLine1);
-    const safeAddressLine2 = addressLine2 ? stripHtml(addressLine2) : null;
-    const safeCity = stripHtml(city);
+    const safeAddressLine1 = isPickup ? 'Store Pickup' : stripHtml(addressLine1);
+    const safeAddressLine2 = isPickup ? null : (addressLine2 ? stripHtml(addressLine2) : null);
+    const safeCity = isPickup ? 'Mumbai' : stripHtml(city);
     const safeAdditionalInfo = additionalInfo ? stripHtml(additionalInfo) : null;
 
     // ── 3. Server-side Price Verification ───────────────────────────
@@ -161,7 +171,8 @@ export async function POST(req) {
     // We IGNORE the client-provided distance completely and recalculate it here
     let deliveryCharges = 0;
 
-    if (serverCalculatedTotal > 0) {
+    // Pickup orders have zero delivery charges — skip distance calculation entirely
+    if (!isPickup && serverCalculatedTotal > 0) {
       try {
         const SHOP_ADDRESS = "NDR 9, B-703 Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089";
         // Create full destination string exactly as the frontend would
@@ -232,7 +243,8 @@ export async function POST(req) {
     const fullAddress = `${safeAddressLine1}${safeAddressLine2 ? ', ' + safeAddressLine2 : ''}, ${safeCity} - ${postalCode}`;
 
     let notesObj = {
-      address: fullAddress.substring(0, 255),
+      order_type: isPickup ? 'Store Pickup' : 'Delivery',
+      address: isPickup ? 'Store Pickup — Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089' : fullAddress.substring(0, 255),
       phone: phone,
       customer_name: `${safeFirstName} ${safeLastName}`.substring(0, 255),
       delivery_date: deliveryDate || 'N/A'
@@ -290,15 +302,18 @@ export async function POST(req) {
             }
           }
 
-          await tx.address.create({
-            data: {
-              userId: txUser.id,
-              addressLine1: safeAddressLine1,
-              addressLine2: safeAddressLine2,
-              city: safeCity,
-              postalCode,
-            },
-          });
+          // Only create an address record for delivery orders
+          if (!isPickup) {
+            await tx.address.create({
+              data: {
+                userId: txUser.id,
+                addressLine1: safeAddressLine1,
+                addressLine2: safeAddressLine2,
+                city: safeCity,
+                postalCode,
+              },
+            });
+          }
 
           const cleanDateStr = deliveryDate ? (typeof deliveryDate === 'string' ? deliveryDate.split('T')[0] : new Date(deliveryDate).toISOString().split('T')[0]) : null;
           const finalDeliveryDate = cleanDateStr ? new Date(`${cleanDateStr}T00:00:00.000Z`) : null;
@@ -308,6 +323,7 @@ export async function POST(req) {
               userId: txUser.id,
               totalAmount: verifiedTotal,
               status: 'PENDING',
+              deliveryType: deliveryType,
               razorpayOrderId: razorpayOrder.id,
               deliveryDate: finalDeliveryDate,
               notes: safeAdditionalInfo,

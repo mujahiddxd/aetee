@@ -39,6 +39,7 @@ export async function GET(request) {
       id: order.id,
       totalAmount: Number(order.totalAmount),
       status: order.status,
+      deliveryType: order.deliveryType,
       createdAt: order.createdAt,
       customerName: `${order.user.firstName} ${order.user.lastName}`,
       customerEmail: order.user.email,

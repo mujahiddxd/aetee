@@ -1,11 +1,13 @@
+"use client";
+
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Suspense } from 'react';
 
-export const metadata = {
-  title: 'Order Successful | Aetee\'s Bakehouse',
-  description: 'Thank you for your order.',
-};
+function SuccessContent() {
+  const searchParams = useSearchParams();
+  const isPickup = searchParams.get('type') === 'pickup';
 
-export default function SuccessPage() {
   return (
     <div style={{
       minHeight: '80vh',
@@ -62,15 +64,53 @@ export default function SuccessPage() {
           Thank You!
         </h1>
         
-        <p style={{ color: '#666', fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '32px' }}>
+        <p style={{ color: '#666', fontSize: '1.1rem', lineHeight: '1.6', marginBottom: isPickup ? '16px' : '32px' }}>
           Your payment is successful and your order has been placed.<br/>
-          Thank you for choosing <strong>Aetee's Bakehouse!</strong> We're getting your treats ready.
+          Thank you for choosing <strong>Aetee&apos;s Bakehouse!</strong>
+          {isPickup
+            ? " Your order will be ready for pickup."
+            : " We're getting your treats ready."}
         </p>
+
+        {isPickup && (
+          <div style={{
+            backgroundColor: '#FDF9F7',
+            border: '1px solid #E8D8CE',
+            borderRadius: '14px',
+            padding: '16px 20px',
+            marginBottom: '32px',
+            textAlign: 'left',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '12px'
+          }}>
+            <span style={{ fontSize: '1.3rem', flexShrink: 0 }}>📍</span>
+            <div>
+              <p style={{ fontWeight: '700', color: '#5A3424', margin: '0 0 4px 0', fontSize: '0.95rem' }}>Pickup Location</p>
+              <p style={{ color: '#666', margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
+                Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089
+              </p>
+            </div>
+          </div>
+        )}
         
         <Link href="/" className="success-btn">
           Back to Home
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+        <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #5A3424', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+      </div>
+    }>
+      <SuccessContent />
+    </Suspense>
   );
 }

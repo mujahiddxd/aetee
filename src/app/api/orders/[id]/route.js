@@ -35,6 +35,7 @@ export async function GET(request, { params }) {
       id: order.id,
       totalAmount: Number(order.totalAmount),
       status: order.status,
+      deliveryType: order.deliveryType,
       razorpayOrderId: order.razorpayOrderId,
       razorpayPaymentId: order.razorpayPaymentId,
       deliveryDate: order.deliveryDate,
