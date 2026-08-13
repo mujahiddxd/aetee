@@ -22,16 +22,7 @@ export default function Checkout() {
   }, [isLoaded, cartItems.length, router]);
 
 
-  // Block rendering until cart is loaded AND has items
-  if (!isLoaded || cartItems.length === 0) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-        <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #5A3424', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-        <p style={{ marginTop: '16px', color: '#888', fontSize: '0.95rem' }}>Loading...</p>
-        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [deliveryType, setDeliveryType] = useState('DELIVERY');
@@ -353,6 +344,17 @@ export default function Checkout() {
   const COST_PER_KM = 10;
   const deliveryCharges = isPickup ? 0 : (distance !== null ? BASE_DELIVERY_FEE + Math.ceil(distance * COST_PER_KM) : 0);
   const grandTotal = parseFloat((itemTotal + deliveryCharges).toFixed(2));
+
+  // Block rendering until cart is loaded AND has items
+  if (!isLoaded || cartItems.length === 0) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #5A3424', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ marginTop: '16px', color: '#888', fontSize: '0.95rem' }}>Loading...</p>
+        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="checkout-container">
