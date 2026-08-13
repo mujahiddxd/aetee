@@ -108,8 +108,9 @@ export default function Home() {
       </section>
 
       {/* Continuous Infinite Slider Section */}
-      <section
-        style={{ position: 'relative', width: '100%', maxWidth: '1200px', margin: '48px auto', overflow: 'hidden', borderRadius: '12px', boxShadow: 'var(--shadow-card)' }}
+      <div style={{ backgroundColor: 'var(--color-primary)', padding: '48px 20px' }}>
+        <section
+          style={{ position: 'relative', width: '100%', maxWidth: '1200px', margin: '0 auto', overflow: 'hidden', borderRadius: '12px', boxShadow: 'var(--shadow-card)' }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -177,6 +178,7 @@ export default function Home() {
           })}
         </div>
       </section>
+      </div>
 
       {/* Info Section (Image Left, Text Right) */}
       <section className="home-split-section">
