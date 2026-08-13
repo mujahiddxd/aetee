@@ -23,7 +23,7 @@ export default function Navbar() {
       {/* --- TOP HEADER --- */}
 
       {/* Desktop Top Header */}
-      <header className="desktop-nav" style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-primary)' }}>
+      <header className="desktop-nav" style={{ borderBottom: 'none', backgroundColor: 'var(--color-primary)' }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 32px', width: '100%' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
             <Image src="/logo-white.png" alt="Aetee's Bakehouse" width={200} height={70} style={{ height: 'auto', width: 'auto', objectFit: 'contain', maxHeight: '70px' }} priority />
