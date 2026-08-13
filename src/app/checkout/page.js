@@ -14,10 +14,13 @@ import './checkout.css';
 export default function Checkout() {
   const router = useRouter();
   const { cartItems, isLoaded, clearCart } = useCart();
-  // Prevent direct URL access — redirect to cart if cart is empty
+  // Prevent direct URL access — redirect to cart if cart is empty or delivery type isn't selected
   useEffect(() => {
-    if (isLoaded && cartItems.length === 0) {
-      router.replace('/cart');
+    if (isLoaded) {
+      const savedLocation = sessionStorage.getItem('deliveryLocation');
+      if (cartItems.length === 0 || !savedLocation) {
+        router.replace('/cart');
+      }
     }
   }, [isLoaded, cartItems.length, router]);
 
