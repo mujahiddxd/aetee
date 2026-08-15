@@ -49,6 +49,14 @@ export async function GET() {
         .filter(r => r._count.id >= 25)
         .map(r => r.deliveryDate.toISOString().split('T')[0]);
 
+      // Manually disable specific dates
+      const disabledDates = ['2026-08-16', '2026-08-17', '2026-08-18'];
+      disabledDates.forEach(date => {
+        if (!fullyBookedDates.includes(date)) {
+          fullyBookedDates.push(date);
+        }
+      });
+
       return { fullyBookedDates };
     });
 
