@@ -1,4 +1,4 @@
-# Aetee's Bakehouse
+#Aetee's Bakehouse
 
 Welcome to the Aetee's Bakehouse codebase! This is the storefront and admin dashboard for Aetee's Bakehouse, enabling customers to explore the menu, place orders, and track them.
 
