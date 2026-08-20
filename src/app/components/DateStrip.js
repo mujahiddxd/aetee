@@ -62,8 +62,12 @@ export default function DateStrip({ selectedDate, onDateChange }) {
       }
       setDates(dateList);
 
-      if (dateList.length > 0 && dateList[0].isDisabled && selectedDate === dateList[0].dateString) {
-        onDateChange(dateList[1].dateString);
+      const currentSelected = dateList.find(d => d.dateString === selectedDate);
+      if (currentSelected && currentSelected.isDisabled) {
+        const firstAvailable = dateList.find(d => !d.isDisabled);
+        if (firstAvailable) {
+          onDateChange(firstAvailable.dateString);
+        }
       }
     };
     generateDates();

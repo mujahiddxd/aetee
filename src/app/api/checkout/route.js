@@ -69,6 +69,12 @@ export async function POST(req) {
       const now = new Date();
       const todayIST = getISTDateString(now);
 
+      const cleanDateStr = typeof deliveryDate === 'string' ? deliveryDate.split('T')[0] : new Date(deliveryDate).toISOString().split('T')[0];
+      const disabledDates = ['2026-08-16', '2026-08-17', '2026-08-18'];
+      if (disabledDates.includes(cleanDateStr)) {
+        return NextResponse.json({ success: false, error: 'Delivery is not available on the selected date.' }, { status: 400 });
+      }
+
       // Block past dates outright
       if (deliveryDate < todayIST) {
         return NextResponse.json({ success: false, error: 'Delivery date cannot be in the past' }, { status: 400 });

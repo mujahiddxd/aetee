@@ -50,6 +50,12 @@ export default function Checkout() {
     turnstileWidgetId.current = window.turnstile.render(turnstileContainerRef.current, {
       sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
       action: 'turnstile-spin-v2',
+      'error-callback': (errorCode) => {
+        console.error('[Cloudflare Turnstile Error]', errorCode);
+      },
+      'expired-callback': () => {
+        console.warn('[Cloudflare Turnstile] Token expired');
+      }
     });
   }, []);
 
