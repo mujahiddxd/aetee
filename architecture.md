@@ -64,23 +64,26 @@ Aetee's Bakehouse is a **full-stack e-commerce web application** built for a pre
 │  │  /api/products   /api/categories   /api/filters             ││
 │  │  /api/orders     /api/checkout     /api/payment/verify      ││
 │  │  /api/contact    /api/upload       /api/delivery-dates      ││
+│  │  /api/admin/blocked-dates                                   ││
 │  │  /api/queue/*    /api/admin/*      /api/webhooks/razorpay   ││
 │  └─────────────────────────────────────────────────────────────┘│
 │                                                                  │
 │  ┌──────────────────── Libraries ──────────────────────────────┐│
 │  │  prisma.js  · cache.js   · auth.js      · telegram.js      ││
 │  │  queue.js   · sanitize.js · turnstile.js · rateLimitMemory  ││
+│  │  blocked-dates.js                                            ││
 │  │  ist-time.js · queue-state.js · cropImage.js                ││
 │  └─────────────────────────────────────────────────────────────┘│
 └────────────────────────┬─────────────────────────────────────────┘
                          │
           ┌──────────────▼──────────────┐
           │         MySQL Database      │
-          │   (Prisma ORM - 8 Models)   │
+          │   (Prisma ORM - 9 Models)   │
           │  User · Address · Category  │
           │  Product · ProductOption     │
           │  Order · OrderItem           │
           │  FilterTag · RateLimit       │
+          │  BlockedDate                 │
           └─────────────────────────────┘
 ```
 
@@ -97,6 +100,7 @@ aetee/
 │   ├── middleware.js            # Edge middleware (auth, subdomain routing)
 │   ├── lib/                    # Shared server utilities
 │   │   ├── auth.js             # HMAC-SHA256 admin token generation
+│   │   ├── blocked-dates.js    # Disabled delivery date helpers
 │   │   ├── cache.js            # In-memory cache with TTL
 │   │   ├── cropImage.js        # Client-side image cropping utility
 │   │   ├── ist-time.js         # IST timezone helpers
@@ -142,7 +146,8 @@ aetee/
 │       │   ├── dashboard/       # Dashboard with analytics
 │       │   ├── products/        # Product CRUD management
 │       │   ├── categories/      # Category management
-│       │   └── filters/         # Filter tag management
+│       │   ├── filters/         # Filter tag management
+│       │   └── blocked-dates/   # Disable/re-enable delivery dates
 │       └── api/                 # API routes (see api-contract.md)
 ├── next.config.mjs             # Next.js config (CSP, rewrites, headers)
 ├── package.json

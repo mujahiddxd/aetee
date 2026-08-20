@@ -726,8 +726,129 @@ Admin queue control (enable/disable, set capacity, etc.).
 
 ### `GET /api/delivery-dates/capacity`
 
-Check order capacity for delivery dates.
+Check which delivery dates are unavailable for the next 62 days.
 
 **Auth**: Public
+**Cache**: In-memory TTL 30s (busted immediately when an admin blocks/unblocks a date)
 
-**Response** `200 OK`: Capacity information for upcoming delivery dates.
+**Response** `200 OK`:
+```json
+{
+  "fullyBookedDates": ["2026-09-03"],
+  "blockedDates": ["2026-09-05", "2026-09-06"]
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `fullyBookedDates` | At capacity — 25 or more occupying orders (PAID, or PENDING within the last 15 minutes) |
+| `blockedDates` | Manually disabled by the admin via the `blocked_dates` table |
+
+Both lists are `YYYY-MM-DD` strings. They are returned separately so the checkout date picker can show "Full" and "N/A" as distinct states. On error the route returns empty lists rather than failing — the backend still rejects unavailable dates at checkout.
+
+---
+
+## 11. Blocked Delivery Dates (Admin)
+
+Dates on which no products can be delivered. Enforced on the backend in `POST /api/checkout` — both as an upfront validation and again inside the order transaction, so a date disabled mid-checkout still rejects the order.
+
+### `GET /api/admin/blocked-dates`
+
+List disabled delivery dates.
+
+**Auth**: Admin required (all methods, including GET)
+
+**Query Parameters**:
+| Param | Type | Default | Description |
+|---|---|---|---|
+| `includePast` | boolean | `false` | Also return dates already in the past |
+
+**Response** `200 OK`:
+```json
+{
+  "blockedDates": [
+    {
+      "id": "uuid",
+      "date": "2026-09-05",
+      "reason": "Closed for Diwali",
+      "orderCount": 2,
+      "createdAt": "2026-08-21T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+`orderCount` is how many PAID/SHIPPED/DELIVERED orders already exist on that date. Blocking is still permitted when this is non-zero — existing orders are not cancelled.
+
+---
+
+### `POST /api/admin/blocked-dates`
+
+Disable delivery on one or more dates.
+
+**Auth**: Admin required
+
+**Request Body**:
+```json
+{
+  "dates": ["2026-09-05", "2026-09-06"],
+  "reason": "Closed for Diwali"
+}
+```
+
+A single `{ "date": "2026-09-05" }` is also accepted. `reason` is optional (max 255 chars, HTML stripped).
+
+**Validation Rules**:
+- Each date must be a real calendar date in `YYYY-MM-DD` form
+- Dates in the past (IST) are rejected
+- Maximum 62 dates per request
+
+**Response** `201 Created`:
+```json
+{
+  "success": true,
+  "blocked": 2,
+  "alreadyBlocked": 0,
+  "dates": ["2026-09-05", "2026-09-06"]
+}
+```
+
+Idempotent — re-posting an already-disabled date is counted in `alreadyBlocked` rather than erroring.
+
+---
+
+### `DELETE /api/admin/blocked-dates`
+
+Re-enable previously disabled dates.
+
+**Auth**: Admin required
+
+**Request Body**:
+```json
+{
+  "dates": ["2026-09-05"]
+}
+```
+
+**Response** `200 OK`:
+```json
+{
+  "success": true,
+  "unblocked": 1,
+  "dates": ["2026-09-05"]
+}
+```
+
+---
+
+### Checkout rejection
+
+When a customer submits an order for a disabled date:
+
+**Response** `400 Bad Request`:
+```json
+{
+  "success": false,
+  "error": "We're not delivering on the selected date. Please choose another delivery date."
+}
+```

@@ -4,6 +4,7 @@ import { getISTHour, getISTDateString } from '@/lib/ist-time';
 export default function DateStrip({ selectedDate, onDateChange }) {
   const [dates, setDates] = useState([]);
   const [fullyBookedDates, setFullyBookedDates] = useState(new Set());
+  const [blockedDates, setBlockedDates] = useState(new Set());
   const stripRef = useRef(null);
   
   // Drag to scroll state
@@ -11,7 +12,7 @@ export default function DateStrip({ selectedDate, onDateChange }) {
   const startX = useRef(null);
   const scrollLeft = useRef(null);
 
-  // Fetch fully-booked dates on mount
+  // Fetch unavailable dates (at capacity + admin-disabled) on mount
   useEffect(() => {
     let cancelled = false;
 
@@ -20,8 +21,9 @@ export default function DateStrip({ selectedDate, onDateChange }) {
         const res = await fetch('/api/delivery-dates/capacity');
         if (res.ok) {
           const data = await res.json();
-          if (!cancelled && data.fullyBookedDates) {
-            setFullyBookedDates(new Set(data.fullyBookedDates));
+          if (!cancelled) {
+            if (data.fullyBookedDates) setFullyBookedDates(new Set(data.fullyBookedDates));
+            if (data.blockedDates) setBlockedDates(new Set(data.blockedDates));
           }
         }
       } catch (err) {
@@ -55,10 +57,12 @@ export default function DateStrip({ selectedDate, onDateChange }) {
         const dayNum = displayDate.getDate();
         const month = displayDate.toLocaleDateString('en-US', { month: 'short' });
         const isPastCutoff = i === 0 && currentISTHour >= 12;
-        const isFullyBooked = fullyBookedDates.has(dateString);
-        const isDisabled = isPastCutoff || isFullyBooked;
+        const isBlocked = blockedDates.has(dateString);
+        // A disabled date is unavailable regardless of how full it is
+        const isFullyBooked = !isBlocked && fullyBookedDates.has(dateString);
+        const isDisabled = isPastCutoff || isFullyBooked || isBlocked;
 
-        dateList.push({ dateString, label, dayNum, month, isDisabled, isFullyBooked });
+        dateList.push({ dateString, label, dayNum, month, isDisabled, isFullyBooked, isBlocked });
       }
       setDates(dateList);
 
@@ -71,7 +75,7 @@ export default function DateStrip({ selectedDate, onDateChange }) {
       }
     };
     generateDates();
-  }, [selectedDate, onDateChange, fullyBookedDates]);
+  }, [selectedDate, onDateChange, fullyBookedDates, blockedDates]);
 
   const isDragging = useRef(false);
 
@@ -122,7 +126,7 @@ export default function DateStrip({ selectedDate, onDateChange }) {
             <button
               key={index}
               type="button"
-              className={`date-card ${isSelected ? 'selected' : ''} ${item.isDisabled ? 'disabled' : ''} ${item.isFullyBooked ? 'fully-booked' : ''}`}
+              className={`date-card ${isSelected ? 'selected' : ''} ${item.isDisabled ? 'disabled' : ''} ${item.isFullyBooked ? 'fully-booked' : ''} ${item.isBlocked ? 'blocked' : ''}`}
               onClick={(e) => {
                 if (isDragging.current) {
                   e.preventDefault();
@@ -134,12 +138,20 @@ export default function DateStrip({ selectedDate, onDateChange }) {
                 }
               }}
               disabled={item.isDisabled}
-              aria-label={item.isFullyBooked ? `${item.label} fully booked` : item.isDisabled ? `${item.label} unavailable` : `Select ${item.label}`}
+              aria-label={
+                item.isBlocked
+                  ? `${item.label} not available for delivery`
+                  : item.isFullyBooked
+                    ? `${item.label} fully booked`
+                    : item.isDisabled
+                      ? `${item.label} unavailable`
+                      : `Select ${item.label}`
+              }
             >
               <span className="date-card-label">{item.label}</span>
               <span className="date-card-num">{item.dayNum}</span>
               <span className="date-card-month">
-                {item.isFullyBooked ? 'Full' : item.month}
+                {item.isBlocked ? 'N/A' : item.isFullyBooked ? 'Full' : item.month}
               </span>
             </button>
           );

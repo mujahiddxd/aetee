@@ -1,16 +1,19 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getOrSetCache } from '@/lib/cache';
+import { getBlockedDatesInRange, toDateString } from '@/lib/blocked-dates';
 
 /**
  * GET /api/delivery-dates/capacity
  *
- * Returns a list of fully-booked delivery dates (>= 25 orders) for the
- * next 62 days. The frontend DateStrip uses this to grey out dates that
- * are no longer available.
+ * Returns two lists of unavailable delivery dates for the next 62 days:
+ *   - fullyBookedDates — at capacity (>= 25 orders)
+ *   - blockedDates     — manually disabled by the admin (blocked_dates table)
  *
- * Results are cached in-memory for 30 seconds so repeated page loads
- * don't hit the database.
+ * They are kept separate so the DateStrip can show "Full" and "N/A" as
+ * distinct states. Results are cached in-memory for 30 seconds; the admin
+ * blocked-dates route busts this key on every change so admin edits show
+ * up immediately.
  */
 export async function GET() {
   try {
@@ -29,40 +32,35 @@ export async function GET() {
       // using the same logic as the checkout capacity check:
       //   - PAID orders always count
       //   - PENDING orders created within the last 15 minutes count
-      const results = await prisma.order.groupBy({
-        by: ['deliveryDate'],
-        where: {
-          deliveryDate: {
-            gte: startDate,
-            lt: endDate,
+      const [results, blockedDates] = await Promise.all([
+        prisma.order.groupBy({
+          by: ['deliveryDate'],
+          where: {
+            deliveryDate: {
+              gte: startDate,
+              lt: endDate,
+            },
+            OR: [
+              { status: 'PAID' },
+              { status: 'PENDING', createdAt: { gte: fifteenMinsAgo } },
+            ],
           },
-          OR: [
-            { status: 'PAID' },
-            { status: 'PENDING', createdAt: { gte: fifteenMinsAgo } },
-          ],
-        },
-        _count: { id: true },
-      });
+          _count: { id: true },
+        }),
+        getBlockedDatesInRange(startDate, endDate),
+      ]);
 
       // Return only dates that are at capacity (>= 25)
       const fullyBookedDates = results
         .filter(r => r._count.id >= 25)
-        .map(r => r.deliveryDate.toISOString().split('T')[0]);
+        .map(r => toDateString(r.deliveryDate));
 
-      // Manually disable specific dates
-      const disabledDates = ['2026-08-16', '2026-08-17', '2026-08-18'];
-      disabledDates.forEach(date => {
-        if (!fullyBookedDates.includes(date)) {
-          fullyBookedDates.push(date);
-        }
-      });
-
-      return { fullyBookedDates };
+      return { fullyBookedDates, blockedDates };
     });
 
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error fetching delivery date capacity:', error);
-    return NextResponse.json({ fullyBookedDates: [] });
+    return NextResponse.json({ fullyBookedDates: [], blockedDates: [] });
   }
 }

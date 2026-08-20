@@ -61,6 +61,7 @@ All secrets are stored in `.env` at the project root. **Never commit this file.*
 | `Order` | `orders` | Customer orders with Razorpay payment details |
 | `OrderItem` | `order_items` | Individual items within an order |
 | `RateLimit` | `rate_limits` | DB-backed rate limiting records (contact form) |
+| `BlockedDate` | `blocked_dates` | Delivery dates disabled by the admin |
 
 ### Key Indexes
 
@@ -75,6 +76,7 @@ All secrets are stored in `.env` at the project root. **Never commit this file.*
 | `orders` | `userId, status, createdAt` | Composite index for user order history |
 | `orders` | `deliveryDate, status, createdAt` | Composite index for delivery schedule |
 | `rate_limits` | `ip, action` (unique) | Rate limit lookups |
+| `blocked_dates` | `date` (unique) | Blocked delivery date lookups |
 
 ### Database Commands
 

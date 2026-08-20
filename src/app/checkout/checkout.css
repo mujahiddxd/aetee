@@ -241,6 +241,29 @@
 .date-card.fully-booked .date-card-label {
   color: #CC4444;
 }
+.date-card.blocked {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background-color: #F2F0ED;
+  border-color: #DDD6CE;
+  box-shadow: none;
+  transform: none;
+  position: relative;
+}
+.date-card.blocked .date-card-num {
+  color: #8A8078;
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+.date-card.blocked .date-card-month {
+  color: #8A8078;
+  font-weight: 700;
+  font-size: 0.6rem;
+  letter-spacing: 0.3px;
+}
+.date-card.blocked .date-card-label {
+  color: #8A8078;
+}
 .date-card-label {
   font-size: 0.65rem;
   font-weight: 700;

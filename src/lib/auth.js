@@ -12,3 +12,23 @@ export function generateAdminToken() {
   }
   return crypto.createHmac('sha256', ADMIN_SECRET).update('admin-session').digest('hex');
 }
+
+/**
+ * Verify an admin_token cookie (Node.js runtime version).
+ * Mirrors the Edge-Runtime check in src/middleware.js.
+ *
+ * @param {{ get: (name: string) => { value?: string } | undefined }} cookieStore
+ *        The store returned by `await cookies()` from 'next/headers'.
+ */
+export function verifyAdminCookie(cookieStore) {
+  const token = cookieStore.get('admin_token');
+  if (!token?.value) return false;
+  if (!ADMIN_SECRET) return false;
+
+  const expectedToken = crypto
+    .createHmac('sha256', ADMIN_SECRET)
+    .update('admin-session')
+    .digest('hex');
+
+  return token.value === expectedToken;
+}

@@ -5,6 +5,9 @@ import { stripHtml } from '@/lib/sanitize';
 import { verifyTurnstile } from '@/lib/turnstile';
 import { getISTHour, getISTDateString } from '@/lib/ist-time';
 import { checkRateLimit } from '@/lib/rateLimitMemory';
+import { isDateBlocked } from '@/lib/blocked-dates';
+
+const BLOCKED_DATE_MESSAGE = "We're not delivering on the selected date. Please choose another delivery date.";
 
 export async function POST(req) {
   const limited = checkRateLimit(req, 'checkout', { max: 15, windowMs: 60000 });
@@ -70,9 +73,12 @@ export async function POST(req) {
       const todayIST = getISTDateString(now);
 
       const cleanDateStr = typeof deliveryDate === 'string' ? deliveryDate.split('T')[0] : new Date(deliveryDate).toISOString().split('T')[0];
-      const disabledDates = ['2026-08-16', '2026-08-17', '2026-08-18'];
-      if (disabledDates.includes(cleanDateStr)) {
-        return NextResponse.json({ success: false, error: 'Delivery is not available on the selected date.' }, { status: 400 });
+
+      // Admin-disabled dates — fast fail before doing any expensive work.
+      // Re-checked inside the transaction below to close the race where a
+      // date is disabled mid-checkout.
+      if (await isDateBlocked(cleanDateStr)) {
+        return NextResponse.json({ success: false, error: BLOCKED_DATE_MESSAGE }, { status: 400 });
       }
 
       // Block past dates outright
@@ -293,6 +299,12 @@ export async function POST(req) {
             const targetDate = new Date(`${cleanDateStr}T00:00:00.000Z`);
             const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
 
+            // Re-check inside the transaction: the admin may have disabled this
+            // date after the validation above ran.
+            if (await isDateBlocked(cleanDateStr, tx)) {
+              throw new Error('DATE_BLOCKED');
+            }
+
             const capacityCount = await tx.order.count({
               where: {
                 deliveryDate: targetDate,
@@ -344,7 +356,8 @@ export async function POST(req) {
 
         break; // Success! Break out of the retry loop.
       } catch (err) {
-        if (err.message === 'DATE_FULL') throw err; // Naturally full, don't retry
+        // Naturally full or deliberately disabled — retrying won't change either
+        if (err.message === 'DATE_FULL' || err.message === 'DATE_BLOCKED') throw err;
 
         // P2034 is Prisma's error code for a write conflict / deadlock in Serializable transactions
         if (err.code === 'P2034') {
@@ -371,6 +384,10 @@ export async function POST(req) {
     });
   } catch (error) {
     console.error('Error in checkout:', error);
+
+    if (error.message === 'DATE_BLOCKED') {
+      return NextResponse.json({ success: false, error: BLOCKED_DATE_MESSAGE }, { status: 400 });
+    }
 
     if (error.message === 'DATE_FULL' || error.message === 'RATE_LIMITED') {
       return NextResponse.json(

@@ -138,3 +138,62 @@
   text-align: center;
   margin-bottom: var(--space-lg);
 }
+
+/* ── Delivery Dates: month calendar ───────────────────────── */
+.blocked-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.blocked-calendar-weekday {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding-bottom: 4px;
+}
+.blocked-calendar-pad {
+  aspect-ratio: 1 / 1;
+}
+.blocked-calendar-day {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  background: var(--color-bg-white);
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.blocked-calendar-day:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: var(--color-highlight);
+}
+.blocked-calendar-day.is-today {
+  border-color: var(--color-primary);
+  border-width: 2px;
+}
+.blocked-calendar-day.is-selected {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+.blocked-calendar-day.is-blocked {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: var(--color-danger);
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+.blocked-calendar-day.is-past {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: var(--color-bg-grey);
+}

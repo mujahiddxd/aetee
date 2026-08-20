@@ -71,7 +71,7 @@ export async function middleware(request) {
   // ────────────────────────────────────────────────────────────────
 
   // Protect specific API routes
-  const protectedRoutes = ['/api/products', '/api/categories', '/api/orders', '/api/filters'];
+  const protectedRoutes = ['/api/products', '/api/categories', '/api/orders', '/api/filters', '/api/admin/blocked-dates'];
 
   const isProtectedApi = protectedRoutes.some(route => pathname.startsWith(route));
 
@@ -82,6 +82,9 @@ export async function middleware(request) {
 
     if (pathname.startsWith('/api/products') || pathname.startsWith('/api/categories') || pathname.startsWith('/api/filters')) {
       if (isModifying) requiresAuth = true;
+    } else if (pathname.startsWith('/api/admin/blocked-dates')) {
+      // Admin-only on every method — reads expose the delivery schedule
+      requiresAuth = true;
     } else if (pathname.startsWith('/api/orders')) {
       // Allow the public cancel sub-route (used when user closes Razorpay popup)
       if (!pathname.endsWith('/cancel')) {
