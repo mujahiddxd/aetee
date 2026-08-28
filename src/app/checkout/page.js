@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
 import Image from 'next/image';
@@ -33,39 +33,7 @@ export default function Checkout() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [deliveryType, setDeliveryType] = useState('DELIVERY');
-  const [turnstileReady, setTurnstileReady] = useState(
-    typeof window !== 'undefined' && !!window.turnstile
-  );
-  const turnstileWidgetId = useRef(null);
-  const turnstileContainerRef = useRef(null);
 
-  const renderTurnstile = useCallback(() => {
-    if (!window.turnstile || !turnstileContainerRef.current) return;
-    // Remove any previously rendered widget before re-rendering
-    if (turnstileWidgetId.current !== null) {
-      try { window.turnstile.remove(turnstileWidgetId.current); } catch (_) { }
-      turnstileWidgetId.current = null;
-    }
-    turnstileContainerRef.current.innerHTML = '';
-    turnstileWidgetId.current = window.turnstile.render(turnstileContainerRef.current, {
-      sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
-      action: 'turnstile-spin-v2',
-      'error-callback': (errorCode) => {
-        console.error('[Cloudflare Turnstile Error]', errorCode);
-      },
-      'expired-callback': () => {
-        console.warn('[Cloudflare Turnstile] Token expired');
-      }
-    });
-  }, []);
-
-  const resetTurnstile = useCallback(() => {
-    if (window.turnstile && turnstileWidgetId.current !== null) {
-      window.turnstile.reset(turnstileWidgetId.current);
-    } else {
-      renderTurnstile();
-    }
-  }, [renderTurnstile]);
 
   // 1. Calculate Minimum Date for the Date Picker
   const getMinDeliveryDateIST = () => {
@@ -98,12 +66,7 @@ export default function Checkout() {
   const [distance, setDistance] = useState(null);
   const isPickup = deliveryType === 'PICKUP';
 
-  // Render Turnstile when it's ready and the container is available
-  useEffect(() => {
-    if (turnstileReady) {
-      renderTurnstile();
-    }
-  }, [turnstileReady, renderTurnstile]);
+
 
   useEffect(() => {
     const savedLocation = sessionStorage.getItem('deliveryLocation');
@@ -200,21 +163,6 @@ export default function Checkout() {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      // Get Turnstile token from the explicitly rendered widget
-      let turnstileToken = null;
-      if (turnstileWidgetId.current !== null && window.turnstile) {
-        turnstileToken = window.turnstile.getResponse(turnstileWidgetId.current);
-      }
-      // Fallback: check hidden input in case of auto-render
-      if (!turnstileToken) {
-        const turnstileInput = document.querySelector('[name="cf-turnstile-response"]');
-        turnstileToken = turnstileInput?.value || null;
-      }
-      if (!turnstileToken) {
-        setShowModal({ isOpen: true, type: 'error', message: 'Please complete the bot verification challenge before placing your order.' });
-        setIsProcessing(false);
-        return;
-      }
 
       try {
         // 1. Create order on backend
@@ -235,7 +183,6 @@ export default function Checkout() {
             deliveryDate: formData.date,
             additionalInfo: formData.additionalInfo || null,
             deliveryType: deliveryType,
-            'cf-turnstile-response': turnstileToken,
             items: cartItems.map(item => {
               const eggPrefLabel = item.eggPreference === 'eggless' ? 'Eggless' : item.eggPreference === 'egg' ? 'Egg' : null;
               const addonParts = [];
@@ -254,8 +201,7 @@ export default function Checkout() {
 
         const data = await response.json();
 
-        // This is the magic line that fixes your bug:
-        resetTurnstile();
+
         if (data.success) {
           // Create a specific description of the items being purchased
           const orderDescription = cartItems.map(item => {
@@ -315,7 +261,7 @@ export default function Checkout() {
               ondismiss: function () {
                 setIsProcessing(false);
                 setShowModal({ isOpen: true, type: 'error', message: 'Payment was cancelled by the user.' });
-                resetTurnstile();
+
                 // Mark the abandoned order as CANCELLED in the database.
                 // Uses the dedicated /cancel endpoint (no admin auth required).
                 // The razorpayOrderId proves this user owns the order.
@@ -332,7 +278,7 @@ export default function Checkout() {
           paymentObject.on('payment.failed', function (response) {
             setIsProcessing(false);
             setShowModal({ isOpen: true, type: 'error', message: 'Payment failed: ' + response.error.description });
-            resetTurnstile();
+
           });
           paymentObject.open();
         } else {
@@ -343,7 +289,6 @@ export default function Checkout() {
         console.error("Payment error:", error);
         setIsProcessing(false);
         setShowModal({ isOpen: true, type: 'error', message: 'An error occurred while processing payment.' });
-        resetTurnstile();
       }
     } else {
       setIsProcessing(false);
@@ -372,24 +317,8 @@ export default function Checkout() {
   return (
     <div className="checkout-container">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" />
-      <Script
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-        async
-        defer
-        onLoad={() => {
-          setTurnstileReady(true);
-          renderTurnstile();
-        }}
-      />
 
-      {!turnstileReady ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', width: '100%' }}>
-          <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #5A3424', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-          <p style={{ marginTop: '16px', color: '#888', fontSize: '0.95rem' }}>Loading checkout...</p>
-          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-        </div>
-      ) : (
-        <>
+      <>
 
           {/* LEFT COLUMN - FORM */}
           <div className="checkout-left">
@@ -625,9 +554,7 @@ export default function Checkout() {
             </div>
 
             {/* Place Order Button - Desktop/Mobile */}
-            <div style={{ marginBottom: '16px' }}>
-              <div ref={turnstileContainerRef}></div>
-            </div>
+
             <div className="mobile-sticky-bottom">
               <button
                 className="place-order-btn"
@@ -788,7 +715,7 @@ export default function Checkout() {
           )}
 
         </>
-      )}
+
 
     </div>
   );
