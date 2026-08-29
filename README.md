@@ -2,7 +2,7 @@
 
 Welcome to the Aetee's Bakehouse codebase! This is the storefront and admin dashboard for Aetee's Bakehouse, enabling customers to explore the menu, place orders, and track them.
 
-## 🚀 Tech Stack
+## 🚀 Tech Stackk
 
 - **Framework:** [Next.js](https://nextjs.org/) (v16+)
 - **UI Library:** [React](https://react.dev/) (v19+)
