@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { verifyTurnstile } from '@/lib/turnstile';
 import { prisma } from '@/lib/prisma';
 import { sendTelegramMessage, escapeHtml } from '@/lib/telegram';
 
@@ -18,8 +17,6 @@ export async function POST(request) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
     }
 
-    // ── Turnstile verification ──────────────────────────────────────
-    const turnstileToken = body['cf-turnstile-response'];
     const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       || request.headers.get('x-real-ip')
       || 'unknown';
@@ -60,12 +57,6 @@ export async function POST(request) {
         });
       }
     }
-
-    const turnstileResult = await verifyTurnstile(turnstileToken, clientIp);
-    if (!turnstileResult.success) {
-      return NextResponse.json({ error: 'Bot verification failed' }, { status: 403 });
-    }
-    // ────────────────────────────────────────────────────────────────
 
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;

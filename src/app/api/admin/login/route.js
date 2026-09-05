@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { generateAdminToken } from '@/lib/auth';
-import { verifyTurnstile } from '@/lib/turnstile';
 import { prisma } from '@/lib/prisma';
 
 // DB-backed brute-force rate limiter (persistent across restarts and PM2 workers)
@@ -51,17 +50,6 @@ export async function POST(request) {
 
     const body = await request.json();
     const { username, password } = body;
-    const turnstileToken = body['cf-turnstile-response'];
-
-    // ── Turnstile verification ──────────────────────────────────────
-    const turnstileResult = await verifyTurnstile(turnstileToken, clientIp);
-    if (!turnstileResult.success) {
-      return NextResponse.json(
-        { success: false, error: 'Bot verification failed' },
-        { status: 403 }
-      );
-    }
-    // ────────────────────────────────────────────────────────────────
 
     const validUsername = process.env.ADMIN_USERNAME;
     const validPassword = process.env.ADMIN_PASSWORD;
