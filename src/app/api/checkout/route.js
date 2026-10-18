@@ -6,6 +6,7 @@ import { stripHtml } from '@/lib/sanitize';
 import { getISTHour, getISTDateString } from '@/lib/ist-time';
 import { checkRateLimit } from '@/lib/rateLimitMemory';
 import { isDateBlocked } from '@/lib/blocked-dates';
+import { getDrivingDistanceKm } from '@/lib/driving-distance';
 
 const BLOCKED_DATE_MESSAGE = "We're not delivering on the selected date. Please choose another delivery date.";
 
@@ -177,28 +178,14 @@ export async function POST(req) {
     // Pickup orders have zero delivery charges — skip distance calculation entirely
     if (!isPickup && serverCalculatedTotal > 0) {
       try {
-        const SHOP_ADDRESS = "NDR 9, B-703 Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089";
         // Create full destination string exactly as the frontend would
         const destinationAddress = `${safeAddressLine1}, ${safeCity} - ${postalCode}`;
 
-        const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+        // Google Routes API (legacy Distance Matrix is not available to new projects)
+        const dist = await getDrivingDistanceKm({ address: destinationAddress });
 
-        if (!googleApiKey) {
-          throw new Error("Missing Google Maps API Key in environment");
-        }
-
-        const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(SHOP_ADDRESS)}&destinations=${encodeURIComponent(destinationAddress)}&key=${googleApiKey}`;
-
-        // We spoof the Referer just in case the API key has HTTP referer restrictions
-        const mapsRes = await fetch(url, {
-          headers: { 'Referer': 'https://aeteesbakehouse.com/' }
-        });
-
-        const mapsData = await mapsRes.json();
-
-        if (mapsData.status === 'OK' && mapsData.rows[0] && mapsData.rows[0].elements[0].status === 'OK') {
-          const distanceInMeters = mapsData.rows[0].elements[0].distance.value;
-          const verifiedDistanceKm = distanceInMeters / 1000;
+        if (dist.ok) {
+          const verifiedDistanceKm = dist.km;
 
           if (verifiedDistanceKm > 40) {
             return NextResponse.json({ success: false, error: `Sorry, your location is ${verifiedDistanceKm.toFixed(1)}km away. We do not deliver beyond 40km.` }, { status: 400 });
@@ -210,7 +197,7 @@ export async function POST(req) {
           deliveryCharges = BASE_DELIVERY_FEE + Math.ceil(verifiedDistanceKm * COST_PER_KM);
         } else {
           // If Google Maps fails (e.g. unrecognizable address), reject the order to prevent free delivery abuse
-          console.error("Google Maps Distance API Error:", mapsData);
+          console.error("Google Routes API Error:", dist.error, dist.detail);
           return NextResponse.json({ success: false, error: 'Could not verify delivery distance for this address. Please ensure the address is correct.' }, { status: 400 });
         }
       } catch (err) {

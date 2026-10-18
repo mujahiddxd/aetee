@@ -37,7 +37,8 @@ All secrets are stored in `.env` at the project root. **Never commit this file.*
 | `TURNSTILE_SECRET` | ✅ | Cloudflare Turnstile server-side secret |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | ✅ | Cloudflare Turnstile client-side site key |
 | `RAZORPAY_WEBHOOK_SECRET` | ⚠️ | Webhook signature verification secret |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | ⚠️ | Google Maps API key (for address autocomplete) |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | ⚠️ | Browser Maps key (Places New autocomplete + Geocoding), referrer-restricted |
+| `GOOGLE_MAPS_SERVER_KEY` | ⚠️ | Server key for Routes API (delivery distance); no referrer restriction, restrict by API/IP |
 
 ---
 

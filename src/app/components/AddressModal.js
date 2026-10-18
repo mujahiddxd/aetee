@@ -4,9 +4,11 @@ import Script from "next/script";
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function AddressModal({ isOpen, onClose, onSuccess }) {
-  const [mapsReady, setMapsReady] = useState(
-    () => typeof window !== "undefined" && Boolean(window.google?.maps?.places)
-  );
+  const [mapsReady, setMapsReady] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const sessionTokenRef = useRef(null);
+  const debounceRef = useRef(null);
+  const suppressSuggestRef = useRef(false);
   const [address, setAddress] = useState('');
   const addressRef = useRef('');
   const [error, setError] = useState('');
@@ -15,190 +17,160 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
   const [deliveryType, setDeliveryType] = useState('DELIVERY');
   const isPickup = deliveryType === 'PICKUP';
 
-  const SHOP_ADDRESS = "NDR 9, B-703 Drushti Sai Pradnya, Tilak Nagar, Mumbai 400089";
-
-  const checkDistance = useCallback((destinationAddress, locationGeometry = null, pincode = '') => {
-    if (!isOpen || !mapsReady) return;
-    console.log("Checking distance for:", destinationAddress);
+  // Distance is calculated on our server via the Google Routes API
+  // (the legacy browser DistanceMatrixService is not available to new projects).
+  const checkDistance = useCallback(async (destinationAddress, locationGeometry = null, pincode = '') => {
+    if (!isOpen) return;
     setLoading(true);
     setError('');
 
     try {
-      if (!window.google || !window.google.maps) {
-        setLoading(false);
-        setError("Google Maps is not loaded yet. Please wait a moment or check your connection.");
+      const payload = { address: destinationAddress };
+      if (locationGeometry) {
+        const lat = typeof locationGeometry.lat === 'function' ? locationGeometry.lat() : locationGeometry.lat;
+        const lng = typeof locationGeometry.lng === 'function' ? locationGeometry.lng() : locationGeometry.lng;
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          payload.lat = lat;
+          payload.lng = lng;
+        }
+      }
+
+      const res = await fetch('/api/distance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      setLoading(false);
+
+      if (!res.ok || !data.success) {
+        setError('Could not calculate distance. Please try a more specific address.');
         return;
       }
 
-      const service = new window.google.maps.DistanceMatrixService();
-      console.log("Calling getDistanceMatrix...");
-      service.getDistanceMatrix(
-        {
-          origins: [SHOP_ADDRESS],
-          destinations: locationGeometry ? [locationGeometry] : [destinationAddress],
-          travelMode: 'DRIVING',
-          unitSystem: window.google.maps.UnitSystem.METRIC,
-        },
-        (response, status) => {
-          console.log("DistanceMatrix response:", status, response);
-          setLoading(false);
-          if (status === 'OK' && response && response.rows && response.rows[0] && response.rows[0].elements[0].status === 'OK') {
-            const distanceInMeters = response.rows[0].elements[0].distance.value;
-            const distanceInKm = distanceInMeters / 1000;
+      const distanceInKm = data.distanceKm;
+      if (distanceInKm > 40) {
+        setError(`Sorry, we cannot deliver here. It is ${distanceInKm.toFixed(1)}km away (Max limit is 40km).`);
+        return;
+      }
 
-            if (distanceInKm > 40) {
-              setError(`Sorry, we cannot deliver here. It is ${distanceInKm.toFixed(1)}km away (Max limit is 40km).`);
-            } else {
-              // Success! Save to sessionStorage and call onSuccess
-              const deliveryInfo = {
-                address: destinationAddress,
-                distance: distanceInKm,
-                pincode: pincode,
-                deliveryType: 'DELIVERY'
-              };
-              sessionStorage.setItem('deliveryLocation', JSON.stringify(deliveryInfo));
-              onSuccess(deliveryInfo);
-            }
-          } else {
-            let errorMsg = 'Could not calculate distance. Please try a more specific address.';
-            if (status !== 'OK') {
-              errorMsg = `API Error: ${status}. Please ensure Distance Matrix API is enabled in Google Cloud.`;
-            } else if (response && response.rows && response.rows[0] && response.rows[0].elements[0].status === 'ZERO_RESULTS') {
-              errorMsg = 'Could not find a driving route to this address.';
-            } else if (response && response.rows && response.rows[0]) {
-              errorMsg = `Route Error: ${response.rows[0].elements[0].status}`;
-            }
-            setError(errorMsg);
-          }
-        }
-      );
+      const deliveryInfo = {
+        address: destinationAddress,
+        distance: distanceInKm,
+        pincode: pincode,
+        deliveryType: 'DELIVERY'
+      };
+      sessionStorage.setItem('deliveryLocation', JSON.stringify(deliveryInfo));
+      onSuccess(deliveryInfo);
     } catch (err) {
       console.error("Error in checkDistance:", err);
       setLoading(false);
       setError("An unexpected error occurred while checking distance.");
     }
-  }, [onSuccess, isOpen, mapsReady]);
+  }, [onSuccess, isOpen]);
 
+  // Load the Places (New) + Geocoding libraries once the Maps loader is available
   useEffect(() => {
     if (!isOpen) return;
+    let cancelled = false;
 
-    if (window.google && window.google.maps && window.google.maps.places) {
-      setMapsReady(true);
-      return;
+    const load = async () => {
+      try {
+        await Promise.all([
+          window.google.maps.importLibrary('places'),
+          window.google.maps.importLibrary('geocoding'),
+        ]);
+        if (!cancelled) setMapsReady(true);
+      } catch (e) {
+        console.error('Failed to load Google Maps libraries:', e);
+      }
+    };
+
+    if (window.google?.maps?.importLibrary) {
+      load();
+      return () => { cancelled = true; };
     }
 
     const intervalId = setInterval(() => {
-      if (window.google && window.google.maps && window.google.maps.places) {
-        setMapsReady(true);
+      if (window.google?.maps?.importLibrary) {
         clearInterval(intervalId);
+        load();
       }
     }, 50);
 
-    return () => clearInterval(intervalId);
+    return () => { cancelled = true; clearInterval(intervalId); };
   }, [isOpen]);
 
-  const autocompleteRef = useRef(null);
-  const listenerRef = useRef(null);
-
-  useEffect(() => {
-    if (!isOpen || !mapsReady || !inputRef.current) return;
-
-    // 1. Initialize Autocomplete and static listeners EXACTLY ONCE per mount
-    if (!autocompleteRef.current) {
-      autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
-        componentRestrictions: { country: "IN" },
-        fields: ["formatted_address", "geometry", "name", "address_components"],
-      });
-
-      // Prevent Google from submitting the form on Enter
-      inputRef.current.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') e.preventDefault();
-      });
-
-      // If the user typed before the autocomplete was ready, re-trigger
-      // so the widget picks up the existing text and shows suggestions.
-      if (inputRef.current.value.length > 0) {
-        setTimeout(() => {
-          if (inputRef.current) {
-            inputRef.current.dispatchEvent(new Event('input', { bubbles: true }));
-            // Also refocus to nudge the dropdown open
-            inputRef.current.focus();
-          }
-        }, 100);
-      }
+  // Fetch address suggestions with Places API (New)
+  const fetchSuggestions = useCallback(async (text) => {
+    if (!mapsReady || !text || text.trim().length < 3) {
+      setSuggestions([]);
+      return;
     }
-
-    // 2. Clean up old place_changed listener if checkDistance changes (due to re-renders)
-    if (listenerRef.current) {
-      window.google.maps.event.removeListener(listenerRef.current);
+    try {
+      const { AutocompleteSuggestion, AutocompleteSessionToken } = window.google.maps.places;
+      if (!sessionTokenRef.current) sessionTokenRef.current = new AutocompleteSessionToken();
+      const { suggestions: results } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+        input: text,
+        includedRegionCodes: ['in'],
+        sessionToken: sessionTokenRef.current,
+      });
+      setSuggestions((results || []).filter(r => r.placePrediction).slice(0, 5));
+    } catch (e) {
+      console.error('Autocomplete error:', e);
+      setSuggestions([]);
     }
+  }, [mapsReady]);
 
-    // 3. Attach new place_changed listener with the latest closure
-    listenerRef.current = autocompleteRef.current.addListener("place_changed", () => {
-      const place = autocompleteRef.current.getPlace();
-      if (place && place.formatted_address) {
-        let currentAddress = place.formatted_address;
-        let extractedPincode = '';
-        if (place.address_components) {
-          const postalComponent = place.address_components.find(c => c.types.includes("postal_code"));
-          if (postalComponent) {
-            extractedPincode = postalComponent.long_name;
-            if (!currentAddress.includes(extractedPincode)) {
-              currentAddress = currentAddress + " - " + extractedPincode;
-            }
-          }
-        }
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    addressRef.current = val;
+    setAddress(val);
+    if (suppressSuggestRef.current) { suppressSuggestRef.current = false; return; }
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchSuggestions(val), 250);
+  };
 
-        // If no pincode was found in the place data but we have geometry,
-        // do a reverse geocode to fetch the pincode (same as "use location" flow)
-        if (!extractedPincode && place.geometry && place.geometry.location) {
+  useEffect(() => () => clearTimeout(debounceRef.current), []);
+
+  const handleSelectSuggestion = async (suggestion) => {
+    setSuggestions([]);
+    setLoading(true);
+    setError('');
+    try {
+      const place = suggestion.placePrediction.toPlace();
+      await place.fetchFields({ fields: ['formattedAddress', 'location', 'addressComponents'] });
+      sessionTokenRef.current = null; // a session ends after a place is selected
+
+      let currentAddress = place.formattedAddress || suggestion.placePrediction.text?.toString() || '';
+      let pincode = place.addressComponents?.find(c => c.types.includes('postal_code'))?.longText || '';
+      const location = place.location;
+
+      // If no pincode in place data, reverse geocode to find it
+      if (!pincode && location) {
+        try {
           const geocoder = new window.google.maps.Geocoder();
-          const latlng = {
-            lat: typeof place.geometry.location.lat === 'function' ? place.geometry.location.lat() : place.geometry.location.lat,
-            lng: typeof place.geometry.location.lng === 'function' ? place.geometry.location.lng() : place.geometry.location.lng
-          };
-          geocoder.geocode({ location: latlng }, (results, status) => {
-            let reversePin = '';
-            if (status === "OK" && results && results.length > 0) {
-              for (const result of results) {
-                const postalComp = result.address_components?.find(c => c.types.includes("postal_code"));
-                if (postalComp) {
-                  reversePin = postalComp.long_name;
-                  break;
-                }
-              }
-            }
-            if (reversePin && !currentAddress.includes(reversePin)) {
-              currentAddress = currentAddress + " - " + reversePin;
-            }
-            addressRef.current = currentAddress;
-            setAddress(currentAddress);
-            if (inputRef.current) inputRef.current.value = currentAddress;
-            checkDistance(currentAddress, place.geometry.location, reversePin);
-          });
-        } else {
-          addressRef.current = currentAddress;
-          setAddress(currentAddress);
-          if (inputRef.current) inputRef.current.value = currentAddress;
-          if (place.geometry) {
-            checkDistance(currentAddress, place.geometry.location, extractedPincode);
-          } else {
-            checkDistance(currentAddress, null, extractedPincode);
+          const { results } = await geocoder.geocode({ location });
+          for (const r of results || []) {
+            const comp = r.address_components?.find(c => c.types.includes('postal_code'));
+            if (comp) { pincode = comp.long_name; break; }
           }
-        }
+        } catch (e) { /* non-fatal */ }
       }
-    });
 
-    return () => {
-      // Clean up listener on unmount
-      if (listenerRef.current) {
-        window.google.maps.event.removeListener(listenerRef.current);
-        listenerRef.current = null;
-      }
-    };
-  }, [isOpen, mapsReady, checkDistance]);
+      if (pincode && !currentAddress.includes(pincode)) currentAddress += ' - ' + pincode;
 
-
+      addressRef.current = currentAddress;
+      setAddress(currentAddress);
+      suppressSuggestRef.current = true;
+      if (inputRef.current) inputRef.current.value = currentAddress;
+      checkDistance(currentAddress, location, pincode);
+    } catch (e) {
+      console.error('Place details error:', e);
+      setLoading(false);
+      setError('Could not load that address. Please try another.');
+    }
+  };
 
   const handleUseLocation = () => {
     if (!isOpen || !mapsReady) {
@@ -317,15 +289,6 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
         id="google-maps-script"
         src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&loading=async&libraries=places`}
         strategy="afterInteractive"
-        onReady={() => {
-          // Only set ready if the Places library has actually loaded.
-          // With loading=async, onReady fires for the main script BEFORE
-          // the Places library is available. The polling useEffect handles
-          // the case where Places loads later.
-          if (window.google?.maps?.places) {
-            setMapsReady(true);
-          }
-        }}
       />
       <div style={{
         position: 'fixed',
@@ -445,7 +408,9 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
                     type="text"
                     placeholder="Search for a building, street name, or area"
                     defaultValue={address}
-                    onChange={(e) => { addressRef.current = e.target.value; setAddress(e.target.value); }}
+                    onChange={handleInputChange}
+                    onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
+                    autoComplete="off"
                     style={{
                       width: '100%',
                       padding: '14px 16px 14px 40px',
@@ -459,6 +424,24 @@ export default function AddressModal({ isOpen, onClose, onSuccess }) {
                   <svg style={{ position: 'absolute', left: '12px', top: '14px', width: '20px', height: '20px', color: '#EA4335' }} viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                   </svg>
+                  {suggestions.length > 0 && (
+                    <ul style={{
+                      position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
+                      margin: '4px 0 0', padding: 0, listStyle: 'none', background: '#FFF',
+                      border: '1px solid #DDD', borderRadius: '8px', boxShadow: '0 6px 16px rgba(0,0,0,0.12)',
+                      maxHeight: '240px', overflowY: 'auto'
+                    }}>
+                      {suggestions.map((sug, i) => (
+                        <li
+                          key={sug.placePrediction.placeId || i}
+                          onMouseDown={(e) => { e.preventDefault(); handleSelectSuggestion(sug); }}
+                          style={{ padding: '10px 14px', cursor: 'pointer', fontSize: '0.9rem', color: '#333', borderBottom: i < suggestions.length - 1 ? '1px solid #F2F2F2' : 'none' }}
+                        >
+                          {sug.placePrediction.text?.toString()}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
 
                 <button
