@@ -6,7 +6,7 @@ export default function DateStrip({ selectedDate, onDateChange }) {
   const [fullyBookedDates, setFullyBookedDates] = useState(new Set());
   const [blockedDates, setBlockedDates] = useState(new Set());
   const stripRef = useRef(null);
-  
+
   // Drag to scroll state
   const isDown = useRef(false);
   const startX = useRef(null);
@@ -48,7 +48,7 @@ export default function DateStrip({ selectedDate, onDateChange }) {
         const targetDate = new Date(now.getTime() + i * 24 * 60 * 60 * 1000);
         const dateString = getISTDateString(targetDate);
         const displayDate = new Date(dateString);
-        
+
         let label = '';
         if (i === 0) label = 'Today';
         else if (i === 1) label = 'Tomorrow';
@@ -101,18 +101,18 @@ export default function DateStrip({ selectedDate, onDateChange }) {
     e.preventDefault();
     const x = e.pageX - stripRef.current.offsetLeft;
     const walk = (x - startX.current) * 2; // scroll-fast
-    
+
     // Only consider it a drag if moved more than 5px
     if (Math.abs(x - startX.current) > 5) {
       isDragging.current = true;
     }
-    
+
     stripRef.current.scrollLeft = scrollLeft.current - walk;
   };
 
   return (
-    <div 
-      className="date-strip-container" 
+    <div
+      className="date-strip-container"
       ref={stripRef}
       onMouseDown={handleMouseDown}
       onMouseLeave={handleMouseLeave}

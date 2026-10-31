@@ -1,0 +1,13 @@
+[Unit]
+Description=Aetee's Bakehouse Next.js server
+After=network-online.target
+
+[Service]
+WorkingDirectory=/home/zee/Desktop/aetee
+Environment=NODE_ENV=production PORT=3000 HOSTNAME=127.0.0.1
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
