@@ -74,6 +74,16 @@ export async function POST(req) {
       return NextResponse.json({ success: true, message: 'Payment verified but order missing' });
     }
 
+    if (wasAlreadyPaid && updatedOrder && (!updatedOrder.razorpaySignature || !updatedOrder.razorpayPaymentId)) {
+      await prisma.order.update({
+        where: { id: updatedOrder.id },
+        data: {
+          razorpayPaymentId: razorpay_payment_id,
+          razorpaySignature: razorpay_signature,
+        }
+      });
+    }
+
     // 5. Send Telegram Message Instantly and Check Overbooking
     try {
       if (updatedOrder.deliveryDate && !wasAlreadyPaid) {

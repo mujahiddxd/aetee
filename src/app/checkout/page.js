@@ -15,10 +15,12 @@ export default function Checkout() {
   const router = useRouter();
   const { cartItems, isLoaded, clearCart } = useCart();
   const [isValidSession, setIsValidSession] = useState(false);
+  const isRedirectingToSuccess = useRef(false);
 
   // Prevent direct URL access — redirect to cart if cart is empty or delivery type isn't selected
   useEffect(() => {
     if (isLoaded) {
+      if (isRedirectingToSuccess.current) return;
       const savedLocation = sessionStorage.getItem('deliveryLocation');
       if (cartItems.length === 0 || !savedLocation) {
         router.replace('/cart');
@@ -229,24 +231,32 @@ export default function Checkout() {
             order_id: data.orderId,
             notes: notesObj,
             handler: async function (response) {
-              // 3. Verify Payment
-              const verifyRes = await fetch('/api/payment/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                  delivery_date: formData.date
-                })
-              });
+              try {
+                // 3. Verify Payment
+                const verifyRes = await fetch('/api/payment/verify', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                    delivery_date: formData.date
+                  })
+                });
 
-              const verifyData = await verifyRes.json();
-              if (verifyData.success) {
-                clearCart();
-                router.push(`/success${isPickup ? '?type=pickup' : ''}`);
-              } else {
-                setShowModal({ isOpen: true, type: 'error', message: 'Payment verification failed!' });
+                const verifyData = await verifyRes.json();
+                if (verifyData.success) {
+                  isRedirectingToSuccess.current = true;
+                  clearCart();
+                  window.location.href = `/success${isPickup ? '?type=pickup' : ''}`;
+                } else {
+                  setIsProcessing(false);
+                  setShowModal({ isOpen: true, type: 'error', message: verifyData.error || 'Payment verification failed!' });
+                }
+              } catch (err) {
+                console.error('Error verifying payment:', err);
+                setIsProcessing(false);
+                setShowModal({ isOpen: true, type: 'error', message: 'Payment verification could not be completed. Please contact support.' });
               }
             },
             prefill: {
@@ -304,7 +314,7 @@ export default function Checkout() {
   const grandTotal = parseFloat((itemTotal + deliveryCharges).toFixed(2));
 
   // Block rendering until cart is loaded AND has items AND session is valid
-  if (!isLoaded || cartItems.length === 0 || !isValidSession) {
+  if (!isLoaded || (cartItems.length === 0 && !isRedirectingToSuccess.current) || !isValidSession) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
         <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #5A3424', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
