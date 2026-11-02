@@ -10,17 +10,33 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: 'Invalid filename' }, { status: 400 });
   }
 
-  const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'public', 'uploads');
-  const filePath = path.join(uploadDir, filename);
+  // Search candidate upload directories gracefully
+  const candidateDirs = [
+    process.env.UPLOAD_DIR,
+    path.join(process.cwd(), 'public', 'uploads'),
+    path.join(process.cwd(), 'uploads'),
+    path.join(process.cwd(), '..', 'public', 'uploads'),
+    path.join(process.cwd(), '..', 'uploads'),
+  ].filter(Boolean);
 
-  try {
-    await fs.promises.access(filePath, fs.constants.F_OK);
-  } catch (err) {
+  let targetPath = null;
+  for (const dir of candidateDirs) {
+    const candidatePath = path.join(dir, filename);
+    try {
+      await fs.promises.access(candidatePath, fs.constants.F_OK);
+      targetPath = candidatePath;
+      break;
+    } catch {
+      // Continue searching next directory
+    }
+  }
+
+  if (!targetPath) {
     return NextResponse.json({ error: 'Image not found' }, { status: 404 });
   }
 
   try {
-    const fileBuffer = await fs.promises.readFile(filePath);
+    const fileBuffer = await fs.promises.readFile(targetPath);
     return new NextResponse(fileBuffer, {
       status: 200,
       headers: {

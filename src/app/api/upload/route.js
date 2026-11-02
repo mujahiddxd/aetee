@@ -42,16 +42,15 @@ export async function POST(request) {
     // 5. Optimize & Validate Magic Bytes with Sharp
     let optimizedBuffer;
     try {
-      // sharp automatically reads magic bytes. If a .exe is disguised as a .jpg, it will throw an error here.
       optimizedBuffer = await sharp(buffer)
         .resize({ 
           width: 800, 
           height: 800, 
-          fit: 'contain', // Ensures the whole image fits inside without cropping
-          background: { r: 255, g: 255, b: 255, alpha: 0 } // Transparent padding
+          fit: 'contain',
+          background: { r: 255, g: 255, b: 255, alpha: 0 }
         })
-        .webp({ quality: 85, lossless: false }) // Convert to modern webp with good quality
-        .withMetadata(false) // Strip EXIF data
+        .webp({ quality: 85, lossless: false })
+        .withMetadata(false)
         .toBuffer();
     } catch (sharpError) {
       console.error('Sharp optimization failed (possible fake image):', sharpError);
@@ -62,12 +61,31 @@ export async function POST(request) {
     const uuid = crypto.randomUUID();
     const filename = `${uuid}.webp`;
     
-    // 7. Ensure directory exists
-    const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'public', 'uploads');
-    await fs.mkdir(uploadDir, { recursive: true });
+    // 7. Ensure directory exists with fallback
+    const candidateDirs = [
+      process.env.UPLOAD_DIR,
+      path.join(process.cwd(), 'public', 'uploads'),
+      path.join(process.cwd(), 'uploads'),
+    ].filter(Boolean);
+
+    let activeDir = null;
+    for (const dir of candidateDirs) {
+      try {
+        await fs.mkdir(dir, { recursive: true });
+        activeDir = dir;
+        break;
+      } catch {
+        // Try next candidate directory
+      }
+    }
+
+    if (!activeDir) {
+      activeDir = path.join(process.cwd(), 'public', 'uploads');
+      await fs.mkdir(activeDir, { recursive: true });
+    }
 
     // 8. Save file to disk
-    const filePath = path.join(uploadDir, filename);
+    const filePath = path.join(activeDir, filename);
     await fs.writeFile(filePath, optimizedBuffer);
 
     // Return the public URL
